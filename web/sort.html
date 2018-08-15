@@ -25,13 +25,24 @@
                     </ol>
                 </div>
                 <div class="presentation-page flex-v flex-align-y-center" id="page-what-is-sort">
-                    <p>
-                        把一系列无序的元素按照某种规则使得它们按照次序排列的过程叫做排序。
+                    <p style="margin:0;">
+                        &emsp;&emsp;按照某种规则，将计算机内一组无序的数据调整为有序，这种操作我们称之为“排序”。
                     </p>
+                    <div class="flex-v flex-align-x-center flex-align-y-center" style="padding:0px 0px 20px 0px;width:100%;">
+                        <p style="font-size:24px;margin:16px;">未排序</p>
+                        <canvas id="fig-rand-unsort" style="width:100%;height:%;background-color:#ff0;">
+
+                        </canvas>
+                        <p style="font-size:24px;margin:16px;">已排序</p>
+                        <canvas id="fig-rand-sorted" style="width:100%;height:%;background-color:#0ff;">
+
+                        </canvas>
+                    </div>
                 </div>
             </div>
         </div>
         <script src="js/transition.js"></script>
+        <script src="js/graph.js"></script>
         <script src="js/sort.js"></script>
     </body>
 </html>
