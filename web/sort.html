@@ -5,15 +5,33 @@
         <title>CourseWare</title>
         <link rel="stylesheet" type="text/css" href="css/normalize.css"/>
         <link rel="stylesheet" type="text/css" href="css/common.css"/>
+        <link rel="stylesheet" type="text/css" href="css/animations.css"/>
+        <script src="js/modernizr.custom.js"></script>
+        <script src="js/jquery-1.8.0.min.js"></script>
     </head>
-    <body class="wrap-center">
+    <body class="flex-h flex-align-x-center flex-align-y-center">
         <div class="content-main">
-            <div class="page-title wrap-center">
-                <h1>排序算法</h1>
+            <div class="page-title flex-h flex-align-x-center flex-align-y-center">
+                <p>排序算法</p>
             </div>
             <div class="page-content">
-
+                <div class="presentation-page page-active flex-v flex-align-y-center" id="page-main">
+                    <ol class="content-list">
+                        <li><a id="to-what-is-sort" href="javascript:void(0);">何为排序?</a></li>
+                        <li><a href="javascript:void(0);">为何要研究排序算法?</a></li>
+                        <li><a href="javascript:void(0)">排序算法有哪些分类?</a></li>
+                        <li><a href="javascript:void(0)">主要排序算法原理</a></li>
+                        <li><a href="javascript:void(0)">相关C/C++库函数</a></li>
+                    </ol>
+                </div>
+                <div class="presentation-page flex-v flex-align-y-center" id="page-what-is-sort">
+                    <p>
+                        把一系列无序的元素按照某种规则使得它们按照次序排列的过程叫做排序。
+                    </p>
+                </div>
             </div>
         </div>
+        <script src="js/transition.js"></script>
+        <script src="js/sort.js"></script>
     </body>
 </html>
