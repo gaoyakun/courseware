@@ -1,10 +1,5 @@
-(function setupTransition(){
-    Transition.setup ();
-    Transition.setActivePage ($('#page-main'), 48);
-    $('#to-what-is-sort').on ('click', function(){
-        Transition.setActivePage ($('#page-what-is-sort'), 48);
-        $('#page-title').html('何为排序');
-    });
+(function setupPages(){
+    Presentation.setup ($('#page-main'));
 })();
 
 (function createRandFig(){

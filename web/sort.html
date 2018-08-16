@@ -11,37 +11,49 @@
     </head>
     <body class="flex-h flex-align-x-center flex-align-y-center">
         <div class="content-main">
-            <div class="page-title flex-h flex-align-x-center flex-align-y-center">
-                <p id="page-title">排序算法</p>
+            <div class="page-title flex-h flex-align-x-center flex-align-y-center" style="padding:0 30px;">
+                <p id="page-title" style="text-align:center;"></p>
             </div>
             <div class="page-content">
-                <div class="presentation-page page-active flex-v flex-align-y-center" id="page-main">
+                <div class="presentation-page flex-v flex-align-y-center" id="page-main" page-title="排序算法">
                     <ol class="content-list">
-                        <li><a id="to-what-is-sort" href="javascript:void(0);">何为排序?</a></li>
-                        <li><a href="javascript:void(0);">为何要研究排序算法?</a></li>
-                        <li><a href="javascript:void(0)">排序算法有哪些分类?</a></li>
+                        <li><a class="page-nav" target="page-what-is-sort" href="javascript:void(0);">何为排序?</a></li>
+                        <li><a class="page-nav" target="page-why-sort" href="javascript:void(0);">为何要研究排序算法?</a></li>
+                        <li><a class="page-nav" target="page-sort-kinds" href="javascript:void(0)">排序算法有哪些分类?</a></li>
                         <li><a href="javascript:void(0)">主要排序算法原理</a></li>
                         <li><a href="javascript:void(0)">相关C/C++库函数</a></li>
                     </ol>
                 </div>
-                <div class="presentation-page flex-v flex-align-y-center" id="page-what-is-sort">
+                <div class="presentation-page flex-v flex-align-y-center" id="page-what-is-sort" page-title="何为排序">
                     <p style="margin:0;">
                         &emsp;&emsp;按照某种规则，将计算机内一组无序的数据调整为有序，这种操作我们称之为“排序”。
                     </p>
                     <div class="flex-v flex-align-x-center flex-align-y-center" style="padding:0px 0px 20px 0px;width:100%;">
                         <p style="font-size:24px;margin:16px;">未排序</p>
-                        <canvas id="fig-rand-unsort" style="width:100%;height:%;background-color:#ff0;">
-
-                        </canvas>
+                        <canvas id="fig-rand-unsort" style="width:100%;height:100%;background-color:#ff0;"></canvas>
                         <p style="font-size:24px;margin:16px;">已排序</p>
-                        <canvas id="fig-rand-sorted" style="width:100%;height:%;background-color:#0ff;">
-
-                        </canvas>
+                        <canvas id="fig-rand-sorted" style="width:100%;height:100%;background-color:#0ff;"></canvas>
                     </div>
                 </div>
+                <div class="presentation-page flex-v flex-align-y-center" id="page-why-sort" page-title="为何要研究排序算法">
+                    <ol class="content-list">
+                        <li>大量的计算机应用程序都有对于数据排序的需求。</li>
+                        <li>许多复杂的算法当中都对有序数据的要求，或者把排序作为算法中的一个必要环节。</li>
+                        <li>各种不同的基础排序算法中分别涵盖了很多技术，并可以引申到更多的算法领域当中。</li>
+                    </ol>
+                </div>
+                <div class="presentation-page flex-v flex-align-y-center" id="page-sort-kinds" page-title="排序算法的分类">
+                    <ol class="content-list">
+                        <li>按照稳定性可分为稳定排序和不稳定排序。</li>
+                        <li>按照排序方式可分为基于比较的排序和非基于比较的排序。</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="page-foot flex-h flex-align-x-end flex-align-y-center">
+                <a id="page-back" href="javascript:void(0);" style="width:64px;height:64px;margin-right:50px;background-image:url(images/return-64.png);background-size:100% 100%;visibility:hidden;"></a>
             </div>
         </div>
-        <script src="js/transition.js"></script>
+        <script src="js/presentation.js"></script>
         <script src="js/graph.js"></script>
         <script src="js/sort.js"></script>
     </body>

@@ -8,7 +8,7 @@ window.Presentation = (function(){
     };
 	var animEndEventName = animEndEventNames[ Modernizr.prefixed( 'animation' ) ]
 	var navForwardAnimation = 48;
-	var navBackwardAnimation = 48;
+	var navBackwardAnimation = 49;
 
     var Presentation = function () {
         this.pageList = null;
@@ -19,16 +19,23 @@ window.Presentation = (function(){
 		this.navHistory = [];
     };
 
-    Presentation.prototype.setup = function(pages) {
-		var that = this;
-        that.pageList = pages||$(".presentation-page");
+    Presentation.prototype.setup = function(activePage) {
+        var that = this;
+        that.pageList = $(".presentation-page");
         that.pageList.each (function(){
             var page = $(this);
             page.data('originalClassList', page.attr('class'));
 		});
 		$('#page-back').on ('click',function(){
 			that.back ();
-		});
+        });
+        $('.page-nav').on ('click',function(){
+            that.navigateTo ($('#' + $(this).attr('target')));
+        });
+        if (activePage) {
+            $('#page-title').html(activePage.attr('page-title'));
+            activePage.addClass ('page-active');
+        }
     };
 
 	Presentation.prototype.navigateTo = function (page) {
@@ -44,7 +51,8 @@ window.Presentation = (function(){
 			var lastPage = this.navHistory.pop();
 			var currentPage = $(".page-active").eq(0);
 			this.setActivePage (currentPage, lastPage, navBackwardAnimation);
-		} else {
+        }
+        if (this.navHistory.length == 0) {
 			$('#page-back').css('visibility','hidden');
 		}
 	};
@@ -70,14 +78,15 @@ window.Presentation = (function(){
                 }
 			});
 			
+            $('#page-title').html(nextPage.attr('page-title'));
 			return true;
 		}
 		return false;
     };
 
     Presentation.prototype.onEndAnimation = function (outPage, inPage) {
-        that.endCurrentPage = false;
-        that.endNextPage = false;
+        this.endCurrentPage = false;
+        this.endNextPage = false;
         outPage.attr('class', outPage.data('originalClassList'));
         inPage.attr('class', inPage.data('originalClassList')+' page-active');
     };

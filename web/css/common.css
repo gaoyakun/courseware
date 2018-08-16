@@ -72,16 +72,29 @@ a {
     font-size: 36px;
     overflow:hidden;
 }
+.page-foot {
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:140px;
+    font-size: 24px;
+    overflow:hidden;
+}
 .content-list {
     font-weight: bold;
+    font-size: 36px;
 }
 .content-list li {
-    height: 48px;
-    line-height: 48px;
+    height: auto;
+    padding: 10px;
     color: #3e3d82;
 }
 .content-list li a {
     color: #3e3d82;
+}
+.content-list li a:hover {
+    color: #6060b0;
 }
 .hide {
     display: none;
@@ -97,8 +110,8 @@ a {
     left:80px;
     right:80px;
     top:0px;
-    bottom:30px;
-    font-size: 36px;
+    bottom:140px;
+    font-size: 28px;
     visibility: hidden;
     overflow: hidden;
     -webkit-backface-visibility: hidden;
