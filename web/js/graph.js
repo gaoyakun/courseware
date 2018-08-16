@@ -1,4 +1,25 @@
 window.Graph = (function(){
+    var DemoGraph = function (canvas) {
+        this.canvasWidth = canvas.width();
+        this.canvasHeight = canvas.height();
+        canvas[0].width = this.canvasWidth;
+        canvas[0].height = this.canvasHeight;
+        this.entities = {};
+        this.motions = {};
+        this.nextEntityId = 1;
+        this.nextMotionId = 1;
+    };
+
+    DemoGraph.prototype.addEntity = function (entity) {
+        this.entities[this.nextEntityId] = entity;
+        return this.nextEntityId++;
+    };
+
+    DemoGraph.prototype.addMotion = function (motion) {
+        this.motions[this.nextMotionId] = motion;
+        return this.nextMotionId++; 
+    };
+
     var Graph = function () {
     };
 
