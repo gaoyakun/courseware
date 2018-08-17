@@ -35,6 +35,9 @@ window.Presentation = (function(){
         if (activePage) {
             $('#page-title').html(activePage.attr('page-title'));
             activePage.addClass ('page-active');
+            var eventPageIn = new Event('pageIn');
+            eventPageIn.id = activePage.attr('id');
+            window.dispatchEvent(eventPageIn);
         }
     };
 
@@ -89,6 +92,13 @@ window.Presentation = (function(){
         this.endNextPage = false;
         outPage.attr('class', outPage.data('originalClassList'));
         inPage.attr('class', inPage.data('originalClassList')+' page-active');
+        
+        var eventPageOut = new Event('pageOut');
+        eventPageOut.id = outPage.attr('id');
+        window.dispatchEvent(eventPageOut);
+        var eventPageIn = new Event('pageIn');
+        eventPageIn.id = inPage.attr('id');
+        window.dispatchEvent(eventPageIn);
     };
 
     Presentation.prototype.getAnimationClass = function(animationType) {

@@ -20,7 +20,7 @@
                         <li><a class="page-nav" target="page-what-is-sort" href="javascript:void(0);">何为排序?</a></li>
                         <li><a class="page-nav" target="page-why-sort" href="javascript:void(0);">为何要研究排序算法?</a></li>
                         <li><a class="page-nav" target="page-sort-kinds" href="javascript:void(0)">排序算法有哪些分类?</a></li>
-                        <li><a href="javascript:void(0)">主要排序算法原理</a></li>
+                        <li><a class="page-nav" target="page-sort-algorithms" href="javascript:void(0)">主要排序算法原理</a></li>
                         <li><a href="javascript:void(0)">相关C/C++库函数</a></li>
                     </ol>
                 </div>
@@ -48,11 +48,26 @@
                         <li>按照排序方式可分为基于比较的排序和非基于比较的排序。</li>
                     </ol>
                 </div>
+                <div class="presentation-page flex-v flex-align-y-center" id="page-sort-algorithms" page-title="主要排序算法">
+                    <ol class="content-list">
+                        <li><a class="page-nav" target="page-bubble-sort" href="javascript:void(0);">冒泡排序</a></li>
+                        <li><a class="page-nav" target="page-insertion-sort" href="javascript:void(0);">插入排序</a></li>
+                        <li><a class="page-nav" target="page-merge-sort" href="javascript:void(0);">归并排序</a></li>
+                        <li><a class="page-nav" target="page-quick-sort" href="javascript:void(0);">快速排序</a></li>
+                        <li><a class="page-nav" target="page-heap-sort" href="javascript:void(0);">堆排序</a></li>
+                    </ol>
+                </div>
+                <div class="presentation-page flex-v flex-align-y-center" id="page-bubble-sort" page-title="冒泡排序">
+                    <canvas id="demo-bubble-sort" style="width:100%;height:100%;"></canvas>
+                        
+                    </canvas>
+                </div>
             </div>
             <div class="page-foot flex-h flex-align-x-end flex-align-y-center">
                 <a id="page-back" href="javascript:void(0);" style="width:64px;height:64px;margin-right:50px;background-image:url(images/return-64.png);background-size:100% 100%;visibility:hidden;"></a>
             </div>
         </div>
+        <script src="js/transform.js"></script>
         <script src="js/presentation.js"></script>
         <script src="js/graph.js"></script>
         <script src="js/sort.js"></script>
