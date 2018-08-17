@@ -41,7 +41,10 @@ function createBubbleSortDemo(){
     Number.prototype = new GraphEntity();
     Number.prototype.draw = function(graph) {
         graph.ctx.drawImage(this.image, -this.width/2, -this.height/2, this.width, this.height);
-    }
+    };
+    Number.prototype.hittest = function(x, y) {
+        return x > -this.width/2 && x < this.width/2 && y > -this.height/2 && y < this.height/2;
+    };
 
     var demo = new DemoGraph($('#demo-bubble-sort'));
     demo.rootEntity = new Background('#ff0000');

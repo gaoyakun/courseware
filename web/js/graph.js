@@ -11,6 +11,9 @@ window.GraphEntity = (function(){
     GraphEntity.prototype.getBoundingbox = function () {
         return null;
     };
+    GraphEntity.prototype.hittest = function (x, y) {
+        return false;
+    };
     GraphEntity.prototype.getWorldBoundingbox = function () {
         var bbox = this.getBoundingbox ();
         if (bbox) {
@@ -138,6 +141,27 @@ window.DemoGraph = (function(){
 
     DemoGraph.prototype.getMotion = function (motionId) {
         return this.motions[motionId];
+    };
+
+    DemoGraph.prototype.hittest = function (x, y) {
+        function hittest_r (entity, hitResult) {
+            var invWorldMatrix = Transform2d.invert(entity.getWorldMatrix());
+            var localPoint = invWorldMatrix.transformPoint ({x:x,y:y});
+            if (entity.hittest(localPoint.x, localPoint.y)) {
+                hitResult.push(entity);
+            }
+            for (var i = 0; i < entity.children.length; i++) {
+                hittest_r (entity.children[i], hitResult);
+            }
+        }
+        var hitResult = [];
+        if (this.rootEntity) {
+            hittest_r (this.rootEntity, hitResult);
+            hitResult.sort (function(a,b){
+                return b.z - a.z;
+            });
+        }
+        return hitResult;
     };
 
     DemoGraph.prototype.cull = function (entity, cullResult) {
