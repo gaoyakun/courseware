@@ -100,6 +100,21 @@ window.GraphEntity = (function(){
         }
         this.children = [];
     };
+    GraphEntity.prototype.onMouseEnter = function () {
+    };
+    GraphEntity.prototype.onMouseLeave = function () {
+    };
+    GraphEntity.prototype.onMouseDown = function (evt) {
+    };
+    GraphEntity.prototype.onMouseUp = function (evt) {
+    };
+    GraphEntity.prototype.onClick = function (evt) {
+    };
+    GraphEntity.prototype.onDblClick = function (evt) {
+    };
+    GraphEntity.prototype.onMouseWheel = function (evt) {
+    };
+
     return GraphEntity;
 })();
 
@@ -121,6 +136,101 @@ window.DemoGraph = (function(){
         this.motions = {};
         this.nextImageId = 1;
         this.nextMotionId = 1;
+
+        this.hoverEntity = null;
+        this.mouseOver = false;
+        this.mouseX = 0;
+        this.mouseY = 0;
+
+        var that = this;
+        canvas.on ('mouseenter', function(){
+            that.onMouseEnter();
+        });
+        canvas.on ('mouseleave', function(){
+            that.onMouseLeave();
+        });
+        canvas.on ('mousemove', function(evt){
+            that.onMouseMove(evt.x, evt.y);
+        });
+        canvas.on ('mousedown', function(evt){
+            that.onMouseDown(evt);
+        });
+        canvas.on ('mouseup', function(evt){
+            that.onMouseUp(evt);
+        });
+        canvas.on ('click', function(evt){
+            that.onClick(evt);
+        });
+        canvas.on ('mousewheel', function(evt){
+            that.onMouseWheel(evt);
+        });
+        canvas.on ('dblclick', function(evt){
+            that.onDblClick(evt);
+        });
+    };
+
+    DemoGraph.prototype.onMouseEnter = function () {
+        this.mouseOver = true;
+    };
+
+    DemoGraph.prototype.onMouseLeave = function () {
+        this.mouseOver = false;
+        if (this.hoverEntity) {
+            this.hoverEntity.onMouseLeave();
+            this.hoverEntity = null;
+        }
+    };
+
+    DemoGraph.prototype.onMouseMove = function (x, y) {
+        this.mouseX = x;
+        this.mouseY = y;
+        this.updateHoverEntity ();
+    };
+
+    DemoGraph.prototype.onMouseDown = function (evt) {
+        if (this.hoverEntity) {
+            this.hoverEntity.onMouseDown(evt);
+        }
+    };
+
+    DemoGraph.prototype.onMouseUp = function(evt) {
+        if (this.hoverEntity) {
+            this.hoverEntity.onMouseUp (evt);
+        }
+    };
+
+    DemoGraph.prototype.onClick = function(evt) {
+        if (this.hoverEntity) {
+            this.hoverEntity.onClick (evt);
+        }
+    };
+
+    DemoGraph.prototype.onDblClick = function(evt) {
+        if (this.hoverEntity) {
+            this.hoverEntity.onDblClick(evt);
+        }
+    };
+
+    DemoGraph.prototype.onMouseWheel = function (evt) {
+        if (this.hoverEntity) {
+            this.hoverEntity.onMouseWheel (evt);
+        }
+    };
+
+    DemoGraph.prototype.updateHoverEntity = function () {
+        if (this.mouseOver) {
+            var hitResult = this.hittest (this.mouseX, this.mouseY);
+            var hover = hitResult.length>0 ? hitResult[0] : null;
+            if (this.hoverEntity != hover) {
+                if (this.hoverEntity) {
+                    this.hoverEntity.onMouseLeave();
+                }
+                if (hover) {
+                    hover.onMouseEnter();
+                }
+                this.hoverEntity = hover;
+            }
+        }
     };
 
     DemoGraph.prototype.addImage = function (src) {
@@ -198,6 +308,10 @@ window.DemoGraph = (function(){
             }
         }
         this.screenCtx.drawImage(this.buffer, 0, 0);
+    };
+
+    DemoGraph.prototype.run = function () {
+        
     };
 
     return DemoGraph;
