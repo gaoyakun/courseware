@@ -100,6 +100,20 @@ window.GraphEntity = (function(){
         }
         this.children = [];
     };
+    GraphEntity.prototype.onCull = function (graph) {
+        var bbox = this.getWorldBoundingbox ();
+        var culled = false;
+        if (bbox) {
+            var minx = bbox.x;
+            var miny = bbox.y;
+            var maxx = bbox.x + bbox.w;
+            var maxy = bbox.y + bbox.h;
+            culled = (minx >= graph.canvasWidth || miny >= graph.canvasHeight || maxx <= 0 || maxy <= 0);
+        }
+        return culled;
+    };
+    GraphEntity.prototype.onUpdate = function (dt, rt) {
+    };
     GraphEntity.prototype.onMouseEnter = function () {
     };
     GraphEntity.prototype.onMouseLeave = function () {
@@ -141,6 +155,10 @@ window.DemoGraph = (function(){
         this.mouseOver = false;
         this.mouseX = 0;
         this.mouseY = 0;
+        
+        this.lastFrameTime = 0;
+        this.firstFrameTime = 0;
+        this.running = false;
 
         var that = this;
         canvas.on ('mouseenter', function(){
@@ -150,7 +168,7 @@ window.DemoGraph = (function(){
             that.onMouseLeave();
         });
         canvas.on ('mousemove', function(evt){
-            that.onMouseMove(evt.x, evt.y);
+            that.onMouseMove(evt.offsetX, evt.offsetY);
         });
         canvas.on ('mousedown', function(evt){
             that.onMouseDown(evt);
@@ -274,17 +292,15 @@ window.DemoGraph = (function(){
         return hitResult;
     };
 
-    DemoGraph.prototype.cull = function (entity, cullResult) {
-        var bbox = entity.getWorldBoundingbox ();
-        var culled = false;
-        if (bbox) {
-            var minx = bbox.x;
-            var miny = bbox.y;
-            var maxx = bbox.x + bbox.w;
-            var maxy = bbox.y + bbox.h;
-            culled = (minx >= this.canvasWidth || miny >= this.canvasHeight || maxx <= 0 || maxy <= 0);
+    DemoGraph.prototype.update = function (entity, dt, rt) {
+        entity.onUpdate(dt, rt);
+        for (var i = 0; i < entity.children.length; i++) {
+            this.update (entity.children[i], dt, rt);
         }
-        if (!culled) {
+    };
+
+    DemoGraph.prototype.cull = function (entity, cullResult, dt, rt) {
+        if (!entity.onCull(this)) {
             var z = entity.z;
             var group = cullResult[z]||[];
             group.push (entity);
@@ -293,6 +309,13 @@ window.DemoGraph = (function(){
         for (var i = 0; i < entity.children.length; i++) {
             this.cull (entity.children[i], cullResult);
         }
+    };
+
+    DemoGraph.prototype.clear = function (color) {
+        this.ctx.save();
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+        this.ctx.restore();
     };
 
     DemoGraph.prototype.draw = function () {
@@ -310,8 +333,33 @@ window.DemoGraph = (function(){
         this.screenCtx.drawImage(this.buffer, 0, 0);
     };
 
-    DemoGraph.prototype.run = function () {
-        
+    DemoGraph.prototype.run = function (dt, rt) {
+        var that = this;
+        function frame (ts) {
+            if (that.running) {
+                if (that.lastFrameTime == 0) {
+                    that.lastFrameTime = ts;
+                    that.firstFrameTime = ts;
+                }
+                var dt = ts - that.lastFrameTime;
+                var rt = ts - that.firstFrameTime;
+                that.lastFrameTime = ts;
+                that.updateHoverEntity ();
+                if (that.rootEntity) {
+                    that.update (that.rootEntity, dt, rt);
+                    that.draw ();
+                }
+                requestAnimationFrame (frame);
+            }
+        }
+        if (!that.running) {
+            that.running = true;
+            requestAnimationFrame (frame);
+        }
+    };
+
+    DemoGraph.prototype.stop = function () {
+        this.running = false;
     };
 
     return DemoGraph;
