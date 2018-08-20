@@ -21,41 +21,8 @@
 })();
 
 function createBubbleSortDemo(){
-    var Background = function (color) {
-        this.r = 0;
-        this.g = 0;
-        this.b = 0;
-    };
-    Background.prototype = new GraphEntity();
-    Background.prototype.draw = function(graph) {
-        graph.ctx.save();
-        graph.ctx.fillStyle = 'rgb(' + parseInt(this.r) + ',' + parseInt(this.g) + ',' + parseInt(this.b) + ')';
-        graph.ctx.fillRect(0,0,graph.canvasWidth,graph.canvasHeight);
-        graph.ctx.restore();
-    };
-    Background.prototype.onCull = function(graph) {
-        return false;
-    };
-    var Number = function (image, width, height, x, y) {
-        this.image = new Image();
-        this.image.src = image;
-        this.width = width;
-        this.height = height;
-        this.localMatrix = Transform2d.getTranslate(x, y);
-    };
-    Number.prototype = new GraphEntity();
-    Number.prototype.draw = function(graph) {
-        graph.ctx.drawImage(this.image, -this.width/2, -this.height/2, this.width, this.height);
-    };
-    Number.prototype.hittest = function(x, y) {
-        return x > -this.width/2 && x < this.width/2 && y > -this.height/2 && y < this.height/2;
-    };
-    Number.prototype.onClick = function () {
-        console.log (this.image.src);
-    };
-
     var demo = new DemoGraph($('#demo-bubble-sort'));
-    demo.rootEntity = new Background('#ff0000');
+    demo.rootEntity = new Background('#fff');
     demo.rootEntity.addChild(new Number('images/number-0.png', 64, 64, 40, 80));
     demo.rootEntity.addChild(new Number('images/number-1.png', 64, 64, 110, 80));
     demo.rootEntity.addChild(new Number('images/number-2.png', 64, 64, 180, 80));

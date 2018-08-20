@@ -2,6 +2,7 @@ window.GraphEntity = (function(){
     var GraphEntity = function () {
         this.parent = null;
         this.z = 0;
+        this.visible = true;
         this.children = [];
         this.localMatrix = new Transform2d();
     };
@@ -101,16 +102,20 @@ window.GraphEntity = (function(){
         this.children = [];
     };
     GraphEntity.prototype.onCull = function (graph) {
-        var bbox = this.getWorldBoundingbox ();
-        var culled = false;
-        if (bbox) {
-            var minx = bbox.x;
-            var miny = bbox.y;
-            var maxx = bbox.x + bbox.w;
-            var maxy = bbox.y + bbox.h;
-            culled = (minx >= graph.canvasWidth || miny >= graph.canvasHeight || maxx <= 0 || maxy <= 0);
+        if (this.visible) {
+            var bbox = this.getWorldBoundingbox ();
+            var culled = false;
+            if (bbox) {
+                var minx = bbox.x;
+                var miny = bbox.y;
+                var maxx = bbox.x + bbox.w;
+                var maxy = bbox.y + bbox.h;
+                culled = (minx >= graph.canvasWidth || miny >= graph.canvasHeight || maxx <= 0 || maxy <= 0);
+            }
+            return culled;
+        } else {
+            return true;
         }
-        return culled;
     };
     GraphEntity.prototype.onUpdate = function (dt, rt) {
     };
@@ -128,17 +133,26 @@ window.GraphEntity = (function(){
     };
     GraphEntity.prototype.onMouseWheel = function (evt) {
     };
-
+    GraphEntity.prototype.onDragStart = function (evt) {
+        return null;
+    };
+    GraphEntity.prototype.onDragEnd = function (evt, data) {
+    };
+    GraphEntity.prototype.onDragOver = function (evt, data) {
+    };
+    GraphEntity.prototype.onDragDrop = function (evt, data) {
+    };
     return GraphEntity;
 })();
 
 window.DemoGraph = (function(){
     var DemoGraph = function (canvas) {
-        this.canvasWidth = canvas.width();
-        this.canvasHeight = canvas.height();
-        canvas[0].width = this.canvasWidth;
-        canvas[0].height = this.canvasHeight;
-        this.screenCtx = canvas[0].getContext('2d');
+        this.canvas = canvas;
+        this.canvasWidth = this.canvas.width();
+        this.canvasHeight = this.canvas.height();
+        this.canvas[0].width = this.canvasWidth;
+        this.canvas[0].height = this.canvasHeight;
+        this.screenCtx = this.canvas[0].getContext('2d');
 
         this.buffer = document.createElement('canvas');
         this.buffer.width = this.canvasWidth;
@@ -152,6 +166,8 @@ window.DemoGraph = (function(){
         this.nextMotionId = 1;
 
         this.hoverEntity = null;
+        this.draggingEntity = null;
+        this.draggingData = null;
         this.mouseOver = false;
         this.mouseX = 0;
         this.mouseY = 0;
@@ -161,14 +177,14 @@ window.DemoGraph = (function(){
         this.running = false;
 
         var that = this;
-        canvas.on ('mouseenter', function(){
-            that.onMouseEnter();
+        canvas.on ('mouseenter', function(evt){
+            that.onMouseEnter(evt);
         });
-        canvas.on ('mouseleave', function(){
-            that.onMouseLeave();
+        canvas.on ('mouseleave', function(evt){
+            that.onMouseLeave(evt);
         });
         canvas.on ('mousemove', function(evt){
-            that.onMouseMove(evt.offsetX, evt.offsetY);
+            that.onMouseMove(evt);
         });
         canvas.on ('mousedown', function(evt){
             that.onMouseDown(evt);
@@ -187,31 +203,63 @@ window.DemoGraph = (function(){
         });
     };
 
-    DemoGraph.prototype.onMouseEnter = function () {
+    DemoGraph.prototype.onMouseEnter = function (evt) {
         this.mouseOver = true;
+        this.canvas[0].focus();
     };
 
-    DemoGraph.prototype.onMouseLeave = function () {
+    DemoGraph.prototype.onMouseLeave = function (evt) {
         this.mouseOver = false;
+        if (this.draggingEntity) {
+            if (this.draggingData) {
+                this.draggingEntity.onDragEnd(evt, this.draggingData);
+                this.draggingData = null;
+            }
+            this.draggingEntity = null;
+        }
         if (this.hoverEntity) {
             this.hoverEntity.onMouseLeave();
             this.hoverEntity = null;
         }
     };
 
-    DemoGraph.prototype.onMouseMove = function (x, y) {
-        this.mouseX = x;
-        this.mouseY = y;
+    DemoGraph.prototype.onMouseMove = function (evt) {
+        this.mouseX = evt.offsetX;
+        this.mouseY = evt.offsetY;
         this.updateHoverEntity ();
+
+        if (this.draggingEntity && !this.draggingData) {
+            this.draggingData = this.draggingEntity.onDragStart(evt);
+            if (!this.draggingData) {
+                this.draggingEntity = null;
+                this.draggingData = null;
+            }
+        } else if (this.hoverEntity && this.draggingEntity && this.draggingData && this.draggingEntity != this.hoverEntity) {
+            this.hoverEntity.onDragOver(evt, this.draggingData);
+        }
     };
 
     DemoGraph.prototype.onMouseDown = function (evt) {
         if (this.hoverEntity) {
             this.hoverEntity.onMouseDown(evt);
+            if (evt.button == 0) {
+                this.draggingEntity = this.hoverEntity;
+                this.draggingData = null;
+            }
         }
     };
 
     DemoGraph.prototype.onMouseUp = function(evt) {
+        if (evt.button == 0) {
+            if (this.draggingEntity && this.draggingData) {
+                if (this.hoverEntity && this.hoverEntity != this.draggingEntity) {
+                    this.hoverEntity.onDragDrop (evt, this.draggingData);
+                }
+                this.draggingEntity.onDragEnd (evt, this.draggingData);
+            }
+            this.draggingEntity = null;
+            this.draggingData = null;
+        }
         if (this.hoverEntity) {
             this.hoverEntity.onMouseUp (evt);
         }
@@ -329,6 +377,11 @@ window.DemoGraph = (function(){
                 entityGroups[i][j].applyTransform (this.ctx);
                 entityGroups[i][j].draw (this);
             }
+        }
+        if (this.draggingEntity && this.draggingData && this.draggingData.draw) {
+            var matrix = Transform2d.getTranslate(this.mouseX, this.mouseY);
+            this.ctx.setTransform (matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
+            this.draggingData.draw.call (this.draggingEntity, this);
         }
         this.screenCtx.drawImage(this.buffer, 0, 0);
     };
