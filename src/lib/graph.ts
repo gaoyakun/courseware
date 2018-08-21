@@ -1,32 +1,40 @@
-window.GraphEntity = (function(){
-    var GraphEntity = function () {
+import {Transform2d} from './transform';
+
+export class GraphEntity {
+    parent: GraphEntity|null;
+    z: number;
+    visible: boolean;
+    children: GraphEntity[];
+    localMatrix: Transform2d;
+
+    constructor () {
         this.parent = null;
         this.z = 0;
         this.visible = true;
         this.children = [];
         this.localMatrix = new Transform2d();
-    };
-    GraphEntity.prototype.getWorldMatrix = function () {
+    }
+    getWorldMatrix (): Transform2d {
         return this.parent ? Transform2d.transform(this.parent.getWorldMatrix(), this.localMatrix) : this.localMatrix;
     };
-    GraphEntity.prototype.getBoundingbox = function () {
+    getBoundingbox (): {x:number,y:number,w:number,h:number}|null {
         return null;
     };
-    GraphEntity.prototype.hittest = function (x, y) {
+    hittest (x:number, y:number): boolean {
         return false;
     };
-    GraphEntity.prototype.getWorldBoundingbox = function () {
-        var bbox = this.getBoundingbox ();
+    getWorldBoundingbox (): {x:number,y:number,w:number,h:number}|null {
+        let bbox = this.getBoundingbox ();
         if (bbox) {
-            var worldMatrix = this.getWorldMatrix();
-            var lt = worldMatrix.transformPoint({x:bbox.x,y:bbox.y});
-            var rt = worldMatrix.transformPoint({x:bbox.x+bbox.w,y:bbox.y});
-            var lb = worldMatrix.transformPoint({x:bbox.x,y:bbox.y+bbox.h});
-            var rb = worldMatrix.transformPoint({x:bbox.x+bbox.w,y:bbox.y+bbox.h});
-            var minx = lt.x;
-            var miny = lt.y;
-            var maxx = lt.x;
-            var maxy = lt.y;
+            let worldMatrix = this.getWorldMatrix();
+            let lt = worldMatrix.transformPoint({x:bbox.x,y:bbox.y});
+            let rt = worldMatrix.transformPoint({x:bbox.x+bbox.w,y:bbox.y});
+            let lb = worldMatrix.transformPoint({x:bbox.x,y:bbox.y+bbox.h});
+            let rb = worldMatrix.transformPoint({x:bbox.x+bbox.w,y:bbox.y+bbox.h});
+            let minx = lt.x;
+            let miny = lt.y;
+            let maxx = lt.x;
+            let maxy = lt.y;
             if (minx > rt.x) {
                 minx = rt.x;
             }
@@ -68,48 +76,48 @@ window.GraphEntity = (function(){
             return null;
         }
     };
-    GraphEntity.prototype.applyTransform = function(ctx) {
-        var matrix = this.getWorldMatrix();
+    applyTransform (ctx:any): void {
+        let matrix = this.getWorldMatrix();
         ctx.setTransform (matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
     };
-    GraphEntity.prototype.draw = function(graph){
+    draw (graph:DemoGraph): void {
         graph.ctx.save();
         graph.ctx.fillStyle('#ff0000');
         graph.ctx.fillRect(-10,-10,20,20);
         graph.ctx.restore();
     };
-    GraphEntity.prototype.addChild = function (child) {
+    addChild (child:GraphEntity): void {
         if (child && child.parent===null) {
             child.parent = this;
             this.children.push (child);
         }
     };
-    GraphEntity.prototype.remove = function () {
+    remove (): void {
         if (this.parent) {
-            for (var i = 0; i < this.parent.children.length; i++) {
+            for (let i = 0; i < this.parent.children.length; i++) {
                 if (this.parent.children[i] == this) {
-                    parent.children.splice (i, 1);
+                    this.parent.children.splice (i, 1);
                     break;
                 }
             }
         }
         this.parent = null;
     };
-    GraphEntity.prototype.removeChildren = function () {
-        for (var i = 0; i < this.children.length; i++) {
+    removeChildren (): void {
+        for (let i = 0; i < this.children.length; i++) {
             this.children[i].parent = null;
         }
         this.children = [];
     };
-    GraphEntity.prototype.onCull = function (graph) {
+    onCull (graph:DemoGraph): boolean {
         if (this.visible) {
-            var bbox = this.getWorldBoundingbox ();
-            var culled = false;
+            let bbox = this.getWorldBoundingbox ();
+            let culled = false;
             if (bbox) {
-                var minx = bbox.x;
-                var miny = bbox.y;
-                var maxx = bbox.x + bbox.w;
-                var maxy = bbox.y + bbox.h;
+                let minx = bbox.x;
+                let miny = bbox.y;
+                let maxx = bbox.x + bbox.w;
+                let maxy = bbox.y + bbox.h;
                 culled = (minx >= graph.canvasWidth || miny >= graph.canvasHeight || maxx <= 0 || maxy <= 0);
             }
             return culled;
@@ -117,36 +125,56 @@ window.GraphEntity = (function(){
             return true;
         }
     };
-    GraphEntity.prototype.onUpdate = function (dt, rt) {
+    onUpdate (dt:number, rt:number): void {
     };
-    GraphEntity.prototype.onMouseEnter = function () {
+    onMouseEnter (): void {
     };
-    GraphEntity.prototype.onMouseLeave = function () {
+    onMouseLeave (): void {
     };
-    GraphEntity.prototype.onMouseDown = function (evt) {
+    onMouseDown (evt:any): void {
     };
-    GraphEntity.prototype.onMouseUp = function (evt) {
+    onMouseUp (evt:any): void {
     };
-    GraphEntity.prototype.onClick = function (evt) {
+    onClick (evt:any): void {
     };
-    GraphEntity.prototype.onDblClick = function (evt) {
+    onDblClick (evt:any): void {
     };
-    GraphEntity.prototype.onMouseWheel = function (evt) {
+    onMouseWheel (evt:any): void {
     };
-    GraphEntity.prototype.onDragStart = function (evt) {
+    onDragStart (evt:any): any {
         return null;
     };
-    GraphEntity.prototype.onDragEnd = function (evt, data) {
+    onDragEnd (evt:any, data:any): void {
     };
-    GraphEntity.prototype.onDragOver = function (evt, data) {
+    onDragOver (evt:any, data:any): void {
     };
-    GraphEntity.prototype.onDragDrop = function (evt, data) {
+    onDragDrop (evt:any, data:any): void {
     };
-    return GraphEntity;
-})();
+}
 
-window.DemoGraph = (function(){
-    var DemoGraph = function (canvas) {
+export class DemoGraph {
+    canvas: any;
+    canvasWidth: number;
+    canvasHeight: number;
+    screenCtx: any;
+    buffer: any;
+    ctx: any;
+    images: any;
+    rootEntity: GraphEntity|null;
+    motions: any;
+    nextImageId: number;
+    nextMotionId: number;
+    hoverEntity: GraphEntity|null;
+    draggingEntity: GraphEntity|null;
+    draggingData: any;
+    mouseOver: boolean;
+    mouseX: number;
+    mouseY: number;
+    lastFrameTime: number;
+    firstFrameTime: number;
+    running: boolean;
+
+    constructor (canvas:any) {
         this.canvas = canvas;
         this.canvasWidth = this.canvas.width();
         this.canvasHeight = this.canvas.height();
@@ -176,39 +204,38 @@ window.DemoGraph = (function(){
         this.firstFrameTime = 0;
         this.running = false;
 
-        var that = this;
-        canvas.on ('mouseenter', function(evt){
-            that.onMouseEnter(evt);
+        canvas.on ('mouseenter', (evt:any)=>{
+            this.onMouseEnter(evt);
         });
-        canvas.on ('mouseleave', function(evt){
-            that.onMouseLeave(evt);
+        canvas.on ('mouseleave', (evt:any)=>{
+            this.onMouseLeave(evt);
         });
-        canvas.on ('mousemove', function(evt){
-            that.onMouseMove(evt);
+        canvas.on ('mousemove', (evt:any)=>{
+            this.onMouseMove(evt);
         });
-        canvas.on ('mousedown', function(evt){
-            that.onMouseDown(evt);
+        canvas.on ('mousedown', (evt:any)=>{
+            this.onMouseDown(evt);
         });
-        canvas.on ('mouseup', function(evt){
-            that.onMouseUp(evt);
+        canvas.on ('mouseup', (evt:any)=>{
+            this.onMouseUp(evt);
         });
-        canvas.on ('click', function(evt){
-            that.onClick(evt);
+        canvas.on ('click', (evt:any)=>{
+            this.onClick(evt);
         });
-        canvas.on ('mousewheel', function(evt){
-            that.onMouseWheel(evt);
+        canvas.on ('mousewheel', (evt:any)=>{
+            this.onMouseWheel(evt);
         });
-        canvas.on ('dblclick', function(evt){
-            that.onDblClick(evt);
+        canvas.on ('dblclick', (evt:any)=>{
+            this.onDblClick(evt);
         });
     };
 
-    DemoGraph.prototype.onMouseEnter = function (evt) {
+    onMouseEnter (evt:any): void {
         this.mouseOver = true;
         this.canvas[0].focus();
     };
 
-    DemoGraph.prototype.onMouseLeave = function (evt) {
+    onMouseLeave (evt:any): void {
         this.mouseOver = false;
         if (this.draggingEntity) {
             if (this.draggingData) {
@@ -223,7 +250,7 @@ window.DemoGraph = (function(){
         }
     };
 
-    DemoGraph.prototype.onMouseMove = function (evt) {
+    onMouseMove (evt:any): void {
         this.mouseX = evt.offsetX;
         this.mouseY = evt.offsetY;
         this.updateHoverEntity ();
@@ -239,7 +266,7 @@ window.DemoGraph = (function(){
         }
     };
 
-    DemoGraph.prototype.onMouseDown = function (evt) {
+    onMouseDown (evt:any): void {
         if (this.hoverEntity) {
             this.hoverEntity.onMouseDown(evt);
             if (evt.button == 0) {
@@ -249,7 +276,7 @@ window.DemoGraph = (function(){
         }
     };
 
-    DemoGraph.prototype.onMouseUp = function(evt) {
+    onMouseUp (evt:any): void {
         if (evt.button == 0) {
             if (this.draggingEntity && this.draggingData) {
                 if (this.hoverEntity && this.hoverEntity != this.draggingEntity) {
@@ -265,28 +292,28 @@ window.DemoGraph = (function(){
         }
     };
 
-    DemoGraph.prototype.onClick = function(evt) {
+    onClick (evt:any): void {
         if (this.hoverEntity) {
             this.hoverEntity.onClick (evt);
         }
     };
 
-    DemoGraph.prototype.onDblClick = function(evt) {
+    onDblClick (evt:any): void {
         if (this.hoverEntity) {
             this.hoverEntity.onDblClick(evt);
         }
     };
 
-    DemoGraph.prototype.onMouseWheel = function (evt) {
+    onMouseWheel (evt:any): void {
         if (this.hoverEntity) {
             this.hoverEntity.onMouseWheel (evt);
         }
     };
 
-    DemoGraph.prototype.updateHoverEntity = function () {
+    updateHoverEntity (): void {
         if (this.mouseOver) {
-            var hitResult = this.hittest (this.mouseX, this.mouseY);
-            var hover = hitResult.length>0 ? hitResult[0] : null;
+            let hitResult = this.hittest (this.mouseX, this.mouseY);
+            let hover = hitResult.length>0 ? hitResult[0] : null;
             if (this.hoverEntity != hover) {
                 if (this.hoverEntity) {
                     this.hoverEntity.onMouseLeave();
@@ -299,38 +326,38 @@ window.DemoGraph = (function(){
         }
     };
 
-    DemoGraph.prototype.addImage = function (src) {
-        var img = new Image();
+    addImage (src:string): number {
+        let img = new Image();
         img.src = src;
         this.images[this.nextImageId] = img;
         return this.nextImageId++;
     };
 
-    DemoGraph.prototype.getImage = function (imgId) {
+    getImage (imgId:number): any {
         return this.images[imgId];
     };
 
-    DemoGraph.prototype.addMotion = function (motion) {
+    addMotion (motion:any): number {
         this.motions[this.nextMotionId] = motion;
         return this.nextMotionId++; 
     };
 
-    DemoGraph.prototype.getMotion = function (motionId) {
+    getMotion (motionId:number): any {
         return this.motions[motionId];
     };
 
-    DemoGraph.prototype.hittest = function (x, y) {
-        function hittest_r (entity, hitResult) {
-            var invWorldMatrix = Transform2d.invert(entity.getWorldMatrix());
-            var localPoint = invWorldMatrix.transformPoint ({x:x,y:y});
+    hittest (x:number, y:number): GraphEntity[] {
+        function hittest_r (entity:GraphEntity, hitResult:GraphEntity[]) {
+            let invWorldMatrix = Transform2d.invert(entity.getWorldMatrix());
+            let localPoint = invWorldMatrix.transformPoint ({x:x,y:y});
             if (entity.hittest(localPoint.x, localPoint.y)) {
                 hitResult.push(entity);
             }
-            for (var i = 0; i < entity.children.length; i++) {
+            for (let i = 0; i < entity.children.length; i++) {
                 hittest_r (entity.children[i], hitResult);
             }
         }
-        var hitResult = [];
+        let hitResult:GraphEntity[] = [];
         if (this.rootEntity) {
             hittest_r (this.rootEntity, hitResult);
             hitResult.sort (function(a,b){
@@ -340,62 +367,62 @@ window.DemoGraph = (function(){
         return hitResult;
     };
 
-    DemoGraph.prototype.update = function (entity, dt, rt) {
+    update (entity:GraphEntity, dt:number, rt:number): void {
         entity.onUpdate(dt, rt);
-        for (var i = 0; i < entity.children.length; i++) {
+        for (let i = 0; i < entity.children.length; i++) {
             this.update (entity.children[i], dt, rt);
         }
     };
 
-    DemoGraph.prototype.cull = function (entity, cullResult, dt, rt) {
+    cull (entity:GraphEntity, cullResult:any): void {
         if (!entity.onCull(this)) {
-            var z = entity.z;
-            var group = cullResult[z]||[];
+            let z = entity.z;
+            let group = cullResult[z]||[];
             group.push (entity);
             cullResult[z] = group;
         }
-        for (var i = 0; i < entity.children.length; i++) {
+        for (let i = 0; i < entity.children.length; i++) {
             this.cull (entity.children[i], cullResult);
         }
     };
 
-    DemoGraph.prototype.clear = function (color) {
+    clear (color:any): void {
         this.ctx.save();
         this.ctx.fillStyle = color;
         this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
         this.ctx.restore();
     };
 
-    DemoGraph.prototype.draw = function () {
+    draw (): void {
+        let cullResult: Object = {};
         if (this.rootEntity) {
-            var cullResult = {};
             this.cull (this.rootEntity, cullResult);
         }
-        var entityGroups = Object.values(cullResult);
-        for (var i = 0; i < entityGroups.length; i++) {
-            for (var j = 0; j < entityGroups[i].length; j++) {
-                entityGroups[i][j].applyTransform (this.ctx);
-                entityGroups[i][j].draw (this);
+        for (let i in cullResult) {
+            let group:GraphEntity[] = (cullResult as any)[i];
+            for (let j = 0; j < group.length; j++) {
+                group[j].applyTransform (this.ctx);
+                group[j].draw (this);
             }
         }
         if (this.draggingEntity && this.draggingData && this.draggingData.draw) {
-            var matrix = Transform2d.getTranslate(this.mouseX, this.mouseY);
+            let matrix = Transform2d.getTranslate(this.mouseX, this.mouseY);
             this.ctx.setTransform (matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
             this.draggingData.draw.call (this.draggingEntity, this);
         }
         this.screenCtx.drawImage(this.buffer, 0, 0);
     };
 
-    DemoGraph.prototype.run = function (dt, rt) {
-        var that = this;
-        function frame (ts) {
+    run (): void {
+        let that = this;
+        function frame (ts:number) {
             if (that.running) {
                 if (that.lastFrameTime == 0) {
                     that.lastFrameTime = ts;
                     that.firstFrameTime = ts;
                 }
-                var dt = ts - that.lastFrameTime;
-                var rt = ts - that.firstFrameTime;
+                let dt = ts - that.lastFrameTime;
+                let rt = ts - that.firstFrameTime;
                 that.lastFrameTime = ts;
                 that.updateHoverEntity ();
                 if (that.rootEntity) {
@@ -405,21 +432,23 @@ window.DemoGraph = (function(){
                 requestAnimationFrame (frame);
             }
         }
-        if (!that.running) {
-            that.running = true;
+        if (!this.running) {
+            this.running = true;
             requestAnimationFrame (frame);
         }
     };
 
-    DemoGraph.prototype.stop = function () {
+    stop (): void {
         this.running = false;
     };
+}
 
-    return DemoGraph;
-})();
+export class Graph {
+    canvasWidth: number;
+    canvasHeight: number;
+    ctx: any;
 
-window.Graph = (function(){
-    var Graph = function (canvas) {
+    constructor (canvas:any) {
         this.canvasWidth = canvas.width();
         this.canvasHeight = canvas.height();
         canvas[0].width = this.canvasWidth;
@@ -427,17 +456,17 @@ window.Graph = (function(){
         this.ctx = canvas[0].getContext('2d');
     };
 
-    Graph.prototype.histogram = function (options) {
-        var paddingH = options.paddingH||20;
-        var paddingV = options.paddingV||20;
-        var color = options.color||'#f00';
-        var bkcolor = options.bkcolor||'#fff';
-        var barWidth = Math.round((this.canvasWidth - (options.values.length + 1) * paddingH) / options.values.length);
-        var barHeight = this.canvasHeight - 2 * paddingV;
-        var barTop = paddingV;
-        var barLeft = paddingH;
-        var maxValue = 0;
-        for (var i = 0; i < options.values.length; i++) {
+    histogram (options:any): void {
+        let paddingH = options.paddingH||20;
+        let paddingV = options.paddingV||20;
+        let color = options.color||'#f00';
+        let bkcolor = options.bkcolor||'#fff';
+        let barWidth = Math.round((this.canvasWidth - (options.values.length + 1) * paddingH) / options.values.length);
+        let barHeight = this.canvasHeight - 2 * paddingV;
+        let barTop = paddingV;
+        let barLeft = paddingH;
+        let maxValue = 0;
+        for (let i = 0; i < options.values.length; i++) {
             if (options.values[i] > maxValue) {
                 maxValue = options.values[i];
             }
@@ -446,9 +475,48 @@ window.Graph = (function(){
         if (maxValue > 0) {
             this.ctx.fillRect (0, 0, this.canvasWidth, this.canvasHeight);
             this.ctx.fillStyle = color;
-            for (var i = 0; i < options.values.length; i++) {
-                var top = barTop + Math.round(barHeight * (maxValue-options.values[i])/maxValue);
-                var height = this.canvasHeight - paddingV - top;
+            for (let i = 0; i < options.values.length; i++) {
+                let top = barTop + Math.round(barHeight * (maxValue-options.values[i])/maxValue);
+                let height = this.canvasHeight - paddingV - top;
+                this.ctx.fillRect (barLeft, top, barWidth, height);
+                barLeft += barWidth;
+                barLeft += paddingH;
+            }
+        }
+    };
+}
+/*
+window.Graph = (function(){
+    let Graph = function (canvas) {
+        this.canvasWidth = canvas.width();
+        this.canvasHeight = canvas.height();
+        canvas[0].width = this.canvasWidth;
+        canvas[0].height = this.canvasHeight;
+        this.ctx = canvas[0].getContext('2d');
+    };
+
+    Graph.prototype.histogram = function (options) {
+        let paddingH = options.paddingH||20;
+        let paddingV = options.paddingV||20;
+        let color = options.color||'#f00';
+        let bkcolor = options.bkcolor||'#fff';
+        let barWidth = Math.round((this.canvasWidth - (options.values.length + 1) * paddingH) / options.values.length);
+        let barHeight = this.canvasHeight - 2 * paddingV;
+        let barTop = paddingV;
+        let barLeft = paddingH;
+        let maxValue = 0;
+        for (let i = 0; i < options.values.length; i++) {
+            if (options.values[i] > maxValue) {
+                maxValue = options.values[i];
+            }
+        }
+        this.ctx.fillStyle = bkcolor;
+        if (maxValue > 0) {
+            this.ctx.fillRect (0, 0, this.canvasWidth, this.canvasHeight);
+            this.ctx.fillStyle = color;
+            for (let i = 0; i < options.values.length; i++) {
+                let top = barTop + Math.round(barHeight * (maxValue-options.values[i])/maxValue);
+                let height = this.canvasHeight - paddingV - top;
                 this.ctx.fillRect (barLeft, top, barWidth, height);
                 barLeft += barWidth;
                 barLeft += paddingH;
@@ -458,3 +526,4 @@ window.Graph = (function(){
 
     return Graph;
 })();
+*/

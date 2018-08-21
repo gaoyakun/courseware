@@ -1,35 +1,46 @@
-window.Transform2d = (function(){
-    var Transform2d = function () {
-        this.makeIdentity();
-    };
-    Transform2d.getIdentity = function () {
+export class Transform2d {
+    a:number;
+    b:number;
+    c:number;
+    d:number;
+    e:number;
+    f:number;
+    constructor () {
+        this.a = 1;
+        this.b = 0;
+        this.c = 0;
+        this.d = 1;
+        this.e = 0;
+        this.f = 0;
+    }
+    static getIdentity () {
         return new Transform2d();
     };
-    Transform2d.getTranslate = function (x, y) {
+    static getTranslate (x:number, y:number) {
         return new Transform2d().makeTranslate (x, y);
     };
-    Transform2d.getScale = function (x, y) {
+    static getScale (x:number, y:number) {
         return new Transform2d().makeScale (x, y);
     };
-    Transform2d.getRotate = function (theta) {
+    static getRotate (theta:number) {
         return new Transform2d().makeRotate (theta);
     };
-    Transform2d.transform = function (t1, t2) {
+    static transform (t1:Transform2d, t2:Transform2d) {
         return new Transform2d().copyFrom(t1).transform(t2);
     };
-    Transform2d.translate = function (t, x, y) {
+    static translate (t:Transform2d, x:number, y:number) {
         return new Transform2d().copyFrom(t).translate(x, y);
     };
-    Transform2d.scale = function (t, x, y) {
+    static scale (t:Transform2d, x:number, y:number) {
         return new Transform2d().copyFrom(t).scale(x, y);
     };
-    Transform2d.rotate = function (t, theta) {
+    static rotate (t:Transform2d, theta:number) {
         return new Transform2d().copyFrom(t).rotate(theta);
     };
-    Transform2d.invert = function (t) {
+    static invert (t:Transform2d) {
         return new Transform2d().copyFrom(t).invert();
     };
-    Transform2d.prototype.set = function (a, b, c, d, e, f) {
+    set (a:number, b:number, c:number, d:number, e:number, f:number) {
         this.a = a;
         this.b = b;
         this.c = c;
@@ -38,24 +49,24 @@ window.Transform2d = (function(){
         this.f = f;
         return this;
     };
-    Transform2d.prototype.makeIdentity = function () {
+    makeIdentity () {
         return this.set (1, 0, 0, 1, 0, 0);
     };
-    Transform2d.prototype.makeTranslate = function (x, y) {
+    makeTranslate (x:number, y:number) {
         return this.set (1, 0, 0, 1, x, y);
     };
-    Transform2d.prototype.makeScale = function (x, y) {
+    makeScale (x:number, y:number) {
         return this.set (x, 0, 0, y, 0, 0);
     };
-    Transform2d.prototype.makeRotate = function (theta) {
-        var s = Math.sin(theta);
-        var c = Math.cos(theta);
+    makeRotate (theta:number) {
+        let s = Math.sin(theta);
+        let c = Math.cos(theta);
         return this.set (c, s, -s, c, 0.0, 0.0);
     };
-    Transform2d.prototype.copyFrom = function (otherTransform) {
+    copyFrom (otherTransform:Transform2d) {
         return this.set (otherTransform.a, otherTransform.b, otherTransform.c, otherTransform.d, otherTransform.e, otherTransform.f);
     };
-    Transform2d.prototype.transform = function (right) {
+    transform (right:Transform2d) {
         return this.set(
             this.a * right.a + this.c * right.b,
             this.b * right.a + this.d * right.b,
@@ -65,29 +76,29 @@ window.Transform2d = (function(){
             this.b * right.e + this.d * right.f + this.f
         );
     };
-    Transform2d.prototype.transformPoint = function (point) {
+    transformPoint (point:{x:number,y:number}) {
         return { 
             x:this.a * point.x + this.c * point.y + this.e, 
             y:this.b * point.x + this.d * point.y + this.f 
         };
     };
-    Transform2d.prototype.translate = function (x, y) {
+    translate (x:number, y:number) {
         return this.transform (Transform2d.getTranslate(x, y));
     };
-    Transform2d.prototype.scale = function (x, y) {
+    scale (x:number, y:number) {
         return this.transform (Transform2d.getScale(x, y));
     };
-    Transform2d.prototype.rotate = function (theta) {
+    rotate (theta:number) {
         return this.transform (Transform2d.getRotate(theta));
     };
-    Transform2d.prototype.invert = function () {
-        var a00 = this.a, a01 = this.b, a02 = 0;
-        var a10 = this.c, a11 = this.d, a12 = 0;
-        var a20 = this.e, a21 = this.f, a22 = 1;
-		var b01 = a22 * a11 - a12 * a21;
-		var b11 =-a22 * a10 + a12 * a20;
-		var b21 = a21 * a10 - a11 * a20;
-		var det = a00 * b01 + a01 * b11 + a02 * b21;
+    invert () {
+        let a00 = this.a, a01 = this.b, a02 = 0;
+        let a10 = this.c, a11 = this.d, a12 = 0;
+        let a20 = this.e, a21 = this.f, a22 = 1;
+		let b01 = a22 * a11 - a12 * a21;
+		let b11 =-a22 * a10 + a12 * a20;
+		let b21 = a21 * a10 - a11 * a20;
+		let det = a00 * b01 + a01 * b11 + a02 * b21;
 		if (!det){
             return this;
 		}
@@ -100,6 +111,4 @@ window.Transform2d = (function(){
         this.f = (-a21 * a00 + a01 * a20) * det;
         return this;
     };
-
-    return Transform2d;
-})();
+}

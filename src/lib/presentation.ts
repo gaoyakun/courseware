@@ -1,83 +1,92 @@
-window.Presentation = (function(){
+import $ from 'jquery';
 
-    var animEndEventNames = {
-        'WebkitAnimation' : 'webkitAnimationEnd',
-        'OAnimation' : 'oAnimationEnd',
-        'msAnimation' : 'MSAnimationEnd',
-        'animation' : 'animationend'
-    };
-	var animEndEventName = animEndEventNames[ Modernizr.prefixed( 'animation' ) ]
-	var navForwardAnimation = 48;
-	var navBackwardAnimation = 49;
+const animEndEventNames:any = {
+    'WebkitAnimation' : 'webkitAnimationEnd',
+    'OAnimation' : 'oAnimationEnd',
+    'msAnimation' : 'MSAnimationEnd',
+    'animation' : 'animationend'
+};
+const animEndEventName = animEndEventNames['animation'];//(animEndEventNames as any)[ (Modernizr as any).prefixed( 'animation' ) ]
+const navForwardAnimation = 48;
+const navBackwardAnimation = 49;
 
-    var Presentation = function () {
+export class CousewareFramework {
+    pageList: any;
+    endCurrentPage: boolean;
+    endNextPage: boolean;
+    outClass: string;
+    inClass: string;
+    navHistory: Array<any>;
+
+    constructor () {
         this.pageList = null;
         this.endCurrentPage = false;
         this.endNextPage = false;
         this.outClass = '';
 		this.inClass = '';
 		this.navHistory = [];
-    };
+    }
 
-    Presentation.prototype.setup = function(activePage) {
-        var that = this;
+    setup (activePage:any): void {
+		let that = this;
         that.pageList = $(".presentation-page");
         that.pageList.each (function(){
-            var page = $(this);
+            var page:any = $(this);
             page.data('originalClassList', page.attr('class'));
 		});
 		$('#page-back').on ('click',function(){
 			that.back ();
         });
         $('.page-nav').on ('click',function(){
+			console.log(this);
             that.navigateTo ($('#' + $(this).attr('target')));
         });
         if (activePage) {
             $('#page-title').html(activePage.attr('page-title'));
             activePage.addClass ('page-active');
-            var eventPageIn = new Event('pageIn');
-            eventPageIn.id = activePage.attr('id');
+            let eventPageIn:any = new Event('pageIn');
+            eventPageIn['id'] = activePage.attr('id');
             window.dispatchEvent(eventPageIn);
         }
-    };
+    }
 
-	Presentation.prototype.navigateTo = function (page) {
+	navigateTo (page:any): void {
         var currentPage = $(".page-active").eq(0);
 		if (this.setActivePage (currentPage, page, navForwardAnimation)) {
 			this.navHistory.push (currentPage);
 			$('#page-back').css('visibility','visible');
 		}
-	};
+	}
 
-	Presentation.prototype.back = function () {
+	back (): void {
 		if (this.navHistory.length > 0) {
-			var lastPage = this.navHistory.pop();
-			var currentPage = $(".page-active").eq(0);
+			let lastPage = this.navHistory.pop();
+			let currentPage = $(".page-active").eq(0);
 			this.setActivePage (currentPage, lastPage, navBackwardAnimation);
         }
         if (this.navHistory.length == 0) {
 			$('#page-back').css('visibility','hidden');
 		}
-	};
+	}
 
-    Presentation.prototype.setActivePage = function(currentPage, nextPage, animationType) {
-        var that = this;
+    setActivePage (currentPage:any, nextPage:any, animationType:number): boolean {
 		nextPage.addClass ('page-active');
+		console.log(nextPage.hasClass('page-active'));
         if (currentPage && currentPage.attr('id') != nextPage.attr('id')) {
-            that.getAnimationClass (animationType);
+            this.getAnimationClass (animationType);
 
-            currentPage.addClass(that.outClass).on (animEndEventName, function(){
+            currentPage.addClass(this.outClass).on (animEndEventName, ()=>{
                 currentPage.off (animEndEventName);
-                that.endCurrentPage = true;
-                if (that.endNextPage) {
-                    that.onEndAnimation (currentPage, nextPage);
+                this.endCurrentPage = true;
+                if (this.endNextPage) {
+                    this.onEndAnimation (currentPage, nextPage);
                 }
             });
-            nextPage.addClass(that.inClass).on (animEndEventName, function(){
+            nextPage.addClass(this.inClass).on (animEndEventName, ()=>{
                 nextPage.off (animEndEventName);
-                that.endNextPage = true;
-                if (that.endCurrentPage) {
-                    that.onEndAnimation (currentPage, nextPage);
+                this.endNextPage = true;
+                if (this.endCurrentPage) {
+                    this.onEndAnimation (currentPage, nextPage);
                 }
 			});
 			
@@ -85,23 +94,23 @@ window.Presentation = (function(){
 			return true;
 		}
 		return false;
-    };
+    }
 
-    Presentation.prototype.onEndAnimation = function (outPage, inPage) {
+    onEndAnimation (outPage:any, inPage:any): void {
         this.endCurrentPage = false;
         this.endNextPage = false;
         outPage.attr('class', outPage.data('originalClassList'));
         inPage.attr('class', inPage.data('originalClassList')+' page-active');
         
-        var eventPageOut = new Event('pageOut');
-        eventPageOut.id = outPage.attr('id');
+        var eventPageOut:any = new Event('pageOut');
+        eventPageOut['id'] = outPage.attr('id');
         window.dispatchEvent(eventPageOut);
-        var eventPageIn = new Event('pageIn');
-        eventPageIn.id = inPage.attr('id');
+        var eventPageIn:any = new Event('pageIn');
+        eventPageIn['id'] = inPage.attr('id');
         window.dispatchEvent(eventPageIn);
-    };
+    }
 
-    Presentation.prototype.getAnimationClass = function(animationType) {
+    getAnimationClass (animationType:number): void {
 		switch(animationType) {
 			case 1:		
 				this.outClass = 'pt-page-moveToLeft';
@@ -372,7 +381,5 @@ window.Presentation = (function(){
 				this.inClass = 'pt-page-rotateSlideIn';
 				break;
         }
-    };
-        
-    return new Presentation();
-})();
+    }
+}
