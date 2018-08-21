@@ -1,12 +1,12 @@
 import $ from 'jquery';
 import {CousewareFramework} from '../lib/presentation';
 import {DemoGraph,GraphEntity,Graph} from '../lib/graph';
-import {Bkground,Number} from '../lib/demo';
+import {Bkground,Number,NumberSequenceDemo} from '../lib/demo';
 
 export class CourseSort extends CousewareFramework {
     private graphRandUnsort: Graph;
     private graphRandSorted: Graph;
-    private bubbleDemo: DemoGraph;
+    private bubbleDemo: NumberSequenceDemo;
 
     constructor () {
         super();
@@ -30,39 +30,24 @@ export class CourseSort extends CousewareFramework {
             paddingH:5
         });
 
-        this.bubbleDemo = new DemoGraph($('#demo-bubble-sort'));
+        this.bubbleDemo = new NumberSequenceDemo($('#demo-bubble-sort'));
 
         window.addEventListener ('pageIn', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
-                this.startBubbleSortDemo ();
+                this.bubbleDemo.start ('rgba(0,0,0,0)',[3,2,8,4,8,6,9,1,0],{
+                    margin_h: 50,
+                    margin_v: 50,
+                    padding: 20
+                });
             }
         });        
 
         window.addEventListener ('pageOut', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
-                this.stopBubbleSortDemo ();
+                this.bubbleDemo.end ();
             }
         });        
     }
 
-    startBubbleSortDemo () {
-        this.bubbleDemo.rootEntity = new Bkground('#fff');
-        this.bubbleDemo.rootEntity.addChild(new Number('images/number-0.png', 64, 64, 40, 80));
-        this.bubbleDemo.rootEntity.addChild(new Number('images/number-1.png', 64, 64, 110, 80));
-        this.bubbleDemo.rootEntity.addChild(new Number('images/number-2.png', 64, 64, 180, 80));
-        this.bubbleDemo.rootEntity.addChild(new Number('images/number-3.png', 64, 64, 250, 80));
-        this.bubbleDemo.rootEntity.addChild(new Number('images/number-4.png', 64, 64, 320, 80));
-        this.bubbleDemo.rootEntity.addChild(new Number('images/number-5.png', 64, 64, 390, 80));
-        this.bubbleDemo.rootEntity.addChild(new Number('images/number-6.png', 64, 64, 460, 80));
-        this.bubbleDemo.rootEntity.addChild(new Number('images/number-7.png', 64, 64, 530, 80));
-        this.bubbleDemo.rootEntity.addChild(new Number('images/number-8.png', 64, 64, 600, 80));
-        this.bubbleDemo.rootEntity.addChild(new Number('images/number-9.png', 64, 64, 670, 80));
-        this.bubbleDemo.run ();
-    }
-
-    stopBubbleSortDemo () {
-        this.bubbleDemo.stop ();
-        this.bubbleDemo.rootEntity = null;
-    }
 }
 

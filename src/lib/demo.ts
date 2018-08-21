@@ -10,10 +10,13 @@ export class Bkground extends GraphEntity {
     }
     draw (graph:DemoGraph): void {
         if (this.color) {
+            graph.ctx.height = graph.ctx.height;
+            /*
             graph.ctx.save();
             graph.ctx.fillStyle = this.color;
             graph.ctx.fillRect (0, 0, graph.canvasWidth, graph.canvasHeight);
             graph.ctx.restore();
+            */
         }
     };
     onCull (graph:DemoGraph): boolean {
@@ -51,3 +54,34 @@ export class Number extends GraphEntity {
     };
 }
 
+export class NumberSequenceDemo extends DemoGraph {
+    private bkground: Bkground|null;
+    private options: any;
+    constructor (canvas:any) {
+        super(canvas);
+        this.bkground = null;
+        this.options = {}
+    }
+    start (bkcolor:any, numbers:number[]|null, options:any) {
+        this.bkground = new Bkground(bkcolor);
+        if (numbers && numbers.length>0) {
+            const margin_h = options.margin_h == null ? 0 : options.margin_h;
+            const margin_v = options.margin_v == null ? 0 : options.margin_v;
+            const padding = options.padding == null ? 0 : options.padding;
+            const step = Math.floor((this.canvasWidth - 2 * margin_h) / numbers.length);
+            const width = step > padding ? step - padding : step;
+            const startx = margin_h + Math.floor(width / 2);
+            const starty = margin_v + Math.floor(width / 2);
+            for (let i = 0; i < numbers.length; i++) {
+                this.bkground.addChild (new Number('images/number-'+numbers[i]+'.png', width, width, startx+i*step, starty));
+            }
+        }
+        this.rootEntity = this.bkground;
+        this.run ();
+    }
+    end () {
+        this.stop ();
+        this.bkground = null;
+        this.options = {}
+    }
+}
