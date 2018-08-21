@@ -34,7 +34,7 @@ export class CourseSort extends CousewareFramework {
 
         window.addEventListener ('pageIn', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
-                this.bubbleDemo.start ('rgba(0,0,0,0)',[3,2,8,4,8,6,9,1,0],{
+                this.bubbleDemo.start ('rgba(0,0,0,255)',[3,2,8,4,8,6,9,1,0],{
                     margin_h: 50,
                     margin_v: 50,
                     padding: 20

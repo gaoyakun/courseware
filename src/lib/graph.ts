@@ -20,7 +20,7 @@ export class GraphEntity {
     getBoundingbox (): {x:number,y:number,w:number,h:number}|null {
         return null;
     };
-    hittest (x:number, y:number): boolean {
+    hittest (graph:DemoGraph, x:number, y:number): boolean {
         return false;
     };
     getWorldBoundingbox (): {x:number,y:number,w:number,h:number}|null {
@@ -347,19 +347,19 @@ export class DemoGraph {
     };
 
     hittest (x:number, y:number): GraphEntity[] {
-        function hittest_r (entity:GraphEntity, hitResult:GraphEntity[]) {
+        function hittest_r (graph:DemoGraph, entity:GraphEntity, hitResult:GraphEntity[]) {
             let invWorldMatrix = Transform2d.invert(entity.getWorldMatrix());
             let localPoint = invWorldMatrix.transformPoint ({x:x,y:y});
-            if (entity.hittest(localPoint.x, localPoint.y)) {
+            if (entity.hittest(graph, localPoint.x, localPoint.y)) {
                 hitResult.push(entity);
             }
             for (let i = 0; i < entity.children.length; i++) {
-                hittest_r (entity.children[i], hitResult);
+                hittest_r (graph, entity.children[i], hitResult);
             }
         }
         let hitResult:GraphEntity[] = [];
         if (this.rootEntity) {
-            hittest_r (this.rootEntity, hitResult);
+            hittest_r (this, this.rootEntity, hitResult);
             hitResult.sort (function(a,b){
                 return b.z - a.z;
             });
