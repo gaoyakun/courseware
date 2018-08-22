@@ -152,6 +152,53 @@ export class GraphEntity {
     };
 }
 
+export class Motion {
+    entity: GraphEntity|null;
+    running: boolean;
+    starttime: number;
+    lasttime: number;
+    callback: ((motion:Motion)=>void)|null;
+    constructor () {
+        this.entity = null;
+        this.running = false;
+        this.callback = null;
+        this.lasttime = 0;
+        this.starttime = 0;
+    }
+    onUpdate (dt:number, rt:number): void {
+    }
+    isRunning (): boolean {
+        return this.running;
+    }
+    start (callback:((motion:Motion)=>void)|null): void {
+        if (!this.running) {
+            this.callback = callback;
+            this.running = true;
+        }
+    }
+    update (dt:number, rt:number): void {
+        if (this.running) {
+            if (this.starttime = 0) {
+                this.starttime = rt;
+                this.lasttime = rt;
+            }
+            this.onUpdate (rt-this.lasttime, rt-this.starttime);
+            this.lasttime = rt;
+        }
+    }
+    stop (): void {
+        if (this.running) {
+            this.running = false;
+            if (this.callback) {
+                this.callback (this);
+                this.callback = null;
+            }
+            this.starttime = 0;
+            this.lasttime = 0;
+        }
+    }
+}
+
 export class DemoGraph {
     canvas: any;
     canvasWidth: number;
@@ -159,10 +206,8 @@ export class DemoGraph {
     screenCtx: any;
     buffer: any;
     ctx: any;
-    images: any;
     rootEntity: GraphEntity|null;
-    motions: any;
-    nextImageId: number;
+    motions: Motion[];
     nextMotionId: number;
     hoverEntity: GraphEntity|null;
     draggingEntity: GraphEntity|null;
@@ -187,10 +232,8 @@ export class DemoGraph {
         this.buffer.height = this.canvasHeight;
         this.ctx = this.buffer.getContext('2d');
 
-        this.images = {};
         this.rootEntity = null;
-        this.motions = {};
-        this.nextImageId = 1;
+        this.motions = [];
         this.nextMotionId = 1;
 
         this.hoverEntity = null;
@@ -326,24 +369,20 @@ export class DemoGraph {
         }
     };
 
-    addImage (src:string): number {
-        let img = new Image();
-        img.src = src;
-        this.images[this.nextImageId] = img;
-        return this.nextImageId++;
+    playMotion (motion:Motion, callback:(motion:Motion)=>void): void {
+        if (motion) {
+            this.motions.push (motion);
+            motion.start (callback);
+        }
     };
 
-    getImage (imgId:number): any {
-        return this.images[imgId];
-    };
-
-    addMotion (motion:any): number {
-        this.motions[this.nextMotionId] = motion;
-        return this.nextMotionId++; 
-    };
-
-    getMotion (motionId:number): any {
-        return this.motions[motionId];
+    removeMotion (motion:Motion): void {
+        for (let i = 0; i < this.motions.length; i++) {
+            if (this.motions[i] == motion) {
+                this.motions.splice (i, 1);
+                break;
+            }
+        }
     };
 
     hittest (x:number, y:number): GraphEntity[] {
