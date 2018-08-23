@@ -157,6 +157,7 @@ export class Motion {
     running: boolean;
     starttime: number;
     lasttime: number;
+    graph: DemoGraph|null;
     callback: ((motion:Motion)=>void)|null;
     constructor () {
         this.entity = null;
@@ -164,6 +165,7 @@ export class Motion {
         this.callback = null;
         this.lasttime = 0;
         this.starttime = 0;
+        this.graph = null;
     }
     onUpdate (dt:number, rt:number): void {
     }
@@ -196,6 +198,32 @@ export class Motion {
             this.starttime = 0;
             this.lasttime = 0;
         }
+    }
+}
+
+export class ArcMotion extends Motion {
+    startPoint: {x:number,y:number};
+    endPoint: {x:number,y:number};
+    height: number;
+    duration: number;
+    speed: number;
+    private center:{x:number,y:number};
+    private transformedStart:{x:number,y:number};
+    private theta: number;
+    constructor (start:{x:number,y:number}, end:{x:number,y:number}, height:number) {
+        super();
+        this.startPoint = start;
+        this.endPoint = end;
+        this.height = height;
+        this.duration = 0;
+        this.speed = 0;
+        let dx = end.x - start.x;
+        let dy = end.y - start.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        let halfdist = dist/2;
+        let radius = (halfdist*halfdist + height*height) / (height * 2);
+    }
+    onUpdate (dt:number, rt:number): void {
     }
 }
 
@@ -370,18 +398,10 @@ export class DemoGraph {
     };
 
     playMotion (motion:Motion, callback:(motion:Motion)=>void): void {
-        if (motion) {
+        if (!motion.graph) {
+            motion.graph = this;
             this.motions.push (motion);
             motion.start (callback);
-        }
-    };
-
-    removeMotion (motion:Motion): void {
-        for (let i = 0; i < this.motions.length; i++) {
-            if (this.motions[i] == motion) {
-                this.motions.splice (i, 1);
-                break;
-            }
         }
     };
 
@@ -410,6 +430,29 @@ export class DemoGraph {
         entity.onUpdate(dt, rt);
         for (let i = 0; i < entity.children.length; i++) {
             this.update (entity.children[i], dt, rt);
+        }
+
+        let nullpos = 0;
+        for (let i = 0; i < this.motions.length; i++) {
+            if (!this.motions[i].isRunning()) {
+                this.motions[i].graph = null;
+                let tmp = this.motions[i];
+                this.motions[i] = this.motions[nullpos];
+                this.motions[nullpos] = tmp;
+                nullpos++;
+            } else {
+                this.motions[i].onUpdate (dt, rt);
+            }
+        }
+        if (nullpos > 0) {
+            this.motions.splice(0, nullpos);
+        }
+
+        // for debug
+        for (let i = 0; i < this.motions.length; i++) {
+            if (!this.motions[i].graph || !this.motions[i].isRunning()) {
+                console.error ('ASSERT error: remove finished motion failed');
+            }
         }
     };
 
