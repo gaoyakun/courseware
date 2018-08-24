@@ -31,11 +31,19 @@ export class Bkground extends GraphEntity {
 }
 
 class NumberSequenceBkground extends Bkground {
-    rects: {x:number,y:number,w:number,h:number,entity:Number|null}[];
+    rects: {x:number,y:number,w:number,h:number,entity:Number}[];
 
-    constructor (color: string = '#000') {
+    constructor (rects:{x:number,y:number,w:number,h:number,entity:Number}[], color: string = '#000') {
         super(color);
-        this.rects = [];
+        this.rects = rects;
+    }
+
+    draw (graph:DemoGraph): void {
+        super.draw (graph);
+        graph.ctx.strokeStyle = '#fff';
+        this.rects.forEach (value=>{
+            graph.ctx.strokeRect(value.x,value.y,value.w,value.h);
+        });
     }
 
     rectTest (x:number, y:number): number {
@@ -70,8 +78,33 @@ class NumberSequenceBkground extends Bkground {
         }
         if (slot >= 0) {
             this.rects[slot].entity = entity;
+            if (entity.parent == null) {
+                this.addChild (entity);
+            }
+            entity.localMatrix = Transform2d.getTranslate(this.rects[slot].x + this.rects[slot].w/2, this.rects[slot].y + this.rects[slot].h/2);
         }
         return slot;
+    }
+
+    insertEntity (pos:number, entity:Number): boolean {
+        let slot;
+        for (slot = this.rects.length-1; slot >= 0; slot--) {
+            if (this.rects[slot].entity != null) {
+                break;
+            }
+        }
+        if (slot == this.rects.length-1 || slot < pos-1) {
+            return false;
+        }
+        for (let i = slot; i >= pos; i--) {
+            this.rects[i+1].entity = this.rects[i].entity;
+            this.rects[i+1].entity.localMatrix = Transform2d.getTranslate(this.rects[i+1].x+this.rects[i+1].w/2, this.rects[i+1].y+this.rects[i+1].h/2);
+        }
+        this.rects[pos].entity = entity;
+        if (entity.parent == null) {
+            this.addChild (entity);
+        }
+        entity.localMatrix = Transform2d.getTranslate(this.rects[pos].x+this.rects[pos].w/2, this.rects[pos].y+this.rects[pos].h/2);
     }
 
     packEntities (): void {
@@ -81,6 +114,7 @@ class NumberSequenceBkground extends Bkground {
                 slot = i;
             } else if (this.rects[i].entity != null && slot >= 0) {
                 this.rects[slot].entity = this.rects[i].entity;
+                this.rects[slot].entity.localMatrix = Transform2d.getTranslate(this.rects[slot].x+this.rects[slot].w/2, this.rects[slot].y+this.rects[slot].h/2);
                 this.rects[i].entity = null;
                 slot++;
             }
@@ -101,33 +135,28 @@ class NumberSequenceBkground extends Bkground {
         let slot2 = this.findEntity(entity2);
         if (slot1 >= 0 && slot2 >= 0 && slot1 != slot2) {
             this.rects[slot1].entity = entity2;
+            entity2.localMatrix = Transform2d.getTranslate(this.rects[slot1].x+this.rects[slot1].w/2, this.rects[slot1].y+this.rects[slot1].h/2);
             this.rects[slot2].entity = entity1;
+            entity1.localMatrix = Transform2d.getTranslate(this.rects[slot2].x+this.rects[slot2].w/2, this.rects[slot2].y+this.rects[slot2].h/2);
             return true;
         }
         return false;
     }
-}
 
-export class Dummy extends GraphEntity {
-    width: number;
-    height: number;
-
-    constructor (width:number, height:number, x:number, y:number) {
-        super();
-        this.z = 1;
-        this.width = width;
-        this.height = height;
-        this.localMatrix = Transform2d.getTranslate(x, y);
-    }
-    onCull (graph:DemoGraph): boolean {
-        return true;
-    }
-    hittest (graph:DemoGraph, x:number, y:number): boolean {
-        return x > -this.width/2 && x < this.width/2 && y > -this.height/2 && y < this.height/2;
-    };
     onDragDrop (evt:any, data:any): void {
         if (data.type == 'number') {
-            data.entity.localMatrix = Transform2d.getTranslate (this.localMatrix.e, this.localMatrix.f);
+            let rect = this.rectTest (evt.offsetX, evt.offsetY);
+            if (rect >= 0 && data.entity != this.rects[rect].entity) {
+                this.removeEntity (data.entity);
+                if (this.rects[rect].entity == null) {
+                    this.addEntity (data.entity);
+                } else {
+                    this.insertEntity (rect, data.entity);
+                }
+            } else if (rect < 0) {
+                this.removeEntity (data.entity);
+                data.entity.localMatrix = Transform2d.getTranslate (evt.offsetX, evt.offsetY);
+            }
         }
     }
 }
@@ -137,7 +166,7 @@ export class Number extends GraphEntity {
     width: number;
     height: number;
 
-    constructor (image:any, width:number, height:number, x:number, y:number) {
+    constructor (image:any, width:number, height:number, x:number=0, y:number=0) {
         super();
         this.z = 2;
         this.image = new Image();
@@ -164,22 +193,23 @@ export class Number extends GraphEntity {
         this.visible = true;
     };
     onDragDrop (evt:any, data:any): void {
+        this.parent.onDragDrop (evt, data);
+        /*
         if (data.type == 'number') {
             data.entity.localMatrix = Transform2d.getTranslate (this.localMatrix.e, this.localMatrix.f);
         }
+        */
     }
 }
 
 export class NumberSequenceDemo extends DemoGraph {
-    private bkground: Bkground|null;
-    private options: any;
+    private bkground: NumberSequenceBkground;
     constructor (canvas:any) {
         super(canvas);
         this.bkground = null;
-        this.options = {}
     }
-    start (bkcolor:any, numbers:number[]|null, options:any) {
-        this.bkground = new Bkground(bkcolor);
+    start (bkcolor:any, numbers:number[], options:any) {
+        let rects:{x:number,y:number,w:number,h:number,entity:Number}[] = [];
         if (numbers && numbers.length>0) {
             const margin_h = options.margin_h == null ? 0 : options.margin_h;
             const margin_v = options.margin_v == null ? 0 : options.margin_v;
@@ -189,8 +219,11 @@ export class NumberSequenceDemo extends DemoGraph {
             const startx = margin_h + Math.floor(width / 2);
             const starty = margin_v + Math.floor(width / 2);
             for (let i = 0; i < numbers.length; i++) {
-                this.bkground.addChild (new Dummy(width, width, startx+i*step, starty));
-                this.bkground.addChild (new Number('images/number-'+numbers[i]+'.png', width, width, startx+i*step, starty));
+                rects.push({x:startx+i*step,y:starty,w:width,h:width,entity:null})
+            }
+            this.bkground = new NumberSequenceBkground(rects, bkcolor);
+            for (let i = 0; i < numbers.length; i++) {
+                this.bkground.addEntity (new Number('images/number-'+numbers[i]+'.png', width, width));
             }
         }
         this.rootEntity = this.bkground;
@@ -198,7 +231,7 @@ export class NumberSequenceDemo extends DemoGraph {
     }
     end () {
         this.stop ();
+        this.bkground.draw (this);
         this.bkground = null;
-        this.options = {}
     }
 }

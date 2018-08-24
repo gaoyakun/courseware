@@ -2,7 +2,7 @@ import {Transform2d} from './transform';
 import {CurveEvaluter,StepEvaluter,LinearEvaluter,PolynomialsEvaluter} from './curve';
 
 export class GraphEntity {
-    parent: GraphEntity|null;
+    parent: GraphEntity;
     z: number;
     visible: boolean;
     children: GraphEntity[];
@@ -18,13 +18,13 @@ export class GraphEntity {
     getWorldMatrix (): Transform2d {
         return this.parent ? Transform2d.transform(this.parent.getWorldMatrix(), this.localMatrix) : this.localMatrix;
     };
-    getBoundingbox (): {x:number,y:number,w:number,h:number}|null {
+    getBoundingbox (): {x:number,y:number,w:number,h:number} {
         return null;
     };
     hittest (graph:DemoGraph, x:number, y:number): boolean {
         return false;
     };
-    getWorldBoundingbox (): {x:number,y:number,w:number,h:number}|null {
+    getWorldBoundingbox (): {x:number,y:number,w:number,h:number} {
         let bbox = this.getBoundingbox ();
         if (bbox) {
             let worldMatrix = this.getWorldMatrix();
@@ -154,12 +154,12 @@ export class GraphEntity {
 }
 
 export class Motion {
-    entity: GraphEntity|null;
+    entity: GraphEntity;
     running: boolean;
     starttime: number;
     lasttime: number;
-    graph: DemoGraph|null;
-    callback: ((motion:Motion)=>void)|null;
+    graph: DemoGraph;
+    callback: ((motion:Motion)=>void);
     constructor () {
         this.entity = null;
         this.running = false;
@@ -173,7 +173,7 @@ export class Motion {
     isRunning (): boolean {
         return this.running;
     }
-    start (callback:((motion:Motion)=>void)|null): void {
+    start (callback:((motion:Motion)=>void)): void {
         if (!this.running) {
             this.callback = callback;
             this.running = true;
@@ -192,12 +192,13 @@ export class Motion {
     stop (): void {
         if (this.running) {
             this.running = false;
-            if (this.callback) {
-                this.callback (this);
-                this.callback = null;
-            }
+            let callback = this.callback;
+            this.callback = null;
             this.starttime = 0;
             this.lasttime = 0;
+            if (callback) {
+                callback (this);
+            }
         }
     }
 }
@@ -239,11 +240,11 @@ export class DemoGraph {
     screenCtx: any;
     buffer: any;
     ctx: any;
-    rootEntity: GraphEntity|null;
+    rootEntity: GraphEntity;
     motions: Motion[];
     nextMotionId: number;
-    hoverEntity: GraphEntity|null;
-    draggingEntity: GraphEntity|null;
+    hoverEntity: GraphEntity;
+    draggingEntity: GraphEntity;
     draggingData: any;
     mouseOver: boolean;
     mouseX: number;
