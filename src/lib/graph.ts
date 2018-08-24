@@ -1,4 +1,5 @@
 import {Transform2d} from './transform';
+import {CurveEvaluter,StepEvaluter,LinearEvaluter,PolynomialsEvaluter} from './curve';
 
 export class GraphEntity {
     parent: GraphEntity|null;
@@ -201,27 +202,31 @@ export class Motion {
     }
 }
 
-export class ArcMotion extends Motion {
-    startPoint: {x:number,y:number};
-    endPoint: {x:number,y:number};
-    height: number;
+export class PathMotion extends Motion {
+    evalutor_x: CurveEvaluter;
+    evalutor_y: CurveEvaluter;
     duration: number;
     speed: number;
-    private center:{x:number,y:number};
-    private transformedStart:{x:number,y:number};
-    private theta: number;
-    constructor (start:{x:number,y:number}, end:{x:number,y:number}, height:number) {
+    constructor (cp:Array<{t:number,x:number,y:number}>, mode:string='poly') {
         super();
-        this.startPoint = start;
-        this.endPoint = end;
-        this.height = height;
+        let x:Array<{x:number,y:number}> = new Array(cp.length);
+        let y:Array<{x:number,y:number}> = new Array(cp.length);
+        for (let i = 0; i < cp.length; i++) {
+            x[i] = {x:cp[i].t,y:cp[i].x};
+            y[i] = {x:cp[i].t,y:cp[i].y};
+        }
+        if (mode == 'step') {
+            this.evalutor_x = new StepEvaluter(x);
+            this.evalutor_y = new StepEvaluter(y);
+        } else if (mode == 'linear') {
+            this.evalutor_x = new LinearEvaluter(x);
+            this.evalutor_y = new LinearEvaluter(y);
+        } else /*if (mode == 'poly')*/ {
+            this.evalutor_x = new PolynomialsEvaluter(x);
+            this.evalutor_y = new PolynomialsEvaluter(y);
+        }
         this.duration = 0;
         this.speed = 0;
-        let dx = end.x - start.x;
-        let dy = end.y - start.y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        let halfdist = dist/2;
-        let radius = (halfdist*halfdist + height*height) / (height * 2);
     }
     onUpdate (dt:number, rt:number): void {
     }
