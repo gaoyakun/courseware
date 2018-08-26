@@ -1,14 +1,72 @@
 import {Transform2d} from './transform';
 import {CurveEvaluter,StepEvaluter,LinearEvaluter,PolynomialsEvaluter} from './curve';
 
-export class GraphEntity {
+export class EventObject {
+    private handlers: any;
+    private eventQueue: Array<any>;
+    constructor () {
+        this.handlers = {};
+        this.eventQueue = [];
+    }
+    on (type:string, handler:(evt:any)=>void): void {
+        let handlers = this.handlers[type]||[];
+        handlers.push (handler);
+        this.handlers[type] = handlers;
+    };
+    off (type:string, handler:(evt:any)=>void): void {
+        let handlers = this.handlers[type]||[];
+        let idx = handlers.indexOf (handler);
+        if (idx >= 0) {
+            handlers.splice(idx, 1);
+        }
+        this.handlers[type] = handlers;
+    }
+    trigger (type:string, evt:any): void {
+        let handlers = this.handlers[type]||[];
+        handlers.forEach ((f:Function)=>{
+            f.call(this, evt);
+        });
+    }
+    post (type:string, evt:any): void {
+        this.eventQueue.push({
+            type:type,
+            evt:evt
+        });
+    }
+    processEvents (): void {
+        this.eventQueue.forEach ((e:any)=>{
+            let handlers = this.handlers[e.type]||[];
+            handlers.forEach ((f:Function)=>{
+                f.call(this, e.evt);
+            });
+        });
+    }
+}
+
+export class GraphEntity extends EventObject {
     parent: GraphEntity;
     z: number;
     visible: boolean;
     children: GraphEntity[];
     localMatrix: Transform2d;
+    /*
+    onCull (graph:DemoGraph)=>boolean;
+    onUpdate: (dt:number, rt:number)=>void;
+    onMouseEnter: ()=>void;
+    onMouseLeave: ()=>void;
+    onMouseDown: (evt:any)=>void;
+    onMouseUp: (evt:any)=>void;
+    onClick: (evt:any)=>void;
+    onDblClick: (evt:any)=>void;
+    onMouseWheel: (evt:any)=>void;
+    onDragStart: (evt:any)=>any;
+    onDragEnd: (evt:any, data:any)=>void;
+    onDragOver: (evt:any, data:any)=>void;
+    onDragDrop: (evt:any, data:any)=>void;
+    */
 
     constructor () {
+        super ();
         this.parent = null;
         this.z = 0;
         this.visible = true;
@@ -81,12 +139,6 @@ export class GraphEntity {
         let matrix = this.getWorldMatrix();
         ctx.setTransform (matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
     };
-    draw (graph:DemoGraph): void {
-        graph.ctx.save();
-        graph.ctx.fillStyle('#ff0000');
-        graph.ctx.fillRect(-10,-10,20,20);
-        graph.ctx.restore();
-    };
     addChild (child:GraphEntity): void {
         if (child && child.parent===null) {
             child.parent = this;
@@ -126,6 +178,7 @@ export class GraphEntity {
             return true;
         }
     };
+    /*
     onUpdate (dt:number, rt:number): void {
     };
     onMouseEnter (): void {
@@ -151,65 +204,61 @@ export class GraphEntity {
     };
     onDragDrop (evt:any, data:any): void {
     };
+    */
 }
 
-export class Motion {
-    entity: GraphEntity;
-    running: boolean;
+export class Motion extends GraphEntity {
     starttime: number;
     lasttime: number;
     graph: DemoGraph;
     callback: ((motion:Motion)=>void);
-    constructor () {
-        this.entity = null;
-        this.running = false;
-        this.callback = null;
+    constructor (callback:(motion:Motion)=>void=null) {
+        super ();
+        this.callback = callback;
         this.lasttime = 0;
         this.starttime = 0;
         this.graph = null;
-    }
-    onUpdate (dt:number, rt:number): void {
-    }
-    isRunning (): boolean {
-        return this.running;
-    }
-    start (callback:((motion:Motion)=>void)): void {
-        if (!this.running) {
-            this.callback = callback;
-            this.running = true;
-        }
-    }
-    update (dt:number, rt:number): void {
-        if (this.running) {
-            if (this.starttime = 0) {
-                this.starttime = rt;
-                this.lasttime = rt;
+        this.on ('update', (evt:{dt:number;rt:number})=>{
+            if (this.starttime == 0) {
+                this.starttime = evt.rt;
+                this.lasttime = evt.rt;
             }
-            this.onUpdate (rt-this.lasttime, rt-this.starttime);
+            this.onMotion (evt.rt-this.lasttime, evt.rt-this.starttime);
+            this.lasttime = evt.rt;
+        });
+    }
+    onCull (graph:DemoGraph): boolean {
+        return true;
+    }
+    /*
+    onUpdate (dt:number, rt:number): void {
+        if (this.starttime == 0) {
+            this.starttime = rt;
             this.lasttime = rt;
         }
+        this.onMotion (rt-this.lasttime, rt-this.starttime);
+        this.lasttime = rt;
+    }
+    */
+    onMotion (dt:number, rt:number): void {
     }
     stop (): void {
-        if (this.running) {
-            this.running = false;
-            let callback = this.callback;
-            this.callback = null;
-            this.starttime = 0;
-            this.lasttime = 0;
-            if (callback) {
-                callback (this);
-            }
+        this.starttime = 0;
+        this.lasttime = 0;
+        this.remove ();
+        if (this.callback) {
+            this.callback (this);
         }
     }
 }
 
 export class PathMotion extends Motion {
+    entity: GraphEntity;
     evalutor_x: CurveEvaluter;
     evalutor_y: CurveEvaluter;
-    duration: number;
-    speed: number;
-    constructor (cp:Array<{t:number,x:number,y:number}>, mode:string='poly') {
-        super();
+    constructor (entity:GraphEntity,cp:Array<{t:number,x:number,y:number}>, mode:string='poly', callback:(motion:Motion)=>void=null) {
+        super(callback);
+        this.entity = entity;
         let x:Array<{x:number,y:number}> = new Array(cp.length);
         let y:Array<{x:number,y:number}> = new Array(cp.length);
         for (let i = 0; i < cp.length; i++) {
@@ -226,14 +275,24 @@ export class PathMotion extends Motion {
             this.evalutor_x = new PolynomialsEvaluter(x);
             this.evalutor_y = new PolynomialsEvaluter(y);
         }
-        this.duration = 0;
-        this.speed = 0;
     }
-    onUpdate (dt:number, rt:number): void {
+    onMotion (dt:number, rt:number): void {
+        console.log ('motion: dt='+dt + ' rt='+rt);
+        let endTime = this.evalutor_x.cp[this.evalutor_x.cp.length-1].x;
+        if (rt > endTime) {
+            rt = endTime;
+        }
+        let destX = this.evalutor_x.eval (rt);
+        let destY = this.evalutor_y.eval (rt);
+        console.log ('motion: destX='+destX + ' destY='+destY);
+        this.entity.localMatrix = Transform2d.getTranslate(destX, destY);
+        if (rt == endTime) {
+            this.stop ();
+        }
     }
 }
 
-export class DemoGraph {
+export class DemoGraph extends EventObject {
     canvas: any;
     canvasWidth: number;
     canvasHeight: number;
@@ -254,6 +313,7 @@ export class DemoGraph {
     running: boolean;
 
     constructor (canvas:any) {
+        super ();
         this.canvas = canvas;
         this.canvasWidth = this.canvas.width();
         this.canvasHeight = this.canvas.height();
@@ -282,132 +342,109 @@ export class DemoGraph {
         this.running = false;
 
         canvas.on ('mouseenter', (evt:any)=>{
-            this.onMouseEnter(evt);
+            this.mouseOver = true;
+            this.canvas[0].focus();
+            this.trigger ('mouseenter', { evt:evt });
+            //this.onMouseEnter(evt);
         });
         canvas.on ('mouseleave', (evt:any)=>{
-            this.onMouseLeave(evt);
+            this.mouseOver = false;
+            if (this.draggingEntity) {
+                if (this.draggingData) {
+                    this.draggingEntity.trigger('dragend', { evt:evt, data:this.draggingData });
+                    this.draggingData = null;
+                }
+                this.draggingEntity = null;
+            }
+            if (this.hoverEntity) {
+                this.hoverEntity.trigger('mouseleave', { evt:evt });
+                this.hoverEntity = null;
+            }
+            this.trigger ('mouseleave', { evt:evt });
+            //this.onMouseLeave(evt);
         });
         canvas.on ('mousemove', (evt:any)=>{
-            this.onMouseMove(evt);
+            this.mouseX = evt.offsetX;
+            this.mouseY = evt.offsetY;
+            this.updateHoverEntity (evt);
+    
+            if (this.draggingEntity && !this.draggingData) {
+                this.draggingData = { allow:false };
+                this.draggingEntity.trigger('dragstart', { evt:evt, data:this.draggingData });
+                if (!this.draggingData.allow) {
+                    this.draggingEntity = null;
+                    this.draggingData = null;
+                }
+            } else if (this.hoverEntity && this.draggingEntity && this.draggingData) {
+                this.hoverEntity.trigger('dragover', { evt:evt, data:this.draggingData });
+            }
+            this.trigger ('mousemove', { evt:evt });
+            //this.onMouseMove(evt);
         });
         canvas.on ('mousedown', (evt:any)=>{
-            this.onMouseDown(evt);
+            if (this.hoverEntity) {
+                this.hoverEntity.trigger('mousedown', { evt:evt });
+                if (evt.button == 0) {
+                    this.draggingEntity = this.hoverEntity;
+                    this.draggingData = null;
+                }
+            }
+            this.trigger ('mousedown', { evt:evt });
+            //this.onMouseDown(evt);
         });
         canvas.on ('mouseup', (evt:any)=>{
-            this.onMouseUp(evt);
-        });
-        canvas.on ('click', (evt:any)=>{
-            this.onClick(evt);
-        });
-        canvas.on ('mousewheel', (evt:any)=>{
-            this.onMouseWheel(evt);
-        });
-        canvas.on ('dblclick', (evt:any)=>{
-            this.onDblClick(evt);
-        });
-    };
-
-    onMouseEnter (evt:any): void {
-        this.mouseOver = true;
-        this.canvas[0].focus();
-    };
-
-    onMouseLeave (evt:any): void {
-        this.mouseOver = false;
-        if (this.draggingEntity) {
-            if (this.draggingData) {
-                this.draggingEntity.onDragEnd(evt, this.draggingData);
-                this.draggingData = null;
-            }
-            this.draggingEntity = null;
-        }
-        if (this.hoverEntity) {
-            this.hoverEntity.onMouseLeave();
-            this.hoverEntity = null;
-        }
-    };
-
-    onMouseMove (evt:any): void {
-        this.mouseX = evt.offsetX;
-        this.mouseY = evt.offsetY;
-        this.updateHoverEntity ();
-
-        if (this.draggingEntity && !this.draggingData) {
-            this.draggingData = this.draggingEntity.onDragStart(evt);
-            if (!this.draggingData) {
+            if (evt.button == 0) {
+                if (this.draggingEntity && this.draggingData) {
+                    if (this.hoverEntity) {
+                        this.hoverEntity.trigger ('dragdrop', { evt:evt, data:this.draggingData });
+                    }
+                    this.draggingEntity.trigger ('dragend', { evt:evt, data:this.draggingData });
+                }
                 this.draggingEntity = null;
                 this.draggingData = null;
             }
-        } else if (this.hoverEntity && this.draggingEntity && this.draggingData && this.draggingEntity != this.hoverEntity) {
-            this.hoverEntity.onDragOver(evt, this.draggingData);
-        }
-    };
-
-    onMouseDown (evt:any): void {
-        if (this.hoverEntity) {
-            this.hoverEntity.onMouseDown(evt);
-            if (evt.button == 0) {
-                this.draggingEntity = this.hoverEntity;
-                this.draggingData = null;
+            if (this.hoverEntity) {
+                this.hoverEntity.trigger ('mouseup', { evt:evt });
             }
-        }
-    };
-
-    onMouseUp (evt:any): void {
-        if (evt.button == 0) {
-            if (this.draggingEntity && this.draggingData) {
-                if (this.hoverEntity && this.hoverEntity != this.draggingEntity) {
-                    this.hoverEntity.onDragDrop (evt, this.draggingData);
-                }
-                this.draggingEntity.onDragEnd (evt, this.draggingData);
+            this.trigger ('mouseup', { evt:evt });
+            //this.onMouseUp(evt);
+        });
+        canvas.on ('click', (evt:any)=>{
+            if (this.hoverEntity) {
+                this.hoverEntity.trigger ('click', { evt:evt });
             }
-            this.draggingEntity = null;
-            this.draggingData = null;
-        }
-        if (this.hoverEntity) {
-            this.hoverEntity.onMouseUp (evt);
-        }
+            this.trigger ('click', { evt:evt });
+            //this.onClick(evt);
+        });
+        canvas.on ('mousewheel', (evt:any)=>{
+            if (this.hoverEntity) {
+                this.hoverEntity.trigger ('mousewheel', { evt:evt });
+            }
+            this.trigger ('mousewheel', { evt:evt });
+            //this.onMouseWheel(evt);
+        });
+        canvas.on ('dblclick', (evt:any)=>{
+            if (this.hoverEntity) {
+                this.hoverEntity.trigger('dblclick', { evt:evt });
+            }
+            this.trigger ('dblclick', { evt:evt });
+            //this.onDblClick(evt);
+        });
     };
 
-    onClick (evt:any): void {
-        if (this.hoverEntity) {
-            this.hoverEntity.onClick (evt);
-        }
-    };
-
-    onDblClick (evt:any): void {
-        if (this.hoverEntity) {
-            this.hoverEntity.onDblClick(evt);
-        }
-    };
-
-    onMouseWheel (evt:any): void {
-        if (this.hoverEntity) {
-            this.hoverEntity.onMouseWheel (evt);
-        }
-    };
-
-    updateHoverEntity (): void {
+    updateHoverEntity (evt:any): void {
         if (this.mouseOver) {
             let hitResult = this.hittest (this.mouseX, this.mouseY);
             let hover = hitResult.length>0 ? hitResult[0] : null;
             if (this.hoverEntity != hover) {
                 if (this.hoverEntity) {
-                    this.hoverEntity.onMouseLeave();
+                    this.hoverEntity.trigger('mouseleave', { evt:evt });
                 }
                 if (hover) {
-                    hover.onMouseEnter();
+                    hover.trigger('mouseenter', { evt:evt });
                 }
                 this.hoverEntity = hover;
             }
-        }
-    };
-
-    playMotion (motion:Motion, callback:(motion:Motion)=>void): void {
-        if (!motion.graph) {
-            motion.graph = this;
-            this.motions.push (motion);
-            motion.start (callback);
         }
     };
 
@@ -433,32 +470,10 @@ export class DemoGraph {
     };
 
     update (entity:GraphEntity, dt:number, rt:number): void {
-        entity.onUpdate(dt, rt);
+        entity.processEvents ();
+        entity.trigger ('update', { dt:dt, rt:rt });
         for (let i = 0; i < entity.children.length; i++) {
             this.update (entity.children[i], dt, rt);
-        }
-
-        let nullpos = 0;
-        for (let i = 0; i < this.motions.length; i++) {
-            if (!this.motions[i].isRunning()) {
-                this.motions[i].graph = null;
-                let tmp = this.motions[i];
-                this.motions[i] = this.motions[nullpos];
-                this.motions[nullpos] = tmp;
-                nullpos++;
-            } else {
-                this.motions[i].onUpdate (dt, rt);
-            }
-        }
-        if (nullpos > 0) {
-            this.motions.splice(0, nullpos);
-        }
-
-        // for debug
-        for (let i = 0; i < this.motions.length; i++) {
-            if (!this.motions[i].graph || !this.motions[i].isRunning()) {
-                console.error ('ASSERT error: remove finished motion failed');
-            }
         }
     };
 
@@ -490,7 +505,8 @@ export class DemoGraph {
             let group:GraphEntity[] = (cullResult as any)[i];
             for (let j = 0; j < group.length; j++) {
                 group[j].applyTransform (this.ctx);
-                group[j].draw (this);
+                group[j].trigger ('draw', { graph:this });
+                //group[j].draw (this);
             }
         }
         if (this.draggingEntity && this.draggingData && this.draggingData.draw) {
@@ -512,7 +528,7 @@ export class DemoGraph {
                 let dt = ts - that.lastFrameTime;
                 let rt = ts - that.firstFrameTime;
                 that.lastFrameTime = ts;
-                that.updateHoverEntity ();
+                that.updateHoverEntity (null);
                 if (that.rootEntity) {
                     that.update (that.rootEntity, dt, rt);
                     that.draw ();

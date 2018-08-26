@@ -37,7 +37,7 @@ export class CourseSort extends CousewareFramework {
                 this.bubbleDemo.start ('rgba(0,0,0,255)',[3,2,8,4,8,6,9,1,0],{
                     margin_h: 50,
                     margin_v: 50,
-                    padding: 20
+                    padding: 5
                 });
             }
         });        

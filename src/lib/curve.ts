@@ -63,7 +63,7 @@ export class LinearEvaluter extends CurveEvaluter {
     eval (x:number): number {
         let seg = this.getSegment(x);
         let t = x - this.cp[seg].x;
-        return (this.cp[seg+1].y-this.cp[seg].y) * t / this.h[seg];
+        return this.cp[seg].y + (this.cp[seg+1].y-this.cp[seg].y) * t / this.h[seg];
     }
 }
 
