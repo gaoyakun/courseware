@@ -4,11 +4,18 @@ let ExtractTextWebpackPlugin = require('extract-text-webpack-plugin');
 let CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-  entry: './src/index.ts',
+  entry: {
+    index: './src/index.ts',
+    curve: './src/lib/curve.ts',
+    demo: './src/lib/demo.ts',
+    graph: './src/lib/graph.ts',
+    presentation: './src/lib/presentation.ts',
+    transform: './src/lib/transform.ts'
+  },
   output: {
     //The output directory as an absolute path.
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js'
+    filename: '[name].bundle.js'
   },
   resolve: {
       // Add '.ts' and '.tsx' as a resolvable extension.

@@ -1,12 +1,12 @@
 import $ from 'jquery';
 import {CousewareFramework} from '../lib/presentation';
-import {DemoGraph,GraphEntity,Graph} from '../lib/graph';
-import {Bkground,Number,NumberSequenceDemo} from '../lib/demo';
+import {Graph} from '../lib/graph';
+import {NumberSequenceScene} from '../lib/demo';
 
 export class CourseSort extends CousewareFramework {
     private graphRandUnsort: Graph;
     private graphRandSorted: Graph;
-    private bubbleDemo: NumberSequenceDemo;
+    private bubbleDemo: NumberSequenceScene;
 
     constructor () {
         super();
@@ -30,14 +30,14 @@ export class CourseSort extends CousewareFramework {
             paddingH:5
         });
 
-        this.bubbleDemo = new NumberSequenceDemo($('#demo-bubble-sort'));
+        this.bubbleDemo = new NumberSequenceScene($('#demo-bubble-sort'));
 
         window.addEventListener ('pageIn', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
                 this.bubbleDemo.start ('rgba(0,0,0,255)',[3,2,8,4,8,6,9,1,0],{
                     margin_h: 50,
                     margin_v: 50,
-                    padding: 5
+                    padding: 0
                 });
             }
         });        

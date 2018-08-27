@@ -1,7 +1,7 @@
 import {Transform2d} from './transform';
-import {GraphEntity,DemoGraph,PathMotion} from './graph';
+import {SceneNode,Scene,PathMotion} from './graph';
 
-export class Bkground extends GraphEntity {
+export class Bkground extends SceneNode {
     color: any;
     constructor (color: string = '#000') {
         super();
@@ -9,27 +9,27 @@ export class Bkground extends GraphEntity {
         this.color = color;
         this.on ('draw', (e:any)=>{
             if (this.color) {
-                e.graph.ctx.save();
-                e.graph.ctx.fillStyle = this.color;
-                e.graph.ctx.fillRect (0, 0, e.graph.canvasWidth, e.graph.canvasHeight);
-                e.graph.ctx.restore();
+                e.scene.ctx.save();
+                e.scene.ctx.fillStyle = this.color;
+                e.scene.ctx.fillRect (0, 0, e.scene.canvasWidth, e.scene.canvasHeight);
+                e.scene.ctx.restore();
             }
         });
     }
-    hittest (graph:DemoGraph, x:number, y:number): boolean {
-        return x>=0 && x<graph.canvasWidth && y>=0 && y<graph.canvasHeight;
+    hittest (scene:Scene, x:number, y:number): boolean {
+        return x>=0 && x<scene.canvasWidth && y>=0 && y<scene.canvasHeight;
     }
-    onCull (graph:DemoGraph): boolean {
+    onCull (scene:Scene): boolean {
         return false;
     };
     onDragDrop (evt:any, data:any): void {
         if (data.type == 'number') {
-            data.entity.localMatrix = Transform2d.getTranslate (evt.offsetX, evt.offsetY);
+            data.node.localMatrix = Transform2d.getTranslate (evt.offsetX, evt.offsetY);
         }
     }
 }
 
-export class Number extends GraphEntity {
+export class Number extends SceneNode {
     image: any;
     width: number;
     height: number;
@@ -43,23 +43,22 @@ export class Number extends GraphEntity {
         this.height = height;
         this.localMatrix = Transform2d.getTranslate(x, y);
         this.on ('draw', function(e){
-            this.draw (e.graph);
+            this.draw (e.scene);
         });
     }
-    draw (graph:DemoGraph): void {
-        graph.ctx.drawImage(this.image, -this.width/2, -this.height/2, this.width, this.height);
+    draw (scene:Scene): void {
+        scene.ctx.drawImage(this.image, -this.width/2, -this.height/2, this.width, this.height);
     }
-    hittest (graph:DemoGraph, x:number, y:number): boolean {
+    hittest (scene:Scene, x:number, y:number): boolean {
         return x > -this.width/2 && x < this.width/2 && y > -this.height/2 && y < this.height/2;
     }
 }
 
-export class NumberSequenceDemo extends DemoGraph {
-    private bkground: Bkground;
-    private rects: {x:number,y:number,w:number,h:number,entity:Number}[];
+export class NumberSequenceScene extends Scene {
+    private rects: {x:number,y:number,w:number,h:number,node:Number}[];
+    private motionParent: SceneNode;
     constructor (canvas:any) {
         super(canvas);
-        this.bkground = null;
         this.rects = [];
     }
     rectTest (x:number, y:number): number {
@@ -71,94 +70,110 @@ export class NumberSequenceDemo extends DemoGraph {
         }
         return -1;
     }
-    createDirectMotion (entity:Number, x:number, y:number, duration:number): void {
-        if (this.rootEntity) {
-            this.rootEntity.addChild (new PathMotion(entity,[{t:0,x:entity.localMatrix.e,y:entity.localMatrix.f},{t:duration,x:x,y:y}],'linear'));
+    createDirectMotion (node:Number, x:number, y:number, duration:number): void {
+        node.localMatrix = Transform2d.getTranslate(x, y)
+        if (this.motionParent) {
+            this.motionParent.addChild (new PathMotion(node,[{t:0,x:node.localMatrix.e,y:node.localMatrix.f},{t:duration,x:x,y:y}],'linear'));
         }
     }
-    findEntity (entity:Number): number {
+    finishMotions (): void {
+        if (this.motionParent) {
+            for (let i = 0; i < this.motionParent.children.length; i++) {
+                (this.motionParent.children[i] as PathMotion).finish ();
+            }
+        }
+    }
+    findNode (node:Number): number {
         for (let i = 0; i < this.rects.length; i++) {
-            if (this.rects[i].entity == entity) {
+            if (this.rects[i].node == node) {
                 return i;
             }
         }
         return -1;
     }
-    addEntity (entity:Number): number {
-        if (this.rootEntity) {
+    addNode (node:Number): number {
+        if (this.rootNode) {
+            console.log ('addNode');
             let slot = -1;
             for (let i = 0; i < this.rects.length; i++) {
-                if (this.rects[i].entity == entity) {
+                if (this.rects[i].node == node) {
                     return -1;
-                } else if (this.rects[i].entity != null && slot >= 0) {
+                } else if (this.rects[i].node != null && slot >= 0) {
                     return -1;
-                } else if (this.rects[i].entity == null && slot < 0) {
+                } else if (this.rects[i].node == null && slot < 0) {
                     slot = i;
                 }
             }
             if (slot >= 0) {
-                this.rects[slot].entity = entity;
-                if (entity.parent == null) {
-                    this.rootEntity.addChild (entity);
+                this.rects[slot].node = node;
+                if (node.parent == null) {
+                    this.rootNode.addChild (node);
                 }
-                entity.localMatrix = Transform2d.getTranslate(this.rects[slot].x + this.rects[slot].w/2, this.rects[slot].y + this.rects[slot].h/2);
+                node.localMatrix = Transform2d.getTranslate(this.rects[slot].x + this.rects[slot].w/2, this.rects[slot].y + this.rects[slot].h/2);
             }
             return slot;
         }
     }
-    insertEntity (pos:number, entity:Number): boolean {
-        if(this.rootEntity) {
+    insertNode (pos:number, node:Number): boolean {
+        if(this.rootNode) {
+            console.log ('insertNode');
             let slot;
             for (slot = this.rects.length-1; slot >= 0; slot--) {
-                if (this.rects[slot].entity != null) {
+                if (this.rects[slot].node != null) {
                     break;
                 }
             }
             if (slot == this.rects.length-1 || slot < pos-1) {
                 return false;
             }
+            this.finishMotions ();
             for (let i = slot; i >= pos; i--) {
-                this.rects[i+1].entity = this.rects[i].entity;
-                //this.rects[i+1].entity.localMatrix = Transform2d.getTranslate(this.rects[i+1].x+this.rects[i+1].w/2, this.rects[i+1].y+this.rects[i+1].h/2);
-                this.createDirectMotion(this.rects[i+1].entity, this.rects[i+1].x+this.rects[i+1].w/2, this.rects[i+1].y+this.rects[i+1].h/2, 100);
+                this.rects[i+1].node = this.rects[i].node;
+                this.createDirectMotion(this.rects[i+1].node, this.rects[i+1].x+this.rects[i+1].w/2, this.rects[i+1].y+this.rects[i+1].h/2, 100);
             }
-            this.rects[pos].entity = entity;
-            if (entity.parent == null) {
-                this.rootEntity.addChild (entity);
+            this.rects[pos].node = node;
+            if (node.parent == null) {
+                this.rootNode.addChild (node);
             }
-            entity.localMatrix = Transform2d.getTranslate(this.rects[pos].x+this.rects[pos].w/2, this.rects[pos].y+this.rects[pos].h/2);
+            node.localMatrix = Transform2d.getTranslate(this.rects[pos].x+this.rects[pos].w/2, this.rects[pos].y+this.rects[pos].h/2);
         }
     }
-    packEntities (): void {
+    packNodes (): void {
+        console.log ('packNodes');
         let slot = -1;
+        let finish = false;
         for (let i = 0; i < this.rects.length; i++) {
-            if (this.rects[i].entity == null && slot < 0) {
+            if (this.rects[i].node == null && slot < 0) {
                 slot = i;
-            } else if (this.rects[i].entity != null && slot >= 0) {
-                this.rects[slot].entity = this.rects[i].entity;
-                //this.rects[slot].entity.localMatrix = Transform2d.getTranslate(this.rects[slot].x+this.rects[slot].w/2, this.rects[slot].y+this.rects[slot].h/2);
-                this.createDirectMotion(this.rects[slot].entity, this.rects[slot].x+this.rects[slot].w/2, this.rects[slot].y+this.rects[slot].h/2, 100);
-                this.rects[i].entity = null;
+            } else if (this.rects[i].node != null && slot >= 0) {
+                if (!finish) {
+                    finish = true;
+                    this.finishMotions();
+                }
+                this.rects[slot].node = this.rects[i].node;
+                this.createDirectMotion(this.rects[slot].node, this.rects[slot].x+this.rects[slot].w/2, this.rects[slot].y+this.rects[slot].h/2, 100);
+                this.rects[i].node = null;
                 slot++;
             }
         }
     }
-    removeEntity (entity:Number): number {
-        let slot = this.findEntity(entity);
+    removeNode (node:Number): number {
+        let slot = this.findNode(node);
         if (slot >= 0) {
-            this.rects[slot].entity = null;
-            this.packEntities ();
+            console.log ('removeNode')
+            this.rects[slot].node = null;
+            this.packNodes ();
         }
         return slot;
     }
-    swapEntities (entity1:Number, entity2:Number): boolean {
-        let slot1 = this.findEntity(entity1);
-        let slot2 = this.findEntity(entity2);
+    swapNodes (node1:Number, node2:Number): boolean {
+        let slot1 = this.findNode(node1);
+        let slot2 = this.findNode(node2);
         if (slot1 >= 0 && slot2 >= 0 && slot1 != slot2) {
-            this.rects[slot1].entity = entity2;
-            entity2.localMatrix = Transform2d.getTranslate(this.rects[slot1].x+this.rects[slot1].w/2, this.rects[slot1].y+this.rects[slot1].h/2);
-            this.rects[slot2].entity = entity1;
-            entity1.localMatrix = Transform2d.getTranslate(this.rects[slot2].x+this.rects[slot2].w/2, this.rects[slot2].y+this.rects[slot2].h/2);
+            this.rects[slot1].node = node2;
+            node2.localMatrix = Transform2d.getTranslate(this.rects[slot1].x+this.rects[slot1].w/2, this.rects[slot1].y+this.rects[slot1].h/2);
+            this.rects[slot2].node = node1;
+            node1.localMatrix = Transform2d.getTranslate(this.rects[slot2].x+this.rects[slot2].w/2, this.rects[slot2].y+this.rects[slot2].h/2);
             return true;
         }
         return false;
@@ -168,31 +183,29 @@ export class NumberSequenceDemo extends DemoGraph {
         const data = e.data;
         if (data.type == 'number') {
             let rect = this.rectTest (evt.offsetX, evt.offsetY);
-            console.log ('onDragOver: rect=' + rect + ' entity=' + (rect>=0?this.rects[rect].entity:null))
-            if (rect >= 0 && data.entity != this.rects[rect].entity) {
-                this.removeEntity (data.entity);
-                if (this.rects[rect].entity == null) {
-                    this.rects[rect].entity = data.entity;
-                    data.entity.localMatrix = Transform2d.getTranslate(this.rects[rect].x+this.rects[rect].w/2, this.rects[rect].y+this.rects[rect].h/2);
+            if (rect >= 0 && data.node != this.rects[rect].node) {
+                this.removeNode (data.node);
+                if (this.rects[rect].node == null) {
+                    this.rects[rect].node = data.node;
+                    data.node.localMatrix = Transform2d.getTranslate(this.rects[rect].x+this.rects[rect].w/2, this.rects[rect].y+this.rects[rect].h/2);
                 } else {
-                    this.insertEntity (rect, data.entity);
+                    this.insertNode (rect, data.node);
                 }
             } else if (rect < 0) {
-                this.removeEntity (data.entity);
+                this.removeNode (data.node);
             }
         }
     }
     onDragDrop (e:any): void {
         const evt = e.evt;
         const data = e.data;
-        this.packEntities ();
         if (data.type == 'number') {
             let rect = this.rectTest (evt.offsetX, evt.offsetY);
             if (rect < 0) {
-                //this.createDirectMotion (data.entity, evt.offsetX, evt.offsetY, 1000);
-                data.entity.localMatrix = Transform2d.getTranslate (evt.offsetX, evt.offsetY);
+                data.node.localMatrix = Transform2d.getTranslate (evt.offsetX, evt.offsetY);
             }
         }
+        this.packNodes ();
     }
     start (bkcolor:any, numbers:number[], options:any) {
         let that = this;
@@ -206,24 +219,27 @@ export class NumberSequenceDemo extends DemoGraph {
             const startx = margin_h;
             const starty = margin_v;
             for (let i = 0; i < numbers.length; i++) {
-                this.rects.push({x:startx+i*step,y:starty,w:width,h:width,entity:null})
+                that.rects.push({x:startx+i*step,y:starty,w:width,h:width,node:null})
             }
-            this.bkground = new Bkground(bkcolor);
-            this.bkground.on('dragdrop', function(e){
+            let bkground = new Bkground(bkcolor);
+            bkground.on('dragdrop', function(e){
                 that.onDragDrop(e);
             });
-            this.bkground.on('dragover', function(e){
+            bkground.on('dragover', function(e){
                 that.onDragOver(e);
             });
-            this.rootEntity = this.bkground;
+            that.rootNode = new SceneNode();
+            that.rootNode.addChild(bkground);
+            that.motionParent = new SceneNode();
+            that.rootNode.addChild(that.motionParent);
             for (let i = 0; i < numbers.length; i++) {
                 let num = new Number('images/number-'+numbers[i]+'.png', width, width);
-                that.addEntity (num);
+                that.addNode (num);
                 num.on('dragstart', function(e){
                     this.visible = false;
                     e.data.allow = true;
                     e.data.type = 'number';
-                    e.data.entity = this;
+                    e.data.node = this;
                     e.data.draw = this.draw;
                 });
                 num.on('dragend', function (e){
@@ -237,12 +253,10 @@ export class NumberSequenceDemo extends DemoGraph {
                 });
             }
         }
-        this.rootEntity = this.bkground;
         this.run ();
     }
     end () {
         this.stop ();
-        this.bkground.trigger ('draw', {graph:this});
-        this.bkground = null;
+        this.draw ();
     }
 }

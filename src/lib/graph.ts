@@ -1,7 +1,7 @@
 import {Transform2d} from './transform';
 import {CurveEvaluter,StepEvaluter,LinearEvaluter,PolynomialsEvaluter} from './curve';
 
-export class EventObject {
+export class EventObserver {
     private handlers: any;
     private eventQueue: Array<any>;
     constructor () {
@@ -43,27 +43,12 @@ export class EventObject {
     }
 }
 
-export class GraphEntity extends EventObject {
-    parent: GraphEntity;
+export class SceneNode extends EventObserver {
+    parent: SceneNode;
     z: number;
     visible: boolean;
-    children: GraphEntity[];
+    children: SceneNode[];
     localMatrix: Transform2d;
-    /*
-    onCull (graph:DemoGraph)=>boolean;
-    onUpdate: (dt:number, rt:number)=>void;
-    onMouseEnter: ()=>void;
-    onMouseLeave: ()=>void;
-    onMouseDown: (evt:any)=>void;
-    onMouseUp: (evt:any)=>void;
-    onClick: (evt:any)=>void;
-    onDblClick: (evt:any)=>void;
-    onMouseWheel: (evt:any)=>void;
-    onDragStart: (evt:any)=>any;
-    onDragEnd: (evt:any, data:any)=>void;
-    onDragOver: (evt:any, data:any)=>void;
-    onDragDrop: (evt:any, data:any)=>void;
-    */
 
     constructor () {
         super ();
@@ -79,7 +64,7 @@ export class GraphEntity extends EventObject {
     getBoundingbox (): {x:number,y:number,w:number,h:number} {
         return null;
     };
-    hittest (graph:DemoGraph, x:number, y:number): boolean {
+    hittest (scene:Scene, x:number, y:number): boolean {
         return false;
     };
     getWorldBoundingbox (): {x:number,y:number,w:number,h:number} {
@@ -139,7 +124,7 @@ export class GraphEntity extends EventObject {
         let matrix = this.getWorldMatrix();
         ctx.setTransform (matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
     };
-    addChild (child:GraphEntity): void {
+    addChild (child:SceneNode): void {
         if (child && child.parent===null) {
             child.parent = this;
             this.children.push (child);
@@ -162,7 +147,7 @@ export class GraphEntity extends EventObject {
         }
         this.children = [];
     };
-    onCull (graph:DemoGraph): boolean {
+    onCull (scene:Scene): boolean {
         if (this.visible) {
             let bbox = this.getWorldBoundingbox ();
             let culled = false;
@@ -171,53 +156,24 @@ export class GraphEntity extends EventObject {
                 let miny = bbox.y;
                 let maxx = bbox.x + bbox.w;
                 let maxy = bbox.y + bbox.h;
-                culled = (minx >= graph.canvasWidth || miny >= graph.canvasHeight || maxx <= 0 || maxy <= 0);
+                culled = (minx >= scene.canvasWidth || miny >= scene.canvasHeight || maxx <= 0 || maxy <= 0);
             }
             return culled;
         } else {
             return true;
         }
     };
-    /*
-    onUpdate (dt:number, rt:number): void {
-    };
-    onMouseEnter (): void {
-    };
-    onMouseLeave (): void {
-    };
-    onMouseDown (evt:any): void {
-    };
-    onMouseUp (evt:any): void {
-    };
-    onClick (evt:any): void {
-    };
-    onDblClick (evt:any): void {
-    };
-    onMouseWheel (evt:any): void {
-    };
-    onDragStart (evt:any): any {
-        return null;
-    };
-    onDragEnd (evt:any, data:any): void {
-    };
-    onDragOver (evt:any, data:any): void {
-    };
-    onDragDrop (evt:any, data:any): void {
-    };
-    */
 }
 
-export class Motion extends GraphEntity {
+export class Motion extends SceneNode {
     starttime: number;
     lasttime: number;
-    graph: DemoGraph;
     callback: ((motion:Motion)=>void);
     constructor (callback:(motion:Motion)=>void=null) {
         super ();
         this.callback = callback;
         this.lasttime = 0;
         this.starttime = 0;
-        this.graph = null;
         this.on ('update', (evt:{dt:number;rt:number})=>{
             if (this.starttime == 0) {
                 this.starttime = evt.rt;
@@ -227,20 +183,12 @@ export class Motion extends GraphEntity {
             this.lasttime = evt.rt;
         });
     }
-    onCull (graph:DemoGraph): boolean {
+    onCull (scene:Scene): boolean {
         return true;
     }
-    /*
-    onUpdate (dt:number, rt:number): void {
-        if (this.starttime == 0) {
-            this.starttime = rt;
-            this.lasttime = rt;
-        }
-        this.onMotion (rt-this.lasttime, rt-this.starttime);
-        this.lasttime = rt;
-    }
-    */
     onMotion (dt:number, rt:number): void {
+    }
+    onFinish (): void {
     }
     stop (): void {
         this.starttime = 0;
@@ -250,15 +198,19 @@ export class Motion extends GraphEntity {
             this.callback (this);
         }
     }
+    finish (): void {
+        this.onFinish ();
+        this.stop();
+    }
 }
 
 export class PathMotion extends Motion {
-    entity: GraphEntity;
+    node: SceneNode;
     evalutor_x: CurveEvaluter;
     evalutor_y: CurveEvaluter;
-    constructor (entity:GraphEntity,cp:Array<{t:number,x:number,y:number}>, mode:string='poly', callback:(motion:Motion)=>void=null) {
+    constructor (node:SceneNode,cp:Array<{t:number,x:number,y:number}>, mode:string='poly', callback:(motion:Motion)=>void=null) {
         super(callback);
-        this.entity = entity;
+        this.node = node;
         let x:Array<{x:number,y:number}> = new Array(cp.length);
         let y:Array<{x:number,y:number}> = new Array(cp.length);
         for (let i = 0; i < cp.length; i++) {
@@ -277,33 +229,37 @@ export class PathMotion extends Motion {
         }
     }
     onMotion (dt:number, rt:number): void {
-        console.log ('motion: dt='+dt + ' rt='+rt);
         let endTime = this.evalutor_x.cp[this.evalutor_x.cp.length-1].x;
         if (rt > endTime) {
             rt = endTime;
         }
         let destX = this.evalutor_x.eval (rt);
         let destY = this.evalutor_y.eval (rt);
-        console.log ('motion: destX='+destX + ' destY='+destY);
-        this.entity.localMatrix = Transform2d.getTranslate(destX, destY);
+        this.node.localMatrix = Transform2d.getTranslate(destX, destY);
         if (rt == endTime) {
             this.stop ();
         }
     }
+    onFinish (): void {
+        let endTime = this.evalutor_x.cp[this.evalutor_x.cp.length-1].x;
+        let destX = this.evalutor_x.eval (endTime);
+        let destY = this.evalutor_y.eval (endTime);
+        this.node.localMatrix = Transform2d.getTranslate(destX, destY);
+    }
 }
 
-export class DemoGraph extends EventObject {
+export class Scene extends EventObserver {
     canvas: any;
     canvasWidth: number;
     canvasHeight: number;
     screenCtx: any;
     buffer: any;
     ctx: any;
-    rootEntity: GraphEntity;
+    rootNode: SceneNode;
     motions: Motion[];
     nextMotionId: number;
-    hoverEntity: GraphEntity;
-    draggingEntity: GraphEntity;
+    hoverNode: SceneNode;
+    draggingNode: SceneNode;
     draggingData: any;
     mouseOver: boolean;
     mouseX: number;
@@ -326,12 +282,12 @@ export class DemoGraph extends EventObject {
         this.buffer.height = this.canvasHeight;
         this.ctx = this.buffer.getContext('2d');
 
-        this.rootEntity = null;
+        this.rootNode = null;
         this.motions = [];
         this.nextMotionId = 1;
 
-        this.hoverEntity = null;
-        this.draggingEntity = null;
+        this.hoverNode = null;
+        this.draggingNode = null;
         this.draggingData = null;
         this.mouseOver = false;
         this.mouseX = 0;
@@ -345,123 +301,115 @@ export class DemoGraph extends EventObject {
             this.mouseOver = true;
             this.canvas[0].focus();
             this.trigger ('mouseenter', { evt:evt });
-            //this.onMouseEnter(evt);
         });
         canvas.on ('mouseleave', (evt:any)=>{
             this.mouseOver = false;
-            if (this.draggingEntity) {
+            if (this.draggingNode) {
                 if (this.draggingData) {
-                    this.draggingEntity.trigger('dragend', { evt:evt, data:this.draggingData });
+                    this.draggingNode.trigger('dragend', { evt:evt, data:this.draggingData });
                     this.draggingData = null;
                 }
-                this.draggingEntity = null;
+                this.draggingNode = null;
             }
-            if (this.hoverEntity) {
-                this.hoverEntity.trigger('mouseleave', { evt:evt });
-                this.hoverEntity = null;
+            if (this.hoverNode) {
+                this.hoverNode.trigger('mouseleave', { evt:evt });
+                this.hoverNode = null;
             }
             this.trigger ('mouseleave', { evt:evt });
-            //this.onMouseLeave(evt);
         });
         canvas.on ('mousemove', (evt:any)=>{
             this.mouseX = evt.offsetX;
             this.mouseY = evt.offsetY;
-            this.updateHoverEntity (evt);
+            this.updateHoverNode (evt);
     
-            if (this.draggingEntity && !this.draggingData) {
+            if (this.draggingNode && !this.draggingData) {
                 this.draggingData = { allow:false };
-                this.draggingEntity.trigger('dragstart', { evt:evt, data:this.draggingData });
+                this.draggingNode.trigger('dragstart', { evt:evt, data:this.draggingData });
                 if (!this.draggingData.allow) {
-                    this.draggingEntity = null;
+                    this.draggingNode = null;
                     this.draggingData = null;
                 }
-            } else if (this.hoverEntity && this.draggingEntity && this.draggingData) {
-                this.hoverEntity.trigger('dragover', { evt:evt, data:this.draggingData });
+            } else if (this.hoverNode && this.draggingNode && this.draggingData) {
+                this.hoverNode.trigger('dragover', { evt:evt, data:this.draggingData });
             }
             this.trigger ('mousemove', { evt:evt });
-            //this.onMouseMove(evt);
         });
         canvas.on ('mousedown', (evt:any)=>{
-            if (this.hoverEntity) {
-                this.hoverEntity.trigger('mousedown', { evt:evt });
+            if (this.hoverNode) {
+                this.hoverNode.trigger('mousedown', { evt:evt });
                 if (evt.button == 0) {
-                    this.draggingEntity = this.hoverEntity;
+                    this.draggingNode = this.hoverNode;
                     this.draggingData = null;
                 }
             }
             this.trigger ('mousedown', { evt:evt });
-            //this.onMouseDown(evt);
         });
         canvas.on ('mouseup', (evt:any)=>{
             if (evt.button == 0) {
-                if (this.draggingEntity && this.draggingData) {
-                    if (this.hoverEntity) {
-                        this.hoverEntity.trigger ('dragdrop', { evt:evt, data:this.draggingData });
+                if (this.draggingNode && this.draggingData) {
+                    if (this.hoverNode) {
+                        this.hoverNode.trigger ('dragdrop', { evt:evt, data:this.draggingData });
                     }
-                    this.draggingEntity.trigger ('dragend', { evt:evt, data:this.draggingData });
+                    this.draggingNode.trigger ('dragend', { evt:evt, data:this.draggingData });
                 }
-                this.draggingEntity = null;
+                this.draggingNode = null;
                 this.draggingData = null;
             }
-            if (this.hoverEntity) {
-                this.hoverEntity.trigger ('mouseup', { evt:evt });
+            if (this.hoverNode) {
+                this.hoverNode.trigger ('mouseup', { evt:evt });
             }
             this.trigger ('mouseup', { evt:evt });
-            //this.onMouseUp(evt);
         });
         canvas.on ('click', (evt:any)=>{
-            if (this.hoverEntity) {
-                this.hoverEntity.trigger ('click', { evt:evt });
+            if (this.hoverNode) {
+                this.hoverNode.trigger ('click', { evt:evt });
             }
             this.trigger ('click', { evt:evt });
-            //this.onClick(evt);
         });
         canvas.on ('mousewheel', (evt:any)=>{
-            if (this.hoverEntity) {
-                this.hoverEntity.trigger ('mousewheel', { evt:evt });
+            if (this.hoverNode) {
+                this.hoverNode.trigger ('mousewheel', { evt:evt });
             }
             this.trigger ('mousewheel', { evt:evt });
-            //this.onMouseWheel(evt);
         });
         canvas.on ('dblclick', (evt:any)=>{
-            if (this.hoverEntity) {
-                this.hoverEntity.trigger('dblclick', { evt:evt });
+            if (this.hoverNode) {
+                this.hoverNode.trigger('dblclick', { evt:evt });
             }
             this.trigger ('dblclick', { evt:evt });
-            //this.onDblClick(evt);
         });
     };
 
-    updateHoverEntity (evt:any): void {
+    updateHoverNode (evt:any): void {
         if (this.mouseOver) {
             let hitResult = this.hittest (this.mouseX, this.mouseY);
             let hover = hitResult.length>0 ? hitResult[0] : null;
-            if (this.hoverEntity != hover) {
-                if (this.hoverEntity) {
-                    this.hoverEntity.trigger('mouseleave', { evt:evt });
+            if (this.hoverNode != hover) {
+                if (this.hoverNode) {
+                    this.hoverNode.trigger('mouseleave', { evt:evt });
                 }
                 if (hover) {
                     hover.trigger('mouseenter', { evt:evt });
                 }
-                this.hoverEntity = hover;
+                this.hoverNode = hover;
             }
         }
     };
 
-    hittest (x:number, y:number): GraphEntity[] {
-        function hittest_r (graph:DemoGraph, entity:GraphEntity, hitResult:GraphEntity[]) {
-            let invWorldMatrix = Transform2d.invert(entity.getWorldMatrix());
+    hittest (x:number, y:number): SceneNode[] {
+        function hittest_r (scene:Scene, node:SceneNode, hitResult:SceneNode[]) {
+            let invWorldMatrix = Transform2d.invert(node.getWorldMatrix());
             let localPoint = invWorldMatrix.transformPoint ({x:x,y:y});
-            if (entity.hittest(graph, localPoint.x, localPoint.y)) {
-                hitResult.push(entity);
+            if (node.hittest(scene, localPoint.x, localPoint.y)) {
+                hitResult.push(node);
             }
-            for (let i = 0; i < entity.children.length; i++) {
-                hittest_r (graph, entity.children[i], hitResult);
+            for (let i = 0; i < node.children.length; i++) {
+                hittest_r (scene, node.children[i], hitResult);
             }
         }
-        let hitResult:GraphEntity[] = [];
-        if (this.rootEntity) {
-            hittest_r (this, this.rootEntity, hitResult);
+        let hitResult:SceneNode[] = [];
+        if (this.rootNode) {
+            hittest_r (this, this.rootNode, hitResult);
             hitResult.sort (function(a,b){
                 return b.z - a.z;
             });
@@ -469,23 +417,23 @@ export class DemoGraph extends EventObject {
         return hitResult;
     };
 
-    update (entity:GraphEntity, dt:number, rt:number): void {
-        entity.processEvents ();
-        entity.trigger ('update', { dt:dt, rt:rt });
-        for (let i = 0; i < entity.children.length; i++) {
-            this.update (entity.children[i], dt, rt);
+    update (node:SceneNode, dt:number, rt:number): void {
+        node.processEvents ();
+        node.trigger ('update', { dt:dt, rt:rt });
+        for (let i = 0; i < node.children.length; i++) {
+            this.update (node.children[i], dt, rt);
         }
     };
 
-    cull (entity:GraphEntity, cullResult:any): void {
-        if (!entity.onCull(this)) {
-            let z = entity.z;
+    cull (node:SceneNode, cullResult:any): void {
+        if (!node.onCull(this)) {
+            let z = node.z;
             let group = cullResult[z]||[];
-            group.push (entity);
+            group.push (node);
             cullResult[z] = group;
         }
-        for (let i = 0; i < entity.children.length; i++) {
-            this.cull (entity.children[i], cullResult);
+        for (let i = 0; i < node.children.length; i++) {
+            this.cull (node.children[i], cullResult);
         }
     };
 
@@ -498,21 +446,20 @@ export class DemoGraph extends EventObject {
 
     draw (): void {
         let cullResult: Object = {};
-        if (this.rootEntity) {
-            this.cull (this.rootEntity, cullResult);
+        if (this.rootNode) {
+            this.cull (this.rootNode, cullResult);
         }
         for (let i in cullResult) {
-            let group:GraphEntity[] = (cullResult as any)[i];
+            let group:SceneNode[] = (cullResult as any)[i];
             for (let j = 0; j < group.length; j++) {
                 group[j].applyTransform (this.ctx);
-                group[j].trigger ('draw', { graph:this });
-                //group[j].draw (this);
+                group[j].trigger ('draw', { scene:this });
             }
         }
-        if (this.draggingEntity && this.draggingData && this.draggingData.draw) {
+        if (this.draggingNode && this.draggingData && this.draggingData.draw) {
             let matrix = Transform2d.getTranslate(this.mouseX, this.mouseY);
             this.ctx.setTransform (matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
-            this.draggingData.draw.call (this.draggingEntity, this);
+            this.draggingData.draw.call (this.draggingNode, this);
         }
         this.screenCtx.drawImage(this.buffer, 0, 0);
     };
@@ -528,9 +475,9 @@ export class DemoGraph extends EventObject {
                 let dt = ts - that.lastFrameTime;
                 let rt = ts - that.firstFrameTime;
                 that.lastFrameTime = ts;
-                that.updateHoverEntity (null);
-                if (that.rootEntity) {
-                    that.update (that.rootEntity, dt, rt);
+                that.updateHoverNode (null);
+                if (that.rootNode) {
+                    that.update (that.rootNode, dt, rt);
                     that.draw ();
                 }
                 requestAnimationFrame (frame);
@@ -589,45 +536,3 @@ export class Graph {
         }
     };
 }
-/*
-window.Graph = (function(){
-    let Graph = function (canvas) {
-        this.canvasWidth = canvas.width();
-        this.canvasHeight = canvas.height();
-        canvas[0].width = this.canvasWidth;
-        canvas[0].height = this.canvasHeight;
-        this.ctx = canvas[0].getContext('2d');
-    };
-
-    Graph.prototype.histogram = function (options) {
-        let paddingH = options.paddingH||20;
-        let paddingV = options.paddingV||20;
-        let color = options.color||'#f00';
-        let bkcolor = options.bkcolor||'#fff';
-        let barWidth = Math.round((this.canvasWidth - (options.values.length + 1) * paddingH) / options.values.length);
-        let barHeight = this.canvasHeight - 2 * paddingV;
-        let barTop = paddingV;
-        let barLeft = paddingH;
-        let maxValue = 0;
-        for (let i = 0; i < options.values.length; i++) {
-            if (options.values[i] > maxValue) {
-                maxValue = options.values[i];
-            }
-        }
-        this.ctx.fillStyle = bkcolor;
-        if (maxValue > 0) {
-            this.ctx.fillRect (0, 0, this.canvasWidth, this.canvasHeight);
-            this.ctx.fillStyle = color;
-            for (let i = 0; i < options.values.length; i++) {
-                let top = barTop + Math.round(barHeight * (maxValue-options.values[i])/maxValue);
-                let height = this.canvasHeight - paddingV - top;
-                this.ctx.fillRect (barLeft, top, barWidth, height);
-                barLeft += barWidth;
-                barLeft += paddingH;
-            }
-        }
-    };
-
-    return Graph;
-})();
-*/
