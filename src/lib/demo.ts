@@ -57,9 +57,11 @@ export class Number extends SceneNode {
 export class NumberSequenceScene extends Scene {
     private rects: {x:number,y:number,w:number,h:number,node:Number}[];
     private motionParent: SceneNode;
+    private aniDuration: number;
     constructor (canvas:any) {
         super(canvas);
         this.rects = [];
+        this.aniDuration = 100;
     }
     rectTest (x:number, y:number): number {
         for (let i = 0; i < this.rects.length; i++) {
@@ -70,16 +72,38 @@ export class NumberSequenceScene extends Scene {
         }
         return -1;
     }
-    createDirectMotion (node:Number, x:number, y:number, duration:number): void {
-        node.localMatrix = Transform2d.getTranslate(x, y)
+    createDirectMotion (node:Number, x:number, y:number): void {
+        //node.localMatrix = Transform2d.getTranslate(x, y)
         if (this.motionParent) {
-            this.motionParent.addChild (new PathMotion(node,[{t:0,x:node.localMatrix.e,y:node.localMatrix.f},{t:duration,x:x,y:y}],'linear'));
+            this.motionParent.addChild (new PathMotion(node,[{t:0,x:node.localMatrix.e,y:node.localMatrix.f},{t:this.aniDuration,x:x,y:y}],'linear'));
         }
     }
     finishMotions (): void {
         if (this.motionParent) {
-            for (let i = 0; i < this.motionParent.children.length; i++) {
-                (this.motionParent.children[i] as PathMotion).finish ();
+            while (this.motionParent.children.length > 0) {
+                (this.motionParent.children[0] as PathMotion).finish ();
+            }
+        }
+    }
+    stopMotions (): void {
+        if (this.motionParent) {
+            while (this.motionParent.children.length > 0) {
+                (this.motionParent.children[0] as PathMotion).stop ();
+            }
+        }
+    }
+    scheduleAnimations (): void {
+        this.stopMotions ();
+        for (let i = 0; i < this.rects.length; i++) {
+            let node = this.rects[i].node;
+            if (node) {
+                let target_x = this.rects[i].x + this.rects[i].w/2;
+                let target_y = this.rects[i].y + this.rects[i].h/2;
+                let x0 = node.localMatrix.e;
+                let y0 = node.localMatrix.f;
+                if (target_x != x0 || target_y != y0) {
+                    this.createDirectMotion (node, target_x, target_y);
+                }
             }
         }
     }
@@ -93,7 +117,6 @@ export class NumberSequenceScene extends Scene {
     }
     addNode (node:Number): number {
         if (this.rootNode) {
-            console.log ('addNode');
             let slot = -1;
             for (let i = 0; i < this.rects.length; i++) {
                 if (this.rects[i].node == node) {
@@ -106,9 +129,6 @@ export class NumberSequenceScene extends Scene {
             }
             if (slot >= 0) {
                 this.rects[slot].node = node;
-                if (node.parent == null) {
-                    this.rootNode.addChild (node);
-                }
                 node.localMatrix = Transform2d.getTranslate(this.rects[slot].x + this.rects[slot].w/2, this.rects[slot].y + this.rects[slot].h/2);
             }
             return slot;
@@ -116,7 +136,6 @@ export class NumberSequenceScene extends Scene {
     }
     insertNode (pos:number, node:Number): boolean {
         if(this.rootNode) {
-            console.log ('insertNode');
             let slot;
             for (slot = this.rects.length-1; slot >= 0; slot--) {
                 if (this.rects[slot].node != null) {
@@ -126,32 +145,20 @@ export class NumberSequenceScene extends Scene {
             if (slot == this.rects.length-1 || slot < pos-1) {
                 return false;
             }
-            this.finishMotions ();
             for (let i = slot; i >= pos; i--) {
                 this.rects[i+1].node = this.rects[i].node;
-                this.createDirectMotion(this.rects[i+1].node, this.rects[i+1].x+this.rects[i+1].w/2, this.rects[i+1].y+this.rects[i+1].h/2, 100);
             }
             this.rects[pos].node = node;
-            if (node.parent == null) {
-                this.rootNode.addChild (node);
-            }
             node.localMatrix = Transform2d.getTranslate(this.rects[pos].x+this.rects[pos].w/2, this.rects[pos].y+this.rects[pos].h/2);
         }
     }
     packNodes (): void {
-        console.log ('packNodes');
         let slot = -1;
-        let finish = false;
         for (let i = 0; i < this.rects.length; i++) {
             if (this.rects[i].node == null && slot < 0) {
                 slot = i;
             } else if (this.rects[i].node != null && slot >= 0) {
-                if (!finish) {
-                    finish = true;
-                    this.finishMotions();
-                }
                 this.rects[slot].node = this.rects[i].node;
-                this.createDirectMotion(this.rects[slot].node, this.rects[slot].x+this.rects[slot].w/2, this.rects[slot].y+this.rects[slot].h/2, 100);
                 this.rects[i].node = null;
                 slot++;
             }
@@ -160,7 +167,6 @@ export class NumberSequenceScene extends Scene {
     removeNode (node:Number): number {
         let slot = this.findNode(node);
         if (slot >= 0) {
-            console.log ('removeNode')
             this.rects[slot].node = null;
             this.packNodes ();
         }
@@ -188,11 +194,15 @@ export class NumberSequenceScene extends Scene {
                 if (this.rects[rect].node == null) {
                     this.rects[rect].node = data.node;
                     data.node.localMatrix = Transform2d.getTranslate(this.rects[rect].x+this.rects[rect].w/2, this.rects[rect].y+this.rects[rect].h/2);
+                    this.packNodes ();
                 } else {
                     this.insertNode (rect, data.node);
                 }
+                this.scheduleAnimations ();
             } else if (rect < 0) {
-                this.removeNode (data.node);
+                if (this.removeNode (data.node) >= 0) {
+                    this.scheduleAnimations ();
+                }
             }
         }
     }
@@ -234,6 +244,7 @@ export class NumberSequenceScene extends Scene {
             that.rootNode.addChild(that.motionParent);
             for (let i = 0; i < numbers.length; i++) {
                 let num = new Number('images/number-'+numbers[i]+'.png', width, width);
+                that.rootNode.addChild (num);
                 that.addNode (num);
                 num.on('dragstart', function(e){
                     this.visible = false;

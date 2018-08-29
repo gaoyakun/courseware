@@ -5,12 +5,7 @@ let CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: {
-    index: './src/index.ts',
-    curve: './src/lib/curve.ts',
-    demo: './src/lib/demo.ts',
-    graph: './src/lib/graph.ts',
-    presentation: './src/lib/presentation.ts',
-    transform: './src/lib/transform.ts'
+    index: './src/index.ts'
   },
   output: {
     //The output directory as an absolute path.
