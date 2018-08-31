@@ -75,25 +75,23 @@ export class NumberSequenceScene extends Scene {
     createDirectMotion (node:Number, x:number, y:number): void {
         //node.localMatrix = Transform2d.getTranslate(x, y)
         if (this.motionParent) {
+            this.stopMotion (node);
             this.motionParent.addChild (new PathMotion(node,[{t:0,x:node.localMatrix.e,y:node.localMatrix.f},{t:this.aniDuration,x:x,y:y}],'linear'));
         }
     }
-    finishMotions (): void {
+    stopMotion (node: Number): void {
         if (this.motionParent) {
-            while (this.motionParent.children.length > 0) {
-                (this.motionParent.children[0] as PathMotion).finish ();
-            }
-        }
-    }
-    stopMotions (): void {
-        if (this.motionParent) {
-            while (this.motionParent.children.length > 0) {
-                (this.motionParent.children[0] as PathMotion).stop ();
+            for (let i=0; i < this.motionParent.children.length;) {
+                let motion = this.motionParent.children[i] as PathMotion;
+                if (motion.node == node) {
+                    motion.stop();
+                } else {
+                    i++;
+                }
             }
         }
     }
     scheduleAnimations (): void {
-        this.stopMotions ();
         for (let i = 0; i < this.rects.length; i++) {
             let node = this.rects[i].node;
             if (node) {
@@ -115,6 +113,13 @@ export class NumberSequenceScene extends Scene {
         }
         return -1;
     }
+    setNodePosition (node:Number, pos:number): void {
+        this.rects[pos].node = node;
+        if (node) {
+            this.stopMotion (node);
+            node.localMatrix = Transform2d.getTranslate(this.rects[pos].x + this.rects[pos].w/2, this.rects[pos].y + this.rects[pos].h/2);
+        }
+    }
     addNode (node:Number): number {
         if (this.rootNode) {
             let slot = -1;
@@ -128,8 +133,7 @@ export class NumberSequenceScene extends Scene {
                 }
             }
             if (slot >= 0) {
-                this.rects[slot].node = node;
-                node.localMatrix = Transform2d.getTranslate(this.rects[slot].x + this.rects[slot].w/2, this.rects[slot].y + this.rects[slot].h/2);
+                this.setNodePosition (node, slot);
             }
             return slot;
         }
@@ -148,8 +152,7 @@ export class NumberSequenceScene extends Scene {
             for (let i = slot; i >= pos; i--) {
                 this.rects[i+1].node = this.rects[i].node;
             }
-            this.rects[pos].node = node;
-            node.localMatrix = Transform2d.getTranslate(this.rects[pos].x+this.rects[pos].w/2, this.rects[pos].y+this.rects[pos].h/2);
+            this.setNodePosition (node, pos);
         }
     }
     packNodes (): void {
@@ -192,8 +195,9 @@ export class NumberSequenceScene extends Scene {
             if (rect >= 0 && data.node != this.rects[rect].node) {
                 this.removeNode (data.node);
                 if (this.rects[rect].node == null) {
-                    this.rects[rect].node = data.node;
-                    data.node.localMatrix = Transform2d.getTranslate(this.rects[rect].x+this.rects[rect].w/2, this.rects[rect].y+this.rects[rect].h/2);
+                    this.setNodePosition (data.node, rect);
+                    //this.rects[rect].node = data.node;
+                    //data.node.localMatrix = Transform2d.getTranslate(this.rects[rect].x+this.rects[rect].w/2, this.rects[rect].y+this.rects[rect].h/2);
                     this.packNodes ();
                 } else {
                     this.insertNode (rect, data.node);
@@ -212,6 +216,7 @@ export class NumberSequenceScene extends Scene {
         if (data.type == 'number') {
             let rect = this.rectTest (evt.offsetX, evt.offsetY);
             if (rect < 0) {
+                this.stopMotion (data.node);
                 data.node.localMatrix = Transform2d.getTranslate (evt.offsetX, evt.offsetY);
             }
         }
