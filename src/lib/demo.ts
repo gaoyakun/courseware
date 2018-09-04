@@ -54,14 +54,24 @@ export class Number extends SceneNode {
     }
 }
 
+interface ISortElement {
+    (index:number,width:number,height:number):SceneNode;
+}
+
+export function SortNumber(index:number,width:number,height:number) {
+    return new Number(`images/number-${index}.png`, width, height);
+}
+
 export class NumberSequenceScene extends Scene {
-    private rects: {x:number,y:number,w:number,h:number,node:Number}[];
+    private rects: {x:number,y:number,w:number,h:number,node:SceneNode}[];
     private motionParent: SceneNode;
     private aniDuration: number;
-    constructor (canvas:any) {
+    private elementFactory:ISortElement;
+    constructor (canvas:any, factory:ISortElement=SortNumber) {
         super(canvas);
         this.rects = [];
         this.aniDuration = 100;
+        this.elementFactory = factory;
     }
     rectTest (x:number, y:number): number {
         for (let i = 0; i < this.rects.length; i++) {
@@ -72,14 +82,14 @@ export class NumberSequenceScene extends Scene {
         }
         return -1;
     }
-    createDirectMotion (node:Number, x:number, y:number): void {
+    createDirectMotion (node:SceneNode, x:number, y:number): void {
         //node.localMatrix = Transform2d.getTranslate(x, y)
         if (this.motionParent) {
             this.stopMotion (node);
             this.motionParent.addChild (new PathMotion(node,[{t:0,x:node.localMatrix.e,y:node.localMatrix.f},{t:this.aniDuration,x:x,y:y}],'linear'));
         }
     }
-    stopMotion (node: Number): void {
+    stopMotion (node: SceneNode): void {
         if (this.motionParent) {
             for (let i=0; i < this.motionParent.children.length;) {
                 let motion = this.motionParent.children[i] as PathMotion;
@@ -105,7 +115,7 @@ export class NumberSequenceScene extends Scene {
             }
         }
     }
-    findNode (node:Number): number {
+    findNode (node:SceneNode): number {
         for (let i = 0; i < this.rects.length; i++) {
             if (this.rects[i].node == node) {
                 return i;
@@ -113,14 +123,14 @@ export class NumberSequenceScene extends Scene {
         }
         return -1;
     }
-    setNodePosition (node:Number, pos:number): void {
+    setNodePosition (node:SceneNode, pos:number): void {
         this.rects[pos].node = node;
         if (node) {
             this.stopMotion (node);
             node.localMatrix = Transform2d.getTranslate(this.rects[pos].x + this.rects[pos].w/2, this.rects[pos].y + this.rects[pos].h/2);
         }
     }
-    addNode (node:Number): number {
+    addNode (node:SceneNode): number {
         if (this.rootNode) {
             let slot = -1;
             for (let i = 0; i < this.rects.length; i++) {
@@ -138,7 +148,7 @@ export class NumberSequenceScene extends Scene {
             return slot;
         }
     }
-    insertNode (pos:number, node:Number): boolean {
+    insertNode (pos:number, node:SceneNode): boolean {
         if(this.rootNode) {
             let slot;
             for (slot = this.rects.length-1; slot >= 0; slot--) {
@@ -167,7 +177,7 @@ export class NumberSequenceScene extends Scene {
             }
         }
     }
-    removeNode (node:Number): number {
+    removeNode (node:SceneNode): number {
         let slot = this.findNode(node);
         if (slot >= 0) {
             this.rects[slot].node = null;
@@ -175,7 +185,7 @@ export class NumberSequenceScene extends Scene {
         }
         return slot;
     }
-    swapNodes (node1:Number, node2:Number): boolean {
+    swapNodes (node1:SceneNode, node2:SceneNode): boolean {
         let slot1 = this.findNode(node1);
         let slot2 = this.findNode(node2);
         if (slot1 >= 0 && slot2 >= 0 && slot1 != slot2) {
@@ -230,11 +240,12 @@ export class NumberSequenceScene extends Scene {
             const margin_v = options.margin_v == null ? 0 : options.margin_v;
             const padding = options.padding == null ? 0 : options.padding;
             const width = Math.floor((that.canvasWidth - 2 * margin_h - (numbers.length-1)*padding) / numbers.length);
+            const height = options.ratio == null ? width : Math.round(width/options.ratio);
             const step = width + padding;
             const startx = margin_h;
             const starty = margin_v;
             for (let i = 0; i < numbers.length; i++) {
-                that.rects.push({x:startx+i*step,y:starty,w:width,h:width,node:null})
+                that.rects.push({x:startx+i*step,y:starty,w:width,h:height,node:null})
             }
             let bkground = new Bkground(bkcolor);
             bkground.on('dragdrop', function(e){
@@ -248,7 +259,7 @@ export class NumberSequenceScene extends Scene {
             that.motionParent = new SceneNode();
             that.rootNode.addChild(that.motionParent);
             for (let i = 0; i < numbers.length; i++) {
-                let num = new Number('images/number-'+numbers[i]+'.png', width, width);
+                let num = this.elementFactory(numbers[i],width,height);
                 that.rootNode.addChild (num);
                 that.addNode (num);
                 num.on('dragstart', function(e){
