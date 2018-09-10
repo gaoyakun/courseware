@@ -3,15 +3,21 @@ import $ from 'jquery';
 
 export interface IEvent {
     type: string;
+    target?: any;
 }
 
 export interface IEventHandler {
     (evt:IEvent):void;
 }
 
+interface IEventHandlerEntry {
+    handler:IEventHandler;
+    bindObject:any;
+}
+
 export class cwApp {
     private static eventQueue:Array<IEvent> = [];
-    private static eventListeners:{[eventType:string]:Array<IEventHandler>} = {};
+    private static eventListeners:{[eventType:string]:Array<IEventHandlerEntry>} = {};
     private static running = false;
     private static lastFrameTime = 0;
     private static firstFrameTime = 0;
@@ -20,15 +26,25 @@ export class cwApp {
     private static processEvent (evt:IEvent): void {
         let handlerList = cwApp.eventListeners[evt.type];
         if (handlerList) {
-            handlerList.forEach ((handler:IEventHandler)=>{
-                handler(evt);
+            handlerList.forEach ((handler:IEventHandlerEntry)=>{
+                if (evt.target === undefined || handler.bindObject === evt.target) {
+                    handler.handler.call (handler.bindObject, evt);
+                }
             });
         }
     }
-    public static postEvent (evt:IEvent): void {
+    public static postEvent (target:any, evt:IEvent): void {
+        if (evt.hasOwnProperty('target')) {
+            throw new Error('Error: cannot overwrite <target> for event object');
+        }
+        evt.target = target;
         cwApp.eventQueue.push (evt);
     }
-    public static sendEvent (evt:IEvent): void {
+    public static triggerEvent (target:any, evt:IEvent): void {
+        if (evt.hasOwnProperty('target')) {
+            throw new Error('Error: cannot overwrite <target> for event object');
+        }
+        evt.target = target;
         cwApp.processEvent (evt);
     }
     public static processPendingEvents (): void {
@@ -38,19 +54,25 @@ export class cwApp {
             cwApp.processEvent (evt);
         });
     }
-    public static addEventListener (eventType:string, handler:IEventHandler) {
+    public static addEventListener (eventType:string, bindObject:any, handler:IEventHandler) {
         let handlerList = cwApp.eventListeners[eventType]||[];
-        if (handlerList.indexOf(handler) < 0) {
-            handlerList.push (handler);
+        for (let i = 0; i < handlerList.length; i++) {
+            if (handlerList[i].handler === handler && handlerList[i].bindObject === bindObject) {
+                return;
+            }
         }
+        handlerList.push ({
+            bindObject: bindObject,
+            handler: handler
+        });
         this.eventListeners[eventType] = handlerList;
     }
-    public static removeEventListener (eventType:string, handler:IEventHandler) {
-        let handlerList = cwApp.eventListeners[eventType];
-        if (handlerList) {
-            let index = handlerList.indexOf(handler);
-            if (index >= 0) {
-                handlerList.splice (index, 1);
+    public static removeEventListener (eventType:string, bindObject:any, handler:IEventHandler) {
+        let handlerList = cwApp.eventListeners[eventType]||[];
+        for (let i = 0; i < handlerList.length; i++) {
+            if (handlerList[i].handler === handler && handlerList[i].bindObject === bindObject) {
+                handlerList.splice (i, 1);
+                break;
             }
         }
     }
@@ -84,10 +106,26 @@ export class cwApp {
     }
 }
 
-export class cwComponent {
+export class cwEventObserver {
+    on (type:string, handler:IEventHandler): void {
+        cwApp.addEventListener (type, this, handler);
+    }
+    off (type:string, handler:IEventHandler): void {
+        cwApp.removeEventListener (type, this, handler);
+    }
+    trigger (evt:IEvent): void {
+        cwApp.triggerEvent (this, evt);
+    }
+    post (evt:IEvent): void {
+        cwApp.postEvent (this, evt);
+    }
+}
+
+export class cwComponent extends cwEventObserver {
     public readonly type: string;
     public object: cwObject|null;
     constructor (type:string) {
+        super ();
         this.type = type;
         this.object = null;
     }
@@ -96,9 +134,10 @@ export class cwComponent {
     }
 }
 
-export class cwObject {
+export class cwObject extends cwEventObserver {
     private components:{[type:string]:Array<cwComponent>};
     constructor () {
+        super ();
         this.components = {}
     }
     addComponent (component:cwComponent): cwObject {
@@ -107,6 +146,7 @@ export class cwObject {
             if (componentArray.indexOf(component) < 0) {
                 componentArray.push (component);
                 component.object = this;
+                component.trigger ({ type:'_attached'});
             }
             this.components[component.type] = componentArray;
         }
@@ -123,6 +163,7 @@ export class cwObject {
         const components = this.components[type];
         if (components && index>=0 && index<components.length) {
             components[index].object = null;
+            components[index].trigger ({ type:'_detached'});
             components.splice(index, 1);
         }
         return this;
