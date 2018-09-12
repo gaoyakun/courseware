@@ -5,7 +5,8 @@ let CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: {
-    index: './src/index.ts'
+    index: './src/index.ts',
+    test: './src/test.ts'
   },
   output: {
     //The output directory as an absolute path.
@@ -25,8 +26,16 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
+        chunks:['index'],
+        filename:'index.html',
         template: path.resolve(path.resolve(__dirname), 'index.html'),
         inject: 'body'
+    }),
+    new HtmlWebpackPlugin({
+      chunks:['test'],
+      filename:'test.html',
+      template: path.resolve(path.resolve(__dirname), 'test.html'),
+      inject: 'body'
     }),
     new ExtractTextWebpackPlugin('./dist/css'),
     new CopyWebpackPlugin([
