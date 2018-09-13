@@ -1,123 +1,196 @@
 import {Transform2d} from './transform';
 import $ from 'jquery';
 
-type CullResult = {[z:number]:Array<cwSceneObject>};
-type HitTestResult = Array<cwSceneObject>;
-type EventHandler = (evt:Event) => void;
-type EventHandlerEntry = { handler:EventHandler,bindObject:any };
+type cwCullResult = {[z:number]:Array<{object:cwEventObserver,z:number,transform:Transform2d}>};
+type cwHitTestResult = Array<cwSceneObject>;
+type cwEventHandler = (evt:cwEvent) => void;
+type cwEventHandlerEntry = { handler:cwEventHandler,bindObject:any };
 
-export class Event {
+export class cwEvent {
     readonly type: string;
     constructor (type:string) {
         this.type = type;
     }
 }
 
-export class ComponentAttachedEvent extends Event {
+export class cwComponentAttachedEvent extends cwEvent {
     static readonly type: string = '@componentAttached';
     constructor () {
-        super (ComponentAttachedEvent.type);
+        super (cwComponentAttachedEvent.type);
     }
 }
 
-export class ComponentDetachedEvent extends Event {
+export class cwComponentDetachedEvent extends cwEvent {
     static readonly type: string = '@componentDetached';
     constructor () {
-        super (ComponentDetachedEvent.type);
+        super (cwComponentDetachedEvent.type);
     }
 }
 
-export class UpdateEvent extends Event {
+export class cwUpdateEvent extends cwEvent {
     static readonly type: string = '@update';
     public readonly deltaTime: number;
     public readonly elapsedTime: number;
     public readonly frameStamp: number;
     constructor (deltaTime:number, elapsedTime:number, frameStamp:number) {
-        super (UpdateEvent.type);
+        super (cwUpdateEvent.type);
         this.deltaTime = deltaTime;
         this.elapsedTime = elapsedTime;
         this.frameStamp = frameStamp;
     }
 }
 
-export class CullEvent extends Event {
+export class cwCullEvent extends cwEvent {
     static readonly type: string = '@cull';
-    result:CullResult;
+    result:cwCullResult;
     constructor () {
-        super (CullEvent.type);
+        super (cwCullEvent.type);
         this.result = {};
     }
-    addObject (object:cwSceneObject): void {
-        let objectList = this.result[object.z]||[];
-        objectList.push (object);
-        this.result[object.z] = objectList;
+    addObject (object:cwEventObserver, z:number, transform:Transform2d): void {
+        let objectList = this.result[z]||[];
+        objectList.push ({object:object,z:z,transform:transform});
+        this.result[z] = objectList;
     }
 }
 
-export class DrawEvent extends Event {
+export class cwDrawEvent extends cwEvent {
     static readonly type: string = '@draw';
     readonly canvas:cwCanvas;
-    constructor (canvas:cwCanvas) {
-        super (DrawEvent.type);
+    readonly z:number;
+    readonly transform:Transform2d;
+    constructor (canvas:cwCanvas, z:number, transform:Transform2d) {
+        super (cwDrawEvent.type);
         this.canvas = canvas;
+        this.z = z;
+        this.transform = transform;
     }
 }
 
-export class HitTestEvent extends Event {
+export class cwHitTestEvent extends cwEvent {
     static readonly type: string = '@hittest';
-    result:HitTestResult;
+    result:cwHitTestResult;
     constructor () {
-        super (HitTestEvent.type);
+        super (cwHitTestEvent.type);
         this.result = [];
     }
 }
 
-export class FrameEvent extends Event {
+export class cwFrameEvent extends cwEvent {
     static readonly type: string = '@frame';
-    public readonly deltaTime: number;
-    public readonly elapsedTime: number;
-    public readonly frameStamp: number;
+    readonly deltaTime: number;
+    readonly elapsedTime: number;
+    readonly frameStamp: number;
     constructor (deltaTime:number, elapsedTime:number, frameStamp:number) {
-        super (FrameEvent.type);
+        super (cwFrameEvent.type);
         this.deltaTime = deltaTime;
         this.elapsedTime = elapsedTime;
         this.frameStamp = frameStamp;
     }
 }
 
+export class cwMouseEvent extends cwEvent {
+    readonly x:number;
+    readonly y:number;
+    readonly button:number;
+    readonly shiftDown:boolean;
+    readonly altDown:boolean;
+    readonly ctrlDown:boolean;
+    readonly metaDown:boolean;
+    constructor (type:string,x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
+        super (type);
+        this.x = x;
+        this.y = y;
+        this.button = button;
+        this.shiftDown = shiftDown;
+        this.altDown = altDown;
+        this.ctrlDown = ctrlDown;
+        this.metaDown = metaDown;
+    }
+}
+
+export class cwMouseDownEvent extends cwMouseEvent {
+    static readonly type: string = '@mousedown';
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
+        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+    }
+}
+
+export class cwMouseUpEvent extends cwMouseEvent {
+    static readonly type: string = '@mouseup';
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
+        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+    }
+}
+
+export class cwMouseMoveEvent extends cwMouseEvent {
+    static readonly type: string = '@mousemove';
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
+        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+    }
+}
+
+export class cwMouseEnterEvent extends cwMouseEvent {
+    static readonly type: string = '@mouseenter';
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
+        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+    }
+}
+
+export class cwMouseLeaveEvent extends cwMouseEvent {
+    static readonly type: string = '@mouseleave';
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
+        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+    }
+}
+
+export class cwClickEvent extends cwMouseEvent {
+    static readonly type: string = '@click';
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
+        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+    }
+}
+
+export class cwDblClickEvent extends cwMouseEvent {
+    static readonly type: string = '@dblclick';
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
+        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+    }
+}
+
 export class cwApp {
-    private static eventQueue:Array<{evt:Event,target:any}> = [];
-    private static eventListeners:{[eventType:string]:Array<EventHandlerEntry>} = {};
+    private static eventQueue:Array<{evt:cwEvent,target:any}> = [];
+    private static eventListeners:{[eventType:string]:Array<cwEventHandlerEntry>} = {};
     private static running = false;
     private static lastFrameTime = 0;
     private static firstFrameTime = 0;
     private static frameStamp = 0;
     static elapsedTime = 0;
     static deltaTime = 0;
-    private static processEvent (evt:Event,target:any): void {
+    private static processEvent (evt:cwEvent,target:any): void {
         let handlerList = cwApp.eventListeners[evt.type];
         if (handlerList) {
-            handlerList.forEach ((handler:EventHandlerEntry)=>{
+            handlerList.forEach ((handler:cwEventHandlerEntry)=>{
                 if (!target || handler.bindObject === target) {
                     handler.handler.call (handler.bindObject, evt);
                 }
             });
         }
     }
-    static postEvent (target:any, evt:Event): void {
+    static postEvent (target:any, evt:cwEvent): void {
         cwApp.eventQueue.push ({evt:evt,target:target});
     }
-    static triggerEvent (target:any, evt:Event): void {
+    static triggerEvent (target:any, evt:cwEvent): void {
         cwApp.processEvent (evt,target);
     }
     static processPendingEvents (): void {
         const events = cwApp.eventQueue;
         cwApp.eventQueue = [];
-        events.forEach ((evt:{evt:Event,target:any})=>{
+        events.forEach ((evt:{evt:cwEvent,target:any})=>{
             cwApp.processEvent (evt.evt,evt.target);
         });
     }
-    static addEventListener (eventType:string, bindObject:any, handler:EventHandler) {
+    static addEventListener (eventType:string, bindObject:any, handler:cwEventHandler) {
         let handlerList = cwApp.eventListeners[eventType]||[];
         for (let i = 0; i < handlerList.length; i++) {
             if (handlerList[i].bindObject === bindObject) {
@@ -152,7 +225,7 @@ export class cwApp {
                 cwApp.lastFrameTime = ts;
                 cwApp.frameStamp++;
                 cwApp.processPendingEvents ();
-                cwApp.triggerEvent(null, new FrameEvent(cwApp.deltaTime, cwApp.elapsedTime, cwApp.frameStamp));
+                cwApp.triggerEvent(null, new cwFrameEvent(cwApp.deltaTime, cwApp.elapsedTime, cwApp.frameStamp));
                 if (cwApp.running) {
                     requestAnimationFrame (frame);
                 }
@@ -174,16 +247,16 @@ export class cwApp {
 }
 
 export class cwEventObserver {
-    on (type:string, handler:EventHandler): void {
+    on (type:string, handler:cwEventHandler): void {
         cwApp.addEventListener (type, this, handler);
     }
     off (type:string): void {
         cwApp.removeEventListener (type, this);
     }
-    trigger (evt:Event): void {
+    trigger (evt:cwEvent): void {
         cwApp.triggerEvent (this, evt);
     }
-    post (evt:Event): void {
+    post (evt:cwEvent): void {
         cwApp.postEvent (this, evt);
     }
 }
@@ -213,7 +286,7 @@ export class cwObject extends cwEventObserver {
             if (componentArray.indexOf(component) < 0) {
                 componentArray.push (component);
                 component.object = this;
-                component.trigger (new ComponentAttachedEvent());
+                component.trigger (new cwComponentAttachedEvent());
             }
             this.components[component.type] = componentArray;
         }
@@ -230,7 +303,7 @@ export class cwObject extends cwEventObserver {
         const components = this.components[type];
         if (components && index>=0 && index<components.length) {
             components[index].object = null;
-            components[index].trigger (new ComponentDetachedEvent());
+            components[index].trigger (new cwComponentDetachedEvent());
             components.splice(index, 1);
         }
         return this;
@@ -258,7 +331,7 @@ export class cwObject extends cwEventObserver {
     getComponents (type:string): Array<cwComponent> {
         return this.components[type];
     }
-    triggerEx (evt:Event): void {
+    triggerEx (evt:cwEvent): void {
         super.trigger (evt);
         for (const c in this.components) {
             if (this.components.hasOwnProperty(c)) {
@@ -268,7 +341,7 @@ export class cwObject extends cwEventObserver {
             }
         }
     }
-    post (evt:Event): void {
+    post (evt:cwEvent): void {
         cwApp.postEvent (this, evt);
     }
 }
@@ -279,13 +352,16 @@ export class cwSceneObject extends cwObject {
     private _visible:boolean;
     private _children: Array<cwSceneObject>;
     private _localTransform: Transform2d;
-    constructor () {
+    constructor (parent:cwSceneObject = null) {
         super();
         this._parent = null;
         this._z = 0;
         this._visible = true;
         this._children = [];
         this._localTransform = new Transform2d();
+        if (parent) {
+            parent.addChild (this);
+        }
     }
     get parent () {
         return this._parent;
@@ -348,13 +424,13 @@ export class cwSceneObject extends cwObject {
         let matrix = this.worldTransform;
         ctx.setTransform (matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
     };
-    triggerRecursive (evt:Event): void {
+    triggerRecursive (evt:cwEvent): void {
         super.trigger (evt);
         this.forEachChild ((child:cwSceneObject, index:number) => {
             child.triggerRecursive (evt);
         });
     }
-    triggerRecursiveEx (evt:Event): void {
+    triggerRecursiveEx (evt:cwEvent): void {
         super.triggerEx (evt);
         this.forEachChild ((child:cwSceneObject, index:number) => {
             child.triggerRecursiveEx (evt);
@@ -371,9 +447,9 @@ export class cwScene extends cwObject {
         this.rootNode = new cwSceneObject();
         this.clearColor = null;
         this.canvas = new cwCanvas(canvas);
-        this.on (FrameEvent.type, (evt:Event) => {
-            let frameEvent = evt as FrameEvent;
-            let updateEvent = new UpdateEvent(frameEvent.deltaTime,frameEvent.elapsedTime,frameEvent.frameStamp);
+        this.on (cwFrameEvent.type, (evt:cwEvent) => {
+            let frameEvent = evt as cwFrameEvent;
+            let updateEvent = new cwUpdateEvent(frameEvent.deltaTime,frameEvent.elapsedTime,frameEvent.frameStamp);
             this.rootNode.triggerRecursiveEx (updateEvent);
             this.draw ();
         });
@@ -382,20 +458,18 @@ export class cwScene extends cwObject {
         if (this.clearColor !== null) {
             this.canvas.clear (this.clearColor);
         }
-        let cullEvent = new CullEvent();
+        let cullEvent = new cwCullEvent();
         this.rootNode.triggerRecursiveEx (cullEvent);
-        let drawEvent = new DrawEvent (this.canvas);
         for (let i in cullEvent.result) {
             let group = cullEvent.result[i];
             for (let j = 0; j < group.length; j++) {
-                group[j].applyTransform (this.canvas.context);
-                group[j].triggerEx (drawEvent);
+                group[j].object.trigger (new cwDrawEvent(this.canvas, group[j].z, group[j].transform));
             }
         }
         this.canvas.flip ();
     }
-    hitTest (): HitTestResult {
-        let evt = new HitTestEvent ();
+    hitTest (): cwHitTestResult {
+        let evt = new cwHitTestEvent ();
         this.rootNode.triggerRecursiveEx (evt);
         return evt.result;
     }
@@ -408,6 +482,20 @@ export class cwCanvas extends cwObject {
     private _height:number;
     private _screenCtx:CanvasRenderingContext2D;
     private _offscreenCtx:CanvasRenderingContext2D;
+    private _mouseOver:boolean;
+    private static readonly eventNames = ['mouseenter']
+    private initEventHandlers () {
+        this._canvas.addEventListener ('mouseenter', (ev:MouseEvent) => {
+            if (!this._mouseOver) {
+                this._mouseOver = true;
+                console.log ('Canvas mouse entered');
+            }
+        });
+        this._canvas.addEventListener ('mouseleave', (ev:MouseEvent) => {
+            this._mouseOver = false;
+            console.log ('Canvas mouse leaved');
+        });
+    }
     constructor (canvas:HTMLCanvasElement) {
         super ();
         this._canvas = canvas;
@@ -420,6 +508,7 @@ export class cwCanvas extends cwObject {
         this._buffer.width = this._width;
         this._buffer.height = this._height;
         this._offscreenCtx = this._buffer.getContext ("2d");
+        this._mouseOver = false;
     }
     get width() {
         return this._width;
@@ -436,6 +525,9 @@ export class cwCanvas extends cwObject {
         this._offscreenCtx.fillRect (0, 0, this._width, this._height);
         this._offscreenCtx.restore ();
     }
+    applyTransform (transform:Transform2d): void {
+        this._offscreenCtx.setTransform (transform.a, transform.b, transform.c, transform.d, transform.e, transform.f);
+    };
     flip (): void {
         this._screenCtx.drawImage (this._buffer, 0, 0);
     }
@@ -445,9 +537,9 @@ export class cwcVisual extends cwComponent {
     static readonly type = 'Visual';
     constructor () {
         super (cwcVisual.type);
-        this.on (CullEvent.type, (evt:Event) => {});
-        this.on (HitTestEvent.type, (evt:Event) => {});
-        this.on (DrawEvent.type, (evt:Event) => {});
+        this.on (cwCullEvent.type, (evt:cwEvent) => {});
+        this.on (cwHitTestEvent.type, (evt:cwEvent) => {});
+        this.on (cwDrawEvent.type, (evt:cwEvent) => {});
     }
 }
 
