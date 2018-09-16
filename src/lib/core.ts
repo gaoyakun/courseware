@@ -467,32 +467,34 @@ export class cwScene extends cwObject {
             cwScene.clickTick = Date.now();
             let view = cwScene.hitView (ev.clientX, ev.clientY);
             if (view !== null) {
-                cwApp.triggerEvent (view, new cwMouseDownEvent (ev.clientX, ev.clientY, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                cwApp.triggerEvent (view, new cwMouseDownEvent (ev.clientX-view.canvas.canvas.offsetLeft, ev.clientY-view.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
             }
         });
         window.addEventListener ('mouseup', (ev:MouseEvent) => {
             let view = cwScene.hitView (ev.clientX, ev.clientY);
             if (view !== null) {
+                let x = ev.clientX-view.canvas.canvas.offsetLeft;
+                let y = ev.clientY-view.canvas.canvas.offsetTop;
                 let tick = Date.now();
                 if (tick < cwScene.clickTick + cwScene.clickTime) {
                     if (cwScene.dblClickTick == 0) {
                         cwScene.dblClickTick = tick;
                     } else {
                         if (tick < cwScene.dblClickTick + cwScene.dblclickTime) {
-                            cwApp.triggerEvent (view, new cwDblClickEvent (ev.clientX, ev.clientY, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                            cwApp.triggerEvent (view, new cwDblClickEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
                         }
                         cwScene.dblClickTick = 0;
                     }
-                    cwApp.triggerEvent (view, new cwClickEvent (ev.clientX, ev.clientY, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                    cwApp.triggerEvent (view, new cwClickEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
                 }
-                cwApp.triggerEvent (view, new cwMouseUpEvent (ev.clientX, ev.clientY, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                cwApp.triggerEvent (view, new cwMouseUpEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
             }
             cwScene.clickTick = 0;
         });
         window.addEventListener ('mousemove', (ev:MouseEvent) => {
             let view = cwScene.hitView (ev.clientX, ev.clientY);
             if (view !== null) {
-                cwApp.triggerEvent (view, new cwMouseMoveEvent (ev.clientX, ev.clientY, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                cwApp.triggerEvent (view, new cwMouseMoveEvent (ev.clientX-view.canvas.canvas.offsetLeft, ev.clientY-view.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
             }
         });
     }
@@ -518,6 +520,9 @@ export class cwScene extends cwObject {
                 cwScene.views.splice (i, 1);
             }
         }
+    }
+    public static setCapture (view:cwSceneView) {
+        cwScene.capturedView = view;
     }
     public static init () {
         cwScene.initEventListeners ();

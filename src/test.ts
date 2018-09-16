@@ -4,16 +4,26 @@ import {Transform2d} from './lib/transform';
 core.cwScene.init ();
 let view = core.cwScene.addView (document.querySelector('#test-canvas'));
 view.on ('@mousedown', (ev:core.cwEvent) => {
-    console.log ('mouse down');
+    core.cwScene.setCapture (view);
+    const e = ev as core.cwMouseDownEvent;
+    console.log ('mouse down:' + e.x + ',' + e.y);
 });
 view.on ('@mouseup', (ev:core.cwEvent) => {
-    console.log ('mouse up');
+    const e = ev as core.cwMouseUpEvent;
+    console.log ('mouse up:' + e.x + ',' + e.y);
+    core.cwScene.setCapture (null);
 });
 view.on ('@click', (ev:core.cwEvent) => {
-    console.log ('mouse click');
+    const e = ev as core.cwClickEvent;
+    console.log ('mouse click:' + e.x + ',' + e.y);
 });
 view.on ('@dblclick', (ev:core.cwEvent) => {
-    console.log ('mouse double click');
+    const e = ev as core.cwDblClickEvent;
+    console.log ('mouse double click:' + e.x + ',' + e.y);
+});
+view.on ('@mousemove', (ev:core.cwEvent) => {
+    const e = ev as core.cwMouseMoveEvent;
+    console.log ('mouse move:' + e.x + ',' + e.y);
 });
 
 let angle = 0;
