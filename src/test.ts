@@ -1,5 +1,4 @@
 import * as core from './lib/core';
-import {Transform2d} from './lib/transform';
 
 core.cwScene.init ();
 let view = core.cwScene.addView (document.querySelector('#test-canvas'));
