@@ -20,7 +20,7 @@ export class Bkground extends SceneNode {
         return x>=0 && x<scene.canvasWidth && y>=0 && y<scene.canvasHeight;
     }
     onCull (scene:Scene): boolean {
-        return false;
+        return true;
     };
     onDragDrop (evt:any, data:any): void {
         if (data.type == 'number') {
@@ -62,16 +62,40 @@ export function SortNumber(index:number,width:number,height:number) {
     return new Number(`images/number-${index}.png`, width, height);
 }
 
+interface ISortBackgroundDrawer {
+    (ctx:any,index:number,selected:boolean,x:number,y:number,width:number,height:number):void;
+}
+
+export function SortCellDrawer(ctx:any,index:number,selected:boolean,x:number,y:number,width:number,height:number) {
+    const bkcolor = '#fff';
+    const cellcolor = selected ? '#fcad67' : bkcolor;
+    const bordercolor = '#000';
+    ctx.save();
+    ctx.strokeStyle = bordercolor;
+    if (index < 0) {
+        ctx.fillStyle = bkcolor;
+        ctx.fillRect(x,y,width,height);
+        ctx.strokeRect(x,y,width,height);
+    } else {
+        ctx.fillStyle = cellcolor;
+        ctx.fillRect(x,y,width,height);
+        ctx.strokeRect(x,y,width,height);
+    }
+    ctx.restore();
+}
+
 export class NumberSequenceScene extends Scene {
-    private rects: {x:number,y:number,w:number,h:number,node:SceneNode}[];
+    private rects: {x:number,y:number,w:number,h:number,node:SceneNode,selected:boolean}[];
     private motionParent: SceneNode;
     private aniDuration: number;
+    private backgroundDrawer: ISortBackgroundDrawer;
     private elementFactory:ISortElement;
-    constructor (canvas:any, factory:ISortElement=SortNumber) {
+    constructor (canvas:any, backgroundDrawer:ISortBackgroundDrawer=SortCellDrawer,elementFactory:ISortElement=SortNumber) {
         super(canvas);
         this.rects = [];
         this.aniDuration = 100;
-        this.elementFactory = factory;
+        this.backgroundDrawer = backgroundDrawer;
+        this.elementFactory = elementFactory;
     }
     rectTest (x:number, y:number): number {
         for (let i = 0; i < this.rects.length; i++) {
@@ -197,6 +221,20 @@ export class NumberSequenceScene extends Scene {
         }
         return false;
     }
+    onClick (e:any): void {
+        const evt = e.evt;
+        let rect = this.rectTest (evt.offsetX, evt.offsetY);
+        if (rect >= 0 && this.rects[rect].node) {
+            if (!evt.metaKey) {
+                for (let i = 0; i < this.rects.length; i++) {
+                    if (i != rect) {
+                        this.rects[i].selected = false;
+                    }
+                }
+            }
+            this.rects[rect].selected = !this.rects[rect].selected;
+        }
+    }
     onDragOver (e:any): void {
         const evt = e.evt;
         const data = e.data;
@@ -232,6 +270,14 @@ export class NumberSequenceScene extends Scene {
         }
         this.packNodes ();
     }
+    draw (): void {
+        this.ctx.setTransform(1,0,0,1,0,0);
+        this.backgroundDrawer(this.ctx,-1,false,0,0,this.canvasWidth,this.canvasHeight);
+        for (let i = 0; i < this.rects.length; i++) {
+            this.backgroundDrawer(this.ctx, i, this.rects[i].selected, this.rects[i].x, this.rects[i].y, this.rects[i].w, this.rects[i].h);
+        }
+        super.draw ();
+    }
     start (bkcolor:any, numbers:number[], options:any) {
         let that = this;
         that.rects = [];
@@ -245,7 +291,7 @@ export class NumberSequenceScene extends Scene {
             const startx = margin_h;
             const starty = margin_v;
             for (let i = 0; i < numbers.length; i++) {
-                that.rects.push({x:startx+i*step,y:starty,w:width,h:height,node:null})
+                that.rects.push({x:startx+i*step,y:starty,w:width,h:height,node:null,selected:false})
             }
             let bkground = new Bkground(bkcolor);
             bkground.on('dragdrop', function(e){
@@ -277,6 +323,9 @@ export class NumberSequenceScene extends Scene {
                 });
                 num.on('dragdrop', function(e){
                     that.onDragDrop (e);
+                });
+                num.on('click', function(e){
+                    that.onClick (e);
                 });
             }
         }

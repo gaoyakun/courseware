@@ -119,42 +119,42 @@ export class cwMouseDownEvent extends cwMouseEvent {
 export class cwMouseUpEvent extends cwMouseEvent {
     static readonly type: string = '@mouseup';
     constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+        super (cwMouseUpEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
     }
 }
 
 export class cwMouseMoveEvent extends cwMouseEvent {
     static readonly type: string = '@mousemove';
     constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+        super (cwMouseMoveEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
     }
 }
 
 export class cwMouseEnterEvent extends cwMouseEvent {
     static readonly type: string = '@mouseenter';
     constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+        super (cwMouseEnterEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
     }
 }
 
 export class cwMouseLeaveEvent extends cwMouseEvent {
     static readonly type: string = '@mouseleave';
     constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+        super (cwMouseLeaveEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
     }
 }
 
 export class cwClickEvent extends cwMouseEvent {
     static readonly type: string = '@click';
     constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+        super (cwClickEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
     }
 }
 
 export class cwDblClickEvent extends cwMouseEvent {
     static readonly type: string = '@dblclick';
     constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+        super (cwDblClickEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
     }
 }
 
@@ -439,13 +439,99 @@ export class cwSceneObject extends cwObject {
 }
 
 export class cwScene extends cwObject {
+    private static capturedView:cwSceneView = null;
+    private static views:Array<cwSceneView> = [];
+    private static clickTick:number = 0;
+    private static dblClickTick:number = 0;
+    private static clickTime:number = 400;
+    private static dblclickTime:number = 400;
+    private static hitView (x:number,y:number):cwSceneView {
+        if (cwScene.capturedView !== null) {
+            return cwScene.capturedView;
+        }
+        for (let i = 0; i < cwScene.views.length; i++) {
+            let view = cwScene.views[i];
+            let canvas = view.canvas.canvas;
+            let l = canvas.offsetLeft;
+            let t = canvas.offsetTop;
+            let r = l + canvas.offsetWidth;
+            let b = t + canvas.offsetHeight;
+            if (x >= l && x < r && y >= t && y < b) {
+                return view;
+            }
+        }
+        return null;
+    }
+    private static initEventListeners (): void {
+        window.addEventListener ('mousedown', (ev:MouseEvent) => {
+            cwScene.clickTick = Date.now();
+            let view = cwScene.hitView (ev.clientX, ev.clientY);
+            if (view !== null) {
+                cwApp.triggerEvent (view, new cwMouseDownEvent (ev.clientX, ev.clientY, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+            }
+        });
+        window.addEventListener ('mouseup', (ev:MouseEvent) => {
+            let view = cwScene.hitView (ev.clientX, ev.clientY);
+            if (view !== null) {
+                let tick = Date.now();
+                if (tick < cwScene.clickTick + cwScene.clickTime) {
+                    if (cwScene.dblClickTick == 0) {
+                        cwScene.dblClickTick = tick;
+                    } else {
+                        if (tick < cwScene.dblClickTick + cwScene.dblclickTime) {
+                            cwApp.triggerEvent (view, new cwDblClickEvent (ev.clientX, ev.clientY, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                        }
+                        cwScene.dblClickTick = 0;
+                    }
+                    cwApp.triggerEvent (view, new cwClickEvent (ev.clientX, ev.clientY, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                }
+                cwApp.triggerEvent (view, new cwMouseUpEvent (ev.clientX, ev.clientY, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+            }
+            cwScene.clickTick = 0;
+        });
+        window.addEventListener ('mousemove', (ev:MouseEvent) => {
+            let view = cwScene.hitView (ev.clientX, ev.clientY);
+            if (view !== null) {
+                cwApp.triggerEvent (view, new cwMouseMoveEvent (ev.clientX, ev.clientY, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+            }
+        });
+    }
+    public static addView (canvas:HTMLCanvasElement): cwSceneView {
+        if (!cwScene.findView (canvas)) {
+            const view = new cwSceneView(canvas);
+            cwScene.views.push (view);
+            return view;
+        }
+        return null;
+    }
+    public static findView (canvas:HTMLCanvasElement): cwSceneView {
+        for (let i = 0; i < cwScene.views.length; i++) {
+            if (cwScene.views[i].canvas.canvas === canvas) {
+                return cwScene.views[i];
+            }
+        }
+        return null;
+    }
+    public static removeView (canvas:HTMLCanvasElement): void {
+        for (let i = 0; i < cwScene.views.length; i++) {
+            if (cwScene.views[i].canvas.canvas === canvas) {
+                cwScene.views.splice (i, 1);
+            }
+        }
+    }
+    public static init () {
+        cwScene.initEventListeners ();
+    }
+}
+
+export class cwSceneView extends cwObject {
     readonly rootNode: cwSceneObject;
     public clearColor: string|null;
     public readonly canvas: cwCanvas;
     constructor (canvas:HTMLCanvasElement) {
         super ();
         this.rootNode = new cwSceneObject();
-        this.clearColor = null;
+        this.clearColor = '#000';
         this.canvas = new cwCanvas(canvas);
         this.on (cwFrameEvent.type, (evt:cwEvent) => {
             let frameEvent = evt as cwFrameEvent;
@@ -476,12 +562,12 @@ export class cwScene extends cwObject {
 }
 
 export class cwCanvas extends cwObject {
-    private _canvas:HTMLCanvasElement;
-    private _buffer:HTMLCanvasElement;
+    private readonly _canvas:HTMLCanvasElement;
+    private readonly _buffer:HTMLCanvasElement;
+    private readonly _screenCtx:CanvasRenderingContext2D;
+    private readonly _offscreenCtx:CanvasRenderingContext2D;
     private _width:number;
     private _height:number;
-    private _screenCtx:CanvasRenderingContext2D;
-    private _offscreenCtx:CanvasRenderingContext2D;
     private _mouseOver:boolean;
     private static readonly eventNames = ['mouseenter']
     private initEventHandlers () {
@@ -510,13 +596,16 @@ export class cwCanvas extends cwObject {
         this._offscreenCtx = this._buffer.getContext ("2d");
         this._mouseOver = false;
     }
-    get width() {
+    get canvas():HTMLCanvasElement {
+        return this._canvas;
+    }
+    get width():number {
         return this._width;
     }
-    get height() {
+    get height():number {
         return this._height;
     }
-    get context() {
+    get context():CanvasRenderingContext2D {
         return this._offscreenCtx;
     }
     clear (color:string): void {

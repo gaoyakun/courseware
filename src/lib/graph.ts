@@ -40,6 +40,7 @@ export class EventObserver {
                 f.call(this, e.evt);
             });
         });
+        this.eventQueue = [];
     }
 }
 
