@@ -1,4 +1,5 @@
 import {Transform2d} from './transform';
+import {KeyCode} from './keycode';
 import $ from 'jquery';
 
 type cwCullResult = {[z:number]:Array<{object:cwEventObserver,z:number,transform:Transform2d}>};
@@ -69,10 +70,14 @@ export class cwDrawEvent extends cwEvent {
 
 export class cwHitTestEvent extends cwEvent {
     static readonly type: string = '@hittest';
-    result:cwHitTestResult;
-    constructor () {
+    x:number;
+    y:number;
+    result:boolean;
+    constructor (x:number,y:number) {
         super (cwHitTestEvent.type);
-        this.result = [];
+        this.x = x;
+        this.y = y;
+        this.result = false;
     }
 }
 
@@ -86,6 +91,54 @@ export class cwFrameEvent extends cwEvent {
         this.deltaTime = deltaTime;
         this.elapsedTime = elapsedTime;
         this.frameStamp = frameStamp;
+    }
+}
+
+export class cwFocusEvent extends cwEvent {
+    static readonly type: string = '@focus';
+    readonly focus: boolean;
+    constructor (focus:boolean) {
+        super (cwFocusEvent.type);
+        this.focus = focus;
+    }
+}
+
+export class cwKeyboardEvent extends cwEvent {
+    readonly key:string;
+    readonly keyCode:number;    
+    readonly shiftDown:boolean;
+    readonly altDown:boolean;
+    readonly ctrlDown:boolean;
+    readonly metaDown:boolean;
+    constructor (type:string,key:string,code:number,shift:boolean,alt:boolean,ctrl:boolean,meta:boolean) {
+        super (type);
+        this.key = key;
+        this.keyCode = code;
+        this.shiftDown = shift;
+        this.altDown = alt;
+        this.ctrlDown = ctrl;
+        this.metaDown = meta;
+    }
+}
+
+export class cwKeyDownEvent extends cwKeyboardEvent {
+    static readonly type: string = '@keydown';
+    constructor (key:string,code:number,shift:boolean,alt:boolean,ctrl:boolean,meta:boolean) {
+        super (cwKeyDownEvent.type,key,code,shift,alt,ctrl,meta);
+    }
+}
+
+export class cwKeyUpEvent extends cwKeyboardEvent {
+    static readonly type: string = '@keyup';
+    constructor (key:string,code:number,shift:boolean,alt:boolean,ctrl:boolean,meta:boolean) {
+        super (cwKeyUpEvent.type,key,code,shift,alt,ctrl,meta);
+    }
+}
+
+export class cwKeyPressEvent extends cwKeyboardEvent {
+    static readonly type: string = '@keypress';
+    constructor (key:string,code:number,shift:boolean,alt:boolean,ctrl:boolean,meta:boolean) {
+        super (cwKeyPressEvent.type,key,code,shift,alt,ctrl,meta);
     }
 }
 
@@ -280,6 +333,9 @@ export class cwObject extends cwEventObserver {
         super ();
         this.components = {}
     }
+    toString (): string {
+        return '<cwObject>';
+    }
     addComponent (component:cwComponent): cwObject {
         if (component.object === null) {
             let componentArray = this.components[component.type]||[];
@@ -362,6 +418,8 @@ export class cwSceneObject extends cwObject {
         if (parent) {
             parent.addChild (this);
         }
+        this.on ('@hittest', (ev: cwEvent) => {
+        });
     }
     get parent () {
         return this._parent;
@@ -389,6 +447,9 @@ export class cwSceneObject extends cwObject {
     };
     get numChildren () {
         return this._children.length;
+    }
+    getLocalPoint (x:number, y:number): {x:number,y:number} {
+        return Transform2d.invert(this.worldTransform).transformPoint({x:x,y:y});
     }
     childAt (index:number): cwSceneObject {
         return this._children[index];
@@ -436,10 +497,15 @@ export class cwSceneObject extends cwObject {
             child.triggerRecursiveEx (evt);
         });
     }
+    toString (): string {
+        return '<cwSceneObject>';
+    }
 }
 
 export class cwScene extends cwObject {
     private static capturedView:cwSceneView = null;
+    private static hoverView:cwSceneView = null;
+    private static focusView:cwSceneView = null;
     private static views:Array<cwSceneView> = [];
     private static clickTick:number = 0;
     private static dblClickTick:number = 0;
@@ -467,7 +533,7 @@ export class cwScene extends cwObject {
             cwScene.clickTick = Date.now();
             let view = cwScene.hitView (ev.clientX, ev.clientY);
             if (view !== null) {
-                cwApp.triggerEvent (view, new cwMouseDownEvent (ev.clientX-view.canvas.canvas.offsetLeft, ev.clientY-view.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                view.trigger (new cwMouseDownEvent (ev.clientX-view.canvas.canvas.offsetLeft, ev.clientY-view.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
             }
         });
         window.addEventListener ('mouseup', (ev:MouseEvent) => {
@@ -477,34 +543,81 @@ export class cwScene extends cwObject {
                 let y = ev.clientY-view.canvas.canvas.offsetTop;
                 let tick = Date.now();
                 if (tick < cwScene.clickTick + cwScene.clickTime) {
-                    if (cwScene.dblClickTick == 0) {
-                        cwScene.dblClickTick = tick;
-                    } else {
-                        if (tick < cwScene.dblClickTick + cwScene.dblclickTime) {
-                            cwApp.triggerEvent (view, new cwDblClickEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
-                        }
+                    if (tick < cwScene.dblClickTick + cwScene.dblclickTime) {
+                        view.trigger (new cwDblClickEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
                         cwScene.dblClickTick = 0;
+                    } else {
+                        view.trigger (new cwClickEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                        cwScene.dblClickTick = tick;
                     }
-                    cwApp.triggerEvent (view, new cwClickEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                } else {
+                    cwScene.dblClickTick = 0;
                 }
-                cwApp.triggerEvent (view, new cwMouseUpEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                view.trigger (new cwMouseUpEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                cwScene.clickTick = 0;
+            } else {
+                cwScene.clickTick = 0;
+                cwScene.dblClickTick = 0;
             }
-            cwScene.clickTick = 0;
         });
         window.addEventListener ('mousemove', (ev:MouseEvent) => {
             let view = cwScene.hitView (ev.clientX, ev.clientY);
+            if (view != cwScene.hoverView) {
+                if (cwScene.hoverView) {
+                    cwScene.hoverView.trigger (new cwMouseLeaveEvent (ev.clientX-cwScene.hoverView.canvas.canvas.offsetLeft, ev.clientY-cwScene.hoverView.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                    cwScene.hoverView = null;
+                }
+            }
             if (view !== null) {
-                cwApp.triggerEvent (view, new cwMouseMoveEvent (ev.clientX-view.canvas.canvas.offsetLeft, ev.clientY-view.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                cwScene.hoverView = view;
+                let x = ev.clientX-view.canvas.canvas.offsetLeft;
+                let y = ev.clientY-view.canvas.canvas.offsetTop;
+                view.trigger (new cwMouseEnterEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                const moveEvent = new cwMouseMoveEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
+                view.updateHitObjects (moveEvent);
+                view.trigger (moveEvent);
             }
         });
+        window.addEventListener ('keydown', (ev:KeyboardEvent) => {
+            if (cwScene.focusView) {
+                cwScene.focusView.trigger (new cwKeyDownEvent(ev.key,ev.keyCode,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
+            }
+        });
+        window.addEventListener ('keyup', (ev:KeyboardEvent) => {
+            if (cwScene.focusView) {
+                cwScene.focusView.trigger (new cwKeyUpEvent(ev.key,ev.keyCode,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
+            }
+        });
+        window.addEventListener ('keypress', (ev:KeyboardEvent) => {
+            if (cwScene.focusView) {
+                cwScene.focusView.trigger (new cwKeyPressEvent(ev.key,ev.keyCode,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
+            }
+        });
+    }
+    public static updateViews (): void {
+
     }
     public static addView (canvas:HTMLCanvasElement): cwSceneView {
         if (!cwScene.findView (canvas)) {
             const view = new cwSceneView(canvas);
             cwScene.views.push (view);
+            if (!cwScene.focusView) {
+                cwScene.setFocusView (view);
+            }
             return view;
         }
         return null;
+    }
+    public static setFocusView (view:cwSceneView) {
+        if (cwScene.focusView != view) {
+            if (cwScene.focusView) {
+                cwScene.focusView.trigger (new cwFocusEvent(false));
+            }
+            cwScene.focusView = view;
+            if (cwScene.focusView) {
+                cwScene.focusView.trigger (new cwFocusEvent(true));
+            }
+        }
     }
     public static findView (canvas:HTMLCanvasElement): cwSceneView {
         for (let i = 0; i < cwScene.views.length; i++) {
@@ -531,10 +644,31 @@ export class cwScene extends cwObject {
 
 export class cwSceneView extends cwObject {
     readonly rootNode: cwSceneObject;
-    public clearColor: string|null;
-    public readonly canvas: cwCanvas;
+    readonly canvas: cwCanvas;
+    clearColor: string|null;
+    private hitObjects: Array<cwSceneObject>;
+    public updateHitObjects (ev:cwMouseEvent) {
+        const hitTestResult = this.hitTest (ev.x, ev.y);
+        for (let i = 0; i < this.hitObjects.length; ) {
+            if (hitTestResult.indexOf(this.hitObjects[i]) < 0) {
+                const pt = this.hitObjects[i].getLocalPoint(ev.x, ev.y);
+                this.hitObjects[i].trigger (new cwMouseLeaveEvent(pt.x,pt.y,ev.button,ev.shiftDown,ev.altDown,ev.ctrlDown,ev.metaDown));
+                this.hitObjects.splice(i, 1);
+            } else {
+                i++;
+            }
+        }
+        for (let i = 0; i < hitTestResult.length; i++) {
+            if (this.hitObjects.indexOf(hitTestResult[i]) < 0) {
+                const pt = hitTestResult[i].getLocalPoint(ev.x, ev.y);
+                hitTestResult[i].trigger (new cwMouseEnterEvent(pt.x,pt.y,ev.button,ev.shiftDown,ev.altDown,ev.ctrlDown,ev.metaDown));
+            }
+        }
+        this.hitObjects = hitTestResult;
+    }
     constructor (canvas:HTMLCanvasElement) {
         super ();
+        this.hitObjects = [];
         this.rootNode = new cwSceneObject();
         this.clearColor = '#000';
         this.canvas = new cwCanvas(canvas);
@@ -544,6 +678,9 @@ export class cwSceneView extends cwObject {
             this.rootNode.triggerRecursiveEx (updateEvent);
             this.draw ();
         });
+    }
+    setFocus (): void {
+        cwScene.setFocusView (this);
     }
     draw (): void {
         if (this.clearColor !== null) {
@@ -559,10 +696,26 @@ export class cwSceneView extends cwObject {
         }
         this.canvas.flip ();
     }
-    hitTest (): cwHitTestResult {
-        let evt = new cwHitTestEvent ();
-        this.rootNode.triggerRecursiveEx (evt);
-        return evt.result;
+    hitTest (x:number, y:number): cwHitTestResult {
+        function hitTest_r (object:cwSceneObject, result:cwHitTestResult) {
+            const pos = Transform2d.invert(object.worldTransform).transformPoint ({x:x, y:y});
+            const e = new cwHitTestEvent(pos.x,pos.y);
+            object.triggerEx (e);
+            if (e.result) {
+                result.push (object);
+            }
+            object.forEachChild ((child:cwSceneObject,index:number) => {
+                hitTest_r (child, result);
+            });
+        }
+        const hitTestResult:cwHitTestResult = [];
+        if (this.rootNode) {
+            hitTest_r (this.rootNode, hitTestResult);
+        }
+        hitTestResult.sort ((a:cwSceneObject, b:cwSceneObject):number => {
+            return b.z - a.z;
+        });
+        return hitTestResult;
     }
 }
 

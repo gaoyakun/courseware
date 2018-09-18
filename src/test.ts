@@ -1,4 +1,5 @@
 import * as core from './lib/core';
+import {KeyCode} from './lib/keycode';
 
 core.cwScene.init ();
 let view = core.cwScene.addView (document.querySelector('#test-canvas'));
@@ -22,7 +23,35 @@ view.on ('@dblclick', (ev:core.cwEvent) => {
 });
 view.on ('@mousemove', (ev:core.cwEvent) => {
     const e = ev as core.cwMouseMoveEvent;
-    console.log ('mouse move:' + e.x + ',' + e.y);
+    //console.log ('mouse move:' + e.x + ',' + e.y);
+});
+view.on('@mouseleave', (ev:core.cwEvent) => {
+    const e = ev as core.cwMouseLeaveEvent;
+    //console.log ('mouse leave:' + e.x + ',' + e.y);
+});
+view.on('@mouseenter', (ev:core.cwEvent) => {
+    const e = ev as core.cwMouseEnterEvent;
+    //console.log ('mouse enter:' + e.x + ',' + e.y);
+});
+view.on('@focus', (ev:core.cwEvent) => {
+    const e = ev as core.cwFocusEvent;
+    console.log ('focus:' + e.focus);
+});
+view.on('@focus', (ev:core.cwEvent) => {
+    const e = ev as core.cwFocusEvent;
+    console.log ('focus:' + e.focus);
+});
+view.on('@keydown', (ev:core.cwEvent) => {
+    const e = ev as core.cwKeyDownEvent;
+    console.log (`keydown: code=${KeyCode[e.keyCode]} key=${e.key} shift=${e.shiftDown} alt=${e.altDown} ctrl=${e.ctrlDown} meta=${e.metaDown}`);
+});
+view.on('@keyup', (ev:core.cwEvent) => {
+    const e = ev as core.cwKeyDownEvent;
+    console.log (`keyup: code=${KeyCode[e.keyCode]} key=${e.key} shift=${e.shiftDown} alt=${e.altDown} ctrl=${e.ctrlDown} meta=${e.metaDown}`);
+});
+view.on('@keypress', (ev:core.cwEvent) => {
+    const e = ev as core.cwKeyDownEvent;
+    console.log (`keypress: code=${KeyCode[e.keyCode]} key=${e.key} shift=${e.shiftDown} alt=${e.altDown} ctrl=${e.ctrlDown} meta=${e.metaDown}`);
 });
 
 let angle = 0;
@@ -33,8 +62,8 @@ testNode.on(core.cwCullEvent.type, (evt:core.cwEvent) => {
 });
 testNode.on(core.cwUpdateEvent.type, (evt:core.cwEvent) => {
     testNode.localTransform.makeIdentity ();
-    testNode.localTransform.translate (100, 100);
     testNode.localTransform.rotate (angle);
+    testNode.localTransform.translate (100, 100);
     angle += 0.1;
 });
 testNode.on(core.cwDrawEvent.type, (evt:core.cwEvent) => {
@@ -44,6 +73,16 @@ testNode.on(core.cwDrawEvent.type, (evt:core.cwEvent) => {
     drawEvent.canvas.context.fillStyle = '#fff';
     drawEvent.canvas.context.fillRect (-50,-50,100,100);
     drawEvent.canvas.context.restore();
+});
+testNode.on(core.cwHitTestEvent.type, (evt:core.cwEvent) => {
+    const hittestEvent = evt as core.cwHitTestEvent;
+    hittestEvent.result = hittestEvent.x >= -50 && hittestEvent.x < 50 && hittestEvent.y >= -50 && hittestEvent.y < 50;
+});
+testNode.on(core.cwMouseEnterEvent.type, (evt:core.cwEvent) => {
+    console.log ('Mouse entered');
+});
+testNode.on(core.cwMouseLeaveEvent.type, (evt:core.cwEvent) => {
+    console.log ('Mouse leaved');
 });
 core.cwApp.run ();
 
