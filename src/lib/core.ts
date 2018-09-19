@@ -5,12 +5,23 @@ import $ from 'jquery';
 type cwCullResult = {[z:number]:Array<{object:cwEventObserver,z:number,transform:Transform2d}>};
 type cwHitTestResult = Array<cwSceneObject>;
 type cwEventHandler = (evt:cwEvent) => void;
-type cwEventHandlerEntry = { handler:cwEventHandler,bindObject:any };
+type cwEventHandlerList = { handler:cwEventHandler, next:cwEventHandlerList };
+type cwEventHandlerEntry = { handlers:cwEventHandlerList,bindObject:any };
+
+export enum cwEventListenerOrder {
+    First = 1,
+    Last = 2
+}
 
 export class cwEvent {
     readonly type: string;
+    eaten: boolean;
     constructor (type:string) {
         this.type = type;
+        this.eaten = false;
+    }
+    eat () {
+        this.eaten = true;
     }
 }
 
@@ -43,9 +54,13 @@ export class cwUpdateEvent extends cwEvent {
 
 export class cwCullEvent extends cwEvent {
     static readonly type: string = '@cull';
-    result:cwCullResult;
-    constructor () {
+    readonly canvasWidth:number;
+    readonly canvasHeight:number;
+    readonly result:cwCullResult;
+    constructor (w:number, h:number) {
         super (cwCullEvent.type);
+        this.canvasWidth = w;
+        this.canvasHeight = h;
         this.result = {};
     }
     addObject (object:cwEventObserver, z:number, transform:Transform2d): void {
@@ -150,6 +165,7 @@ export class cwMouseEvent extends cwEvent {
     readonly altDown:boolean;
     readonly ctrlDown:boolean;
     readonly metaDown:boolean;
+    bubble:boolean;
     constructor (type:string,x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
         super (type);
         this.x = x;
@@ -159,6 +175,10 @@ export class cwMouseEvent extends cwEvent {
         this.altDown = altDown;
         this.ctrlDown = ctrlDown;
         this.metaDown = metaDown;
+        this.bubble = true;
+    }
+    cancelBubble () {
+        this.bubble = false;
     }
 }
 
@@ -223,11 +243,22 @@ export class cwApp {
     private static processEvent (evt:cwEvent,target:any): void {
         let handlerList = cwApp.eventListeners[evt.type];
         if (handlerList) {
-            handlerList.forEach ((handler:cwEventHandlerEntry)=>{
-                if (!target || handler.bindObject === target) {
-                    handler.handler.call (handler.bindObject, evt);
+            for (let i = 0; i < handlerList.length; i++) {
+                const entry = handlerList[i];
+                if (!target || entry.bindObject === target) {
+                    let h = entry.handlers;
+                    while (h) {
+                        h.handler.call (entry.bindObject, evt);
+                        if (evt.eaten) {
+                            break;
+                        }
+                        h = h.next;
+                    }
+                    if (target) {
+                        break;
+                    }
                 }
-            });
+            }
         }
     }
     static postEvent (target:any, evt:cwEvent): void {
@@ -243,26 +274,59 @@ export class cwApp {
             cwApp.processEvent (evt.evt,evt.target);
         });
     }
-    static addEventListener (eventType:string, bindObject:any, handler:cwEventHandler) {
+    static addEventListener (eventType:string, bindObject:any, handler:cwEventHandler, order:cwEventListenerOrder) {
         let handlerList = cwApp.eventListeners[eventType]||[];
         for (let i = 0; i < handlerList.length; i++) {
             if (handlerList[i].bindObject === bindObject) {
-                handlerList[i].handler = handler;
+                if (order == cwEventListenerOrder.First) {
+                    handlerList[i].handlers = {
+                        handler: handler,
+                        next: handlerList[i].handlers
+                    }
+                } else {
+                    let h = handlerList[i].handlers;
+                    while (h.next) {
+                        h = h.next;
+                    }
+                    h.next = { handler:handler, next:null };
+                }
                 return;
             }
         }
         handlerList.push ({
             bindObject: bindObject,
-            handler: handler
+            handlers: {
+                handler: handler,
+                next: null
+            }
         });
         this.eventListeners[eventType] = handlerList;
     }
-    static removeEventListener (eventType:string, bindObject:any) {
+    static removeEventListener (eventType:string, bindObject:any, handler?:cwEventHandler) {
         let handlerList = cwApp.eventListeners[eventType]||[];
         for (let i = 0; i < handlerList.length; i++) {
             if (handlerList[i].bindObject === bindObject) {
-                handlerList.splice (i, 1);
-                break;
+                if (handler) {
+                    let h = handlerList[i].handlers;
+                    let ph = null;
+                    while (h && h.handler !== handler) {
+                        ph = h;
+                        h = h.next;
+                    }
+                    if (h) {
+                        if (ph) {
+                            ph.next = h.next;
+                        } else {
+                            handlerList[i].handlers = h.next;
+                        }
+                    }
+                    if (!handlerList[i].handlers) {
+                        handlerList.splice (i, 1);
+                    }
+                } else {
+                    handlerList.splice (i, 1);
+                    break;
+                }
             }
         }
     }
@@ -300,11 +364,11 @@ export class cwApp {
 }
 
 export class cwEventObserver {
-    on (type:string, handler:cwEventHandler): void {
-        cwApp.addEventListener (type, this, handler);
+    on (type:string, handler:cwEventHandler, order?:cwEventListenerOrder): void {
+        cwApp.addEventListener (type, this, handler, order||cwEventListenerOrder.First);
     }
-    off (type:string): void {
-        cwApp.removeEventListener (type, this);
+    off (type:string, handler?:cwEventHandler): void {
+        cwApp.removeEventListener (type, this, handler);
     }
     trigger (evt:cwEvent): void {
         cwApp.triggerEvent (this, evt);
@@ -418,8 +482,6 @@ export class cwSceneObject extends cwObject {
         if (parent) {
             parent.addChild (this);
         }
-        this.on ('@hittest', (ev: cwEvent) => {
-        });
     }
     get parent () {
         return this._parent;
@@ -666,6 +728,17 @@ export class cwSceneView extends cwObject {
         }
         this.hitObjects = hitTestResult;
     }
+    private wrapMouseEvent (type:string): void {
+        this.on (type, (evt:cwEvent) => {
+            let e = evt as cwMouseEvent;
+            for (let i = 0; i < this.hitObjects.length; i++) {
+                this.hitObjects[i].triggerEx (evt);
+                if (!e.bubble) {
+                    break;
+                }
+            }
+        });
+    }
     constructor (canvas:HTMLCanvasElement) {
         super ();
         this.hitObjects = [];
@@ -678,6 +751,11 @@ export class cwSceneView extends cwObject {
             this.rootNode.triggerRecursiveEx (updateEvent);
             this.draw ();
         });
+        this.wrapMouseEvent(cwMouseDownEvent.type);
+        this.wrapMouseEvent(cwMouseUpEvent.type);
+        this.wrapMouseEvent(cwMouseMoveEvent.type);
+        this.wrapMouseEvent(cwClickEvent.type);
+        this.wrapMouseEvent(cwDblClickEvent.type);
     }
     setFocus (): void {
         cwScene.setFocusView (this);
@@ -686,7 +764,7 @@ export class cwSceneView extends cwObject {
         if (this.clearColor !== null) {
             this.canvas.clear (this.clearColor);
         }
-        let cullEvent = new cwCullEvent();
+        let cullEvent = new cwCullEvent(this.canvas.width, this.canvas.height);
         this.rootNode.triggerRecursiveEx (cullEvent);
         for (let i in cullEvent.result) {
             let group = cullEvent.result[i];
@@ -780,13 +858,66 @@ export class cwCanvas extends cwObject {
     }
 }
 
-export class cwcVisual extends cwComponent {
-    static readonly type = 'Visual';
-    constructor () {
-        super (cwcVisual.type);
-        this.on (cwCullEvent.type, (evt:cwEvent) => {});
-        this.on (cwHitTestEvent.type, (evt:cwEvent) => {});
-        this.on (cwDrawEvent.type, (evt:cwEvent) => {});
+export class cwcImage extends cwComponent {
+    static readonly type = 'Image';
+    private _image:HTMLImageElement;
+    private _width:number;
+    private _height:number;
+    private _loaded:boolean;
+    constructor (filename:string = null, width:number = 0, height:number = 0) {
+        super (cwcImage.type);
+        this._image = new Image();
+        if (filename) {
+            this._image.src = filename;
+        }
+        if (width) {
+            this._image.width = width;
+            this._width = width;
+        } else {
+            this._width = this._image.complete ? this._image.width : 0;
+        }
+        if (height) {
+            this._image.height = height;
+            this._height = height;
+        } else {
+            this._height = this._image.complete ? this._image.height : 0;
+        }
+        if (!this._image.complete) {
+            this._loaded = false;
+            this._image.onload = () => {
+                if (this._width == 0) {
+                    this._width = this._image.width;
+                }
+                if (this._height == 0) {
+                    this._height = this._image.height;
+                }
+                this._loaded = true;
+            }
+        } else {
+            this._loaded = true;
+        }
+        this.on (cwCullEvent.type, (evt:cwEvent) => {
+            if (this._loaded) {
+                const cullEvent = evt as cwCullEvent;
+                const node = this.object as cwSceneObject;
+                cullEvent.addObject (this, node.z, node.worldTransform);
+            }
+        });
+        this.on (cwHitTestEvent.type, (evt:cwEvent) => {
+            if (this._loaded) {
+                const hittestEvent = evt as cwHitTestEvent;
+                hittestEvent.result = hittestEvent.x >= -this._width/2 && hittestEvent.x < this._width/2 && hittestEvent.y >= -this._height/2 && hittestEvent.y < this._height/2;
+            }
+        });
+        this.on (cwDrawEvent.type, (evt:cwEvent) => {
+            if (this._loaded) {
+                const drawEvent = evt as cwDrawEvent;
+                drawEvent.canvas.context.save();
+                drawEvent.canvas.applyTransform (drawEvent.transform);
+                drawEvent.canvas.context.drawImage(this._image, -this._width/2, -this._height/2, this._width, this._height);
+                drawEvent.canvas.context.restore();
+            }
+        });
     }
 }
 
