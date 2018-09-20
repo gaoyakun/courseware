@@ -1,13 +1,14 @@
-import * as core from './lib/core';
-import {KeyCode} from './lib/keycode';
+import { cwApp, cwScene, cwSceneObject } from './lib/core';
+import { cwUpdateEvent, cwEvent, cwClickEvent } from './lib/events';
+import { cwcImage } from './lib/components';
 
-core.cwScene.init ();
-let view = core.cwScene.addView (document.querySelector('#test-canvas'));
+cwScene.init ();
+let view = cwScene.addView (document.querySelector('#test-canvas'));
 
 let angle = 0;
 let scale = 0;
-const testNode = new core.cwSceneObject(view.rootNode);
-testNode.on(core.cwUpdateEvent.type, (evt:core.cwEvent) => {
+const testNode = new cwSceneObject(view.rootNode);
+testNode.on(cwUpdateEvent.type, (evt:cwEvent) => {
     testNode.localTransform.makeIdentity ();
     testNode.localTransform.translate (100, 100);
     const s = Math.sin(scale)*0.5 + 1;
@@ -17,10 +18,10 @@ testNode.on(core.cwUpdateEvent.type, (evt:core.cwEvent) => {
     angle += 0.05;
     scale += 0.1;
 });
-testNode.addComponent(new core.cwcImage('images/return.png', 60, 60));
-testNode.on (core.cwClickEvent.type, (ev:core.cwEvent) => {
+testNode.addComponent(new cwcImage('images/return.png', 60, 60));
+testNode.on (cwClickEvent.type, (_:cwEvent) => {
     console.log ('clicked');
 });
-core.cwApp.run ();
+cwApp.run ();
 
 

@@ -1,4 +1,4 @@
-import {Transform2d} from './transform';
+import {cwTransform2d} from './transform';
 import {CurveEvaluter,StepEvaluter,LinearEvaluter,PolynomialsEvaluter} from './curve';
 
 export class EventObserver {
@@ -49,7 +49,7 @@ export class SceneNode extends EventObserver {
     z: number;
     visible: boolean;
     children: SceneNode[];
-    localMatrix: Transform2d;
+    localMatrix: cwTransform2d;
 
     constructor () {
         super ();
@@ -57,10 +57,10 @@ export class SceneNode extends EventObserver {
         this.z = 0;
         this.visible = true;
         this.children = [];
-        this.localMatrix = new Transform2d();
+        this.localMatrix = new cwTransform2d();
     }
-    getWorldMatrix (): Transform2d {
-        return this.parent ? Transform2d.transform(this.parent.getWorldMatrix(), this.localMatrix) : this.localMatrix;
+    getWorldMatrix (): cwTransform2d {
+        return this.parent ? cwTransform2d.transform(this.parent.getWorldMatrix(), this.localMatrix) : this.localMatrix;
     };
     getBoundingbox (): {x:number,y:number,w:number,h:number} {
         return null;
@@ -236,7 +236,7 @@ export class PathMotion extends Motion {
         }
         let destX = this.evalutor_x.eval (rt);
         let destY = this.evalutor_y.eval (rt);
-        this.node.localMatrix = Transform2d.getTranslate(destX, destY);
+        this.node.localMatrix = cwTransform2d.getTranslate(destX, destY);
         if (rt == endTime) {
             this.stop ();
         }
@@ -245,7 +245,7 @@ export class PathMotion extends Motion {
         let endTime = this.evalutor_x.cp[this.evalutor_x.cp.length-1].x;
         let destX = this.evalutor_x.eval (endTime);
         let destY = this.evalutor_y.eval (endTime);
-        this.node.localMatrix = Transform2d.getTranslate(destX, destY);
+        this.node.localMatrix = cwTransform2d.getTranslate(destX, destY);
     }
 }
 
@@ -399,7 +399,7 @@ export class Scene extends EventObserver {
 
     hittest (x:number, y:number): SceneNode[] {
         function hittest_r (scene:Scene, node:SceneNode, hitResult:SceneNode[]) {
-            let invWorldMatrix = Transform2d.invert(node.getWorldMatrix());
+            let invWorldMatrix = cwTransform2d.invert(node.getWorldMatrix());
             let localPoint = invWorldMatrix.transformPoint ({x:x,y:y});
             if (node.hittest(scene, localPoint.x, localPoint.y)) {
                 hitResult.push(node);
@@ -458,7 +458,7 @@ export class Scene extends EventObserver {
             }
         }
         if (this.draggingNode && this.draggingData && this.draggingData.draw) {
-            let matrix = Transform2d.getTranslate(this.mouseX, this.mouseY);
+            let matrix = cwTransform2d.getTranslate(this.mouseX, this.mouseY);
             this.ctx.setTransform (matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
             this.draggingData.draw.call (this.draggingNode, this);
         }

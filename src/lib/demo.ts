@@ -1,4 +1,4 @@
-import {Transform2d} from './transform';
+import {cwTransform2d} from './transform';
 import {SceneNode,Scene,PathMotion} from './graph';
 
 export class Bkground extends SceneNode {
@@ -24,7 +24,7 @@ export class Bkground extends SceneNode {
     };
     onDragDrop (evt:any, data:any): void {
         if (data.type == 'number') {
-            data.node.localMatrix = Transform2d.getTranslate (evt.offsetX, evt.offsetY);
+            data.node.localMatrix = cwTransform2d.getTranslate (evt.offsetX, evt.offsetY);
         }
     }
 }
@@ -41,7 +41,7 @@ export class Number extends SceneNode {
         this.image.src = image;
         this.width = width;
         this.height = height;
-        this.localMatrix = Transform2d.getTranslate(x, y);
+        this.localMatrix = cwTransform2d.getTranslate(x, y);
         this.on ('draw', function(e){
             this.draw (e.scene);
         });
@@ -151,7 +151,7 @@ export class NumberSequenceScene extends Scene {
         this.rects[pos].node = node;
         if (node) {
             this.stopMotion (node);
-            node.localMatrix = Transform2d.getTranslate(this.rects[pos].x + this.rects[pos].w/2, this.rects[pos].y + this.rects[pos].h/2);
+            node.localMatrix = cwTransform2d.getTranslate(this.rects[pos].x + this.rects[pos].w/2, this.rects[pos].y + this.rects[pos].h/2);
         }
     }
     addNode (node:SceneNode): number {
@@ -214,9 +214,9 @@ export class NumberSequenceScene extends Scene {
         let slot2 = this.findNode(node2);
         if (slot1 >= 0 && slot2 >= 0 && slot1 != slot2) {
             this.rects[slot1].node = node2;
-            node2.localMatrix = Transform2d.getTranslate(this.rects[slot1].x+this.rects[slot1].w/2, this.rects[slot1].y+this.rects[slot1].h/2);
+            node2.localMatrix = cwTransform2d.getTranslate(this.rects[slot1].x+this.rects[slot1].w/2, this.rects[slot1].y+this.rects[slot1].h/2);
             this.rects[slot2].node = node1;
-            node1.localMatrix = Transform2d.getTranslate(this.rects[slot2].x+this.rects[slot2].w/2, this.rects[slot2].y+this.rects[slot2].h/2);
+            node1.localMatrix = cwTransform2d.getTranslate(this.rects[slot2].x+this.rects[slot2].w/2, this.rects[slot2].y+this.rects[slot2].h/2);
             return true;
         }
         return false;
@@ -265,7 +265,7 @@ export class NumberSequenceScene extends Scene {
             let rect = this.rectTest (evt.offsetX, evt.offsetY);
             if (rect < 0) {
                 this.stopMotion (data.node);
-                data.node.localMatrix = Transform2d.getTranslate (evt.offsetX, evt.offsetY);
+                data.node.localMatrix = cwTransform2d.getTranslate (evt.offsetX, evt.offsetY);
             }
         }
         this.packNodes ();

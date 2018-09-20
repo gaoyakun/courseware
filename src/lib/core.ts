@@ -1,235 +1,35 @@
-import {Transform2d} from './transform';
-import {KeyCode} from './keycode';
+import {cwTransform2d} from './transform';
 import $ from 'jquery';
+import {
+    cwEvent, 
+    cwEventListenerOrder, 
+    cwFrameEvent, 
+    cwEventObserver, 
+    cwMouseDownEvent, 
+    cwComponentAttachedEvent, 
+    cwComponentDetachedEvent,
+    cwDblClickEvent,
+    cwClickEvent,
+    cwMouseUpEvent,
+    cwMouseLeaveEvent,
+    cwMouseEnterEvent,
+    cwMouseMoveEvent,
+    cwKeyDownEvent,
+    cwKeyUpEvent,
+    cwKeyPressEvent,
+    cwFocusEvent,
+    cwMouseEvent,
+    cwUpdateEvent,
+    cwCullEvent,
+    cwDrawEvent,
+    cwHitTestEvent,
+    cwResizeEvent,
+    cwEventHandler
+} from './events';
 
-type cwCullResult = {[z:number]:Array<{object:cwEventObserver,z:number,transform:Transform2d}>};
 type cwHitTestResult = Array<cwSceneObject>;
-type cwEventHandler = (evt:cwEvent) => void;
 type cwEventHandlerList = { handler:cwEventHandler, next:cwEventHandlerList };
 type cwEventHandlerEntry = { handlers:cwEventHandlerList,bindObject:any };
-
-export enum cwEventListenerOrder {
-    First = 1,
-    Last = 2
-}
-
-export class cwEvent {
-    readonly type: string;
-    eaten: boolean;
-    constructor (type:string) {
-        this.type = type;
-        this.eaten = false;
-    }
-    eat () {
-        this.eaten = true;
-    }
-}
-
-export class cwComponentAttachedEvent extends cwEvent {
-    static readonly type: string = '@componentAttached';
-    constructor () {
-        super (cwComponentAttachedEvent.type);
-    }
-}
-
-export class cwComponentDetachedEvent extends cwEvent {
-    static readonly type: string = '@componentDetached';
-    constructor () {
-        super (cwComponentDetachedEvent.type);
-    }
-}
-
-export class cwUpdateEvent extends cwEvent {
-    static readonly type: string = '@update';
-    public readonly deltaTime: number;
-    public readonly elapsedTime: number;
-    public readonly frameStamp: number;
-    constructor (deltaTime:number, elapsedTime:number, frameStamp:number) {
-        super (cwUpdateEvent.type);
-        this.deltaTime = deltaTime;
-        this.elapsedTime = elapsedTime;
-        this.frameStamp = frameStamp;
-    }
-}
-
-export class cwCullEvent extends cwEvent {
-    static readonly type: string = '@cull';
-    readonly canvasWidth:number;
-    readonly canvasHeight:number;
-    readonly result:cwCullResult;
-    constructor (w:number, h:number) {
-        super (cwCullEvent.type);
-        this.canvasWidth = w;
-        this.canvasHeight = h;
-        this.result = {};
-    }
-    addObject (object:cwEventObserver, z:number, transform:Transform2d): void {
-        let objectList = this.result[z]||[];
-        objectList.push ({object:object,z:z,transform:transform});
-        this.result[z] = objectList;
-    }
-}
-
-export class cwDrawEvent extends cwEvent {
-    static readonly type: string = '@draw';
-    readonly canvas:cwCanvas;
-    readonly z:number;
-    readonly transform:Transform2d;
-    constructor (canvas:cwCanvas, z:number, transform:Transform2d) {
-        super (cwDrawEvent.type);
-        this.canvas = canvas;
-        this.z = z;
-        this.transform = transform;
-    }
-}
-
-export class cwHitTestEvent extends cwEvent {
-    static readonly type: string = '@hittest';
-    x:number;
-    y:number;
-    result:boolean;
-    constructor (x:number,y:number) {
-        super (cwHitTestEvent.type);
-        this.x = x;
-        this.y = y;
-        this.result = false;
-    }
-}
-
-export class cwFrameEvent extends cwEvent {
-    static readonly type: string = '@frame';
-    readonly deltaTime: number;
-    readonly elapsedTime: number;
-    readonly frameStamp: number;
-    constructor (deltaTime:number, elapsedTime:number, frameStamp:number) {
-        super (cwFrameEvent.type);
-        this.deltaTime = deltaTime;
-        this.elapsedTime = elapsedTime;
-        this.frameStamp = frameStamp;
-    }
-}
-
-export class cwFocusEvent extends cwEvent {
-    static readonly type: string = '@focus';
-    readonly focus: boolean;
-    constructor (focus:boolean) {
-        super (cwFocusEvent.type);
-        this.focus = focus;
-    }
-}
-
-export class cwKeyboardEvent extends cwEvent {
-    readonly key:string;
-    readonly keyCode:number;    
-    readonly shiftDown:boolean;
-    readonly altDown:boolean;
-    readonly ctrlDown:boolean;
-    readonly metaDown:boolean;
-    constructor (type:string,key:string,code:number,shift:boolean,alt:boolean,ctrl:boolean,meta:boolean) {
-        super (type);
-        this.key = key;
-        this.keyCode = code;
-        this.shiftDown = shift;
-        this.altDown = alt;
-        this.ctrlDown = ctrl;
-        this.metaDown = meta;
-    }
-}
-
-export class cwKeyDownEvent extends cwKeyboardEvent {
-    static readonly type: string = '@keydown';
-    constructor (key:string,code:number,shift:boolean,alt:boolean,ctrl:boolean,meta:boolean) {
-        super (cwKeyDownEvent.type,key,code,shift,alt,ctrl,meta);
-    }
-}
-
-export class cwKeyUpEvent extends cwKeyboardEvent {
-    static readonly type: string = '@keyup';
-    constructor (key:string,code:number,shift:boolean,alt:boolean,ctrl:boolean,meta:boolean) {
-        super (cwKeyUpEvent.type,key,code,shift,alt,ctrl,meta);
-    }
-}
-
-export class cwKeyPressEvent extends cwKeyboardEvent {
-    static readonly type: string = '@keypress';
-    constructor (key:string,code:number,shift:boolean,alt:boolean,ctrl:boolean,meta:boolean) {
-        super (cwKeyPressEvent.type,key,code,shift,alt,ctrl,meta);
-    }
-}
-
-export class cwMouseEvent extends cwEvent {
-    readonly x:number;
-    readonly y:number;
-    readonly button:number;
-    readonly shiftDown:boolean;
-    readonly altDown:boolean;
-    readonly ctrlDown:boolean;
-    readonly metaDown:boolean;
-    bubble:boolean;
-    constructor (type:string,x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (type);
-        this.x = x;
-        this.y = y;
-        this.button = button;
-        this.shiftDown = shiftDown;
-        this.altDown = altDown;
-        this.ctrlDown = ctrlDown;
-        this.metaDown = metaDown;
-        this.bubble = true;
-    }
-    cancelBubble () {
-        this.bubble = false;
-    }
-}
-
-export class cwMouseDownEvent extends cwMouseEvent {
-    static readonly type: string = '@mousedown';
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseDownEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
-    }
-}
-
-export class cwMouseUpEvent extends cwMouseEvent {
-    static readonly type: string = '@mouseup';
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseUpEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
-    }
-}
-
-export class cwMouseMoveEvent extends cwMouseEvent {
-    static readonly type: string = '@mousemove';
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseMoveEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
-    }
-}
-
-export class cwMouseEnterEvent extends cwMouseEvent {
-    static readonly type: string = '@mouseenter';
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseEnterEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
-    }
-}
-
-export class cwMouseLeaveEvent extends cwMouseEvent {
-    static readonly type: string = '@mouseleave';
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseLeaveEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
-    }
-}
-
-export class cwClickEvent extends cwMouseEvent {
-    static readonly type: string = '@click';
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwClickEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
-    }
-}
-
-export class cwDblClickEvent extends cwMouseEvent {
-    static readonly type: string = '@dblclick';
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwDblClickEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
-    }
-}
 
 export class cwApp {
     private static eventQueue:Array<{evt:cwEvent,target:any}> = [];
@@ -363,21 +163,6 @@ export class cwApp {
     }
 }
 
-export class cwEventObserver {
-    on (type:string, handler:cwEventHandler, order?:cwEventListenerOrder): void {
-        cwApp.addEventListener (type, this, handler, order||cwEventListenerOrder.First);
-    }
-    off (type:string, handler?:cwEventHandler): void {
-        cwApp.removeEventListener (type, this, handler);
-    }
-    trigger (evt:cwEvent): void {
-        cwApp.triggerEvent (this, evt);
-    }
-    post (evt:cwEvent): void {
-        cwApp.postEvent (this, evt);
-    }
-}
-
 export class cwComponent extends cwEventObserver {
     readonly type: string;
     object: cwObject|null;
@@ -471,14 +256,14 @@ export class cwSceneObject extends cwObject {
     private _z:number;
     private _visible:boolean;
     private _children: Array<cwSceneObject>;
-    private _localTransform: Transform2d;
+    private _localTransform: cwTransform2d;
     constructor (parent:cwSceneObject = null) {
         super();
         this._parent = null;
         this._z = 0;
         this._visible = true;
         this._children = [];
-        this._localTransform = new Transform2d();
+        this._localTransform = new cwTransform2d();
         if (parent) {
             parent.addChild (this);
         }
@@ -501,17 +286,17 @@ export class cwSceneObject extends cwObject {
     get localTransform () {
         return this._localTransform;
     }
-    set localTransform (t:Transform2d) {
+    set localTransform (t:cwTransform2d) {
         this._localTransform = t;
     }
-    get worldTransform (): Transform2d {
-        return this.parent ? Transform2d.transform(this.parent.worldTransform, this._localTransform) : this._localTransform;
+    get worldTransform (): cwTransform2d {
+        return this.parent ? cwTransform2d.transform(this.parent.worldTransform, this._localTransform) : this._localTransform;
     };
     get numChildren () {
         return this._children.length;
     }
     getLocalPoint (x:number, y:number): {x:number,y:number} {
-        return Transform2d.invert(this.worldTransform).transformPoint({x:x,y:y});
+        return cwTransform2d.invert(this.worldTransform).transformPoint({x:x,y:y});
     }
     childAt (index:number): cwSceneObject {
         return this._children[index];
@@ -591,6 +376,12 @@ export class cwScene extends cwObject {
         return null;
     }
     private static initEventListeners (): void {
+        window.addEventListener ('resize', (ev: UIEvent) => {
+            let e = new cwResizeEvent();
+            cwScene.views.forEach ((view:cwSceneView) => {
+                view.trigger (e);
+            });
+        });
         window.addEventListener ('mousedown', (ev:MouseEvent) => {
             cwScene.clickTick = Date.now();
             let view = cwScene.hitView (ev.clientX, ev.clientY);
@@ -751,6 +542,9 @@ export class cwSceneView extends cwObject {
             this.rootNode.triggerRecursiveEx (updateEvent);
             this.draw ();
         });
+        this.on (cwResizeEvent.type, () => {
+            this.canvas.resize ();
+        });
         this.wrapMouseEvent(cwMouseDownEvent.type);
         this.wrapMouseEvent(cwMouseUpEvent.type);
         this.wrapMouseEvent(cwMouseMoveEvent.type);
@@ -761,9 +555,7 @@ export class cwSceneView extends cwObject {
         cwScene.setFocusView (this);
     }
     draw (): void {
-        if (this.clearColor !== null) {
-            this.canvas.clear (this.clearColor);
-        }
+        this.canvas.clear ();
         let cullEvent = new cwCullEvent(this.canvas.width, this.canvas.height);
         this.rootNode.triggerRecursiveEx (cullEvent);
         for (let i in cullEvent.result) {
@@ -776,7 +568,7 @@ export class cwSceneView extends cwObject {
     }
     hitTest (x:number, y:number): cwHitTestResult {
         function hitTest_r (object:cwSceneObject, result:cwHitTestResult) {
-            const pos = Transform2d.invert(object.worldTransform).transformPoint ({x:x, y:y});
+            const pos = cwTransform2d.invert(object.worldTransform).transformPoint ({x:x, y:y});
             const e = new cwHitTestEvent(pos.x,pos.y);
             object.triggerEx (e);
             if (e.result) {
@@ -805,6 +597,7 @@ export class cwCanvas extends cwObject {
     private _width:number;
     private _height:number;
     private _mouseOver:boolean;
+    private _doubleBuffer:boolean;
     private static readonly eventNames = ['mouseenter']
     private initEventHandlers () {
         this._canvas.addEventListener ('mouseenter', (ev:MouseEvent) => {
@@ -818,7 +611,7 @@ export class cwCanvas extends cwObject {
             console.log ('Canvas mouse leaved');
         });
     }
-    constructor (canvas:HTMLCanvasElement) {
+    constructor (canvas:HTMLCanvasElement, doubleBuffer:boolean = false) {
         super ();
         this._canvas = canvas;
         this._width = $(canvas).width();
@@ -831,6 +624,7 @@ export class cwCanvas extends cwObject {
         this._buffer.height = this._height;
         this._offscreenCtx = this._buffer.getContext ("2d");
         this._mouseOver = false;
+        this._doubleBuffer = doubleBuffer;
     }
     get canvas():HTMLCanvasElement {
         return this._canvas;
@@ -842,82 +636,32 @@ export class cwCanvas extends cwObject {
         return this._height;
     }
     get context():CanvasRenderingContext2D {
-        return this._offscreenCtx;
+        return this._doubleBuffer ? this._offscreenCtx : this._screenCtx;
     }
-    clear (color:string): void {
-        this._offscreenCtx.save ();
-        this._offscreenCtx.fillStyle = color;
-        this._offscreenCtx.fillRect (0, 0, this._width, this._height);
-        this._offscreenCtx.restore ();
+    clear (rect?:{x:number,y:number,w:number,h:number}): void {
+        const x = rect ? rect.x : 0;
+        const y = rect ? rect.y : 0;
+        const w = rect ? rect.w : this._width;
+        const h = rect ? rect.h : this._height;
+        this.context.setTransform (1,0,0,1,0,0);
+        this.context.clearRect (x, y, w, h);
+        if (this._doubleBuffer) {
+            this._screenCtx.clearRect (x, y, w, h);
+        }
     }
-    applyTransform (transform:Transform2d): void {
-        this._offscreenCtx.setTransform (transform.a, transform.b, transform.c, transform.d, transform.e, transform.f);
+    applyTransform (transform:cwTransform2d): void {
+        this.context.setTransform (transform.a, transform.b, transform.c, transform.d, transform.e, transform.f);
     };
     flip (): void {
-        this._screenCtx.drawImage (this._buffer, 0, 0);
+        if (this._doubleBuffer) {
+            this._screenCtx.drawImage (this._buffer, 0, 0);
+        }
     }
-}
-
-export class cwcImage extends cwComponent {
-    static readonly type = 'Image';
-    private _image:HTMLImageElement;
-    private _width:number;
-    private _height:number;
-    private _loaded:boolean;
-    constructor (filename:string = null, width:number = 0, height:number = 0) {
-        super (cwcImage.type);
-        this._image = new Image();
-        if (filename) {
-            this._image.src = filename;
-        }
-        if (width) {
-            this._image.width = width;
-            this._width = width;
-        } else {
-            this._width = this._image.complete ? this._image.width : 0;
-        }
-        if (height) {
-            this._image.height = height;
-            this._height = height;
-        } else {
-            this._height = this._image.complete ? this._image.height : 0;
-        }
-        if (!this._image.complete) {
-            this._loaded = false;
-            this._image.onload = () => {
-                if (this._width == 0) {
-                    this._width = this._image.width;
-                }
-                if (this._height == 0) {
-                    this._height = this._image.height;
-                }
-                this._loaded = true;
-            }
-        } else {
-            this._loaded = true;
-        }
-        this.on (cwCullEvent.type, (evt:cwEvent) => {
-            if (this._loaded) {
-                const cullEvent = evt as cwCullEvent;
-                const node = this.object as cwSceneObject;
-                cullEvent.addObject (this, node.z, node.worldTransform);
-            }
-        });
-        this.on (cwHitTestEvent.type, (evt:cwEvent) => {
-            if (this._loaded) {
-                const hittestEvent = evt as cwHitTestEvent;
-                hittestEvent.result = hittestEvent.x >= -this._width/2 && hittestEvent.x < this._width/2 && hittestEvent.y >= -this._height/2 && hittestEvent.y < this._height/2;
-            }
-        });
-        this.on (cwDrawEvent.type, (evt:cwEvent) => {
-            if (this._loaded) {
-                const drawEvent = evt as cwDrawEvent;
-                drawEvent.canvas.context.save();
-                drawEvent.canvas.applyTransform (drawEvent.transform);
-                drawEvent.canvas.context.drawImage(this._image, -this._width/2, -this._height/2, this._width, this._height);
-                drawEvent.canvas.context.restore();
-            }
-        });
+    resize (): void {
+        this._width = $(this._canvas).width();
+        this._height = $(this._canvas).height();
+        this._canvas.width = this._width;
+        this._canvas.height = this._height;
     }
 }
 

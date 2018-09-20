@@ -1,4 +1,4 @@
-export class Transform2d {
+export class cwTransform2d {
     a:number;
     b:number;
     c:number;
@@ -14,31 +14,31 @@ export class Transform2d {
         this.f = 0;
     }
     static getIdentity () {
-        return new Transform2d();
+        return new cwTransform2d();
     };
     static getTranslate (x:number, y:number) {
-        return new Transform2d().makeTranslate (x, y);
+        return new cwTransform2d().makeTranslate (x, y);
     };
     static getScale (x:number, y:number) {
-        return new Transform2d().makeScale (x, y);
+        return new cwTransform2d().makeScale (x, y);
     };
     static getRotate (theta:number) {
-        return new Transform2d().makeRotate (theta);
+        return new cwTransform2d().makeRotate (theta);
     };
-    static transform (t1:Transform2d, t2:Transform2d) {
-        return new Transform2d().copyFrom(t1).transform(t2);
+    static transform (t1:cwTransform2d, t2:cwTransform2d) {
+        return new cwTransform2d().copyFrom(t1).transform(t2);
     };
-    static translate (t:Transform2d, x:number, y:number) {
-        return new Transform2d().copyFrom(t).translate(x, y);
+    static translate (t:cwTransform2d, x:number, y:number) {
+        return new cwTransform2d().copyFrom(t).translate(x, y);
     };
-    static scale (t:Transform2d, x:number, y:number) {
-        return new Transform2d().copyFrom(t).scale(x, y);
+    static scale (t:cwTransform2d, x:number, y:number) {
+        return new cwTransform2d().copyFrom(t).scale(x, y);
     };
-    static rotate (t:Transform2d, theta:number) {
-        return new Transform2d().copyFrom(t).rotate(theta);
+    static rotate (t:cwTransform2d, theta:number) {
+        return new cwTransform2d().copyFrom(t).rotate(theta);
     };
-    static invert (t:Transform2d) {
-        return new Transform2d().copyFrom(t).invert();
+    static invert (t:cwTransform2d) {
+        return new cwTransform2d().copyFrom(t).invert();
     };
     set (a:number, b:number, c:number, d:number, e:number, f:number) {
         this.a = a;
@@ -63,10 +63,10 @@ export class Transform2d {
         let c = Math.cos(theta);
         return this.set (c, s, -s, c, 0.0, 0.0);
     };
-    copyFrom (otherTransform:Transform2d) {
+    copyFrom (otherTransform:cwTransform2d) {
         return this.set (otherTransform.a, otherTransform.b, otherTransform.c, otherTransform.d, otherTransform.e, otherTransform.f);
     };
-    transform (right:Transform2d) {
+    transform (right:cwTransform2d) {
         return this.set(
             this.a * right.a + this.c * right.b,
             this.b * right.a + this.d * right.b,
@@ -83,13 +83,13 @@ export class Transform2d {
         };
     };
     translate (x:number, y:number) {
-        return this.transform (Transform2d.getTranslate(x, y));
+        return this.transform (cwTransform2d.getTranslate(x, y));
     };
     scale (x:number, y:number) {
-        return this.transform (Transform2d.getScale(x, y));
+        return this.transform (cwTransform2d.getScale(x, y));
     };
     rotate (theta:number) {
-        return this.transform (Transform2d.getRotate(theta));
+        return this.transform (cwTransform2d.getRotate(theta));
     };
     invert () {
         let a00 = this.a, a01 = this.b, a02 = 0;
