@@ -233,6 +233,28 @@ export class cwResizeEvent extends cwEvent {
     }
 }
 
+export class cwGetPropEvent extends cwEvent {
+    static readonly type: string = '@getprop';
+    readonly propName: string;
+    propValue: any;
+    constructor (propName:string) {
+        super (cwGetPropEvent.type);
+        this.propName = propName;
+        this.propValue = undefined;
+    }
+}
+
+export class cwSetPropEvent extends cwEvent {
+    static readonly type: string = '@setprop';
+    readonly propName: string;
+    readonly propValue: any;
+    constructor (propName:string, propValue:any) {
+        super (cwSetPropEvent.type);
+        this.propName = propName;
+        this.propValue = propValue;
+    }
+}
+
 export class cwEventObserver {
     on (type:string, handler:cwEventHandler, order?:cwEventListenerOrder): void {
         cwApp.addEventListener (type, this, handler, order||cwEventListenerOrder.First);

@@ -24,6 +24,8 @@ import {
     cwDrawEvent,
     cwHitTestEvent,
     cwResizeEvent,
+    cwGetPropEvent,
+    cwSetPropEvent,
     cwEventHandler
 } from './events';
 
@@ -267,6 +269,44 @@ export class cwSceneObject extends cwObject {
         if (parent) {
             parent.addChild (this);
         }
+        this.on (cwGetPropEvent.type, (ev:cwEvent) => {
+            const e = ev as cwGetPropEvent;
+            switch (e.propName) {
+            case 'z':
+                e.propValue = this.z;
+                e.eat();
+                break;
+            case 'visible':
+                e.propValue = this.visible;
+                e.eat();
+                break;
+            case 'transform':
+                e.propValue = this.localTransform;
+                e.eat();
+                break;
+            default:
+                break;
+            }
+        });
+        this.on (cwSetPropEvent.type, (ev:cwEvent) => {
+            const e = ev as cwSetPropEvent;
+            switch (e.propName) {
+            case 'z':
+                this.z = e.propValue as number;
+                e.eat ();
+                break;
+            case 'visible':
+                this.visible = e.propValue as boolean;
+                e.eat ();
+                break;
+            case 'transform':
+                this.localTransform = e.propValue as cwTransform2d;
+                e.eat ();
+                break;
+            default:
+                break;
+            }
+        });
     }
     get parent () {
         return this._parent;

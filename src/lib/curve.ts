@@ -1,17 +1,19 @@
-export class CurveEvaluter {
+export class cwCurveEvaluter {
     cp: Array<{x:number,y:number}>;
-    constructor (cp:Array<{x:number,y:number}>) {
+    clamp: boolean;
+    constructor (cp:Array<{x:number,y:number}>, clamp:boolean = false) {
         this.cp = cp;
+        this.clamp = clamp;
     }
     eval (x:number): number {
         return 0;
     }
 }
 
-export class StepEvaluter extends CurveEvaluter {
+export class cwStepEvaluter extends cwCurveEvaluter {
     h: Array<number>;
-    constructor (cp:Array<{x:number,y:number}>) {
-        super(cp);
+    constructor (cp:Array<{x:number,y:number}>, clamp:boolean = false) {
+        super(cp, clamp);
         this.h = new Array(cp.length-1);
         this.compute ();
     }
@@ -30,15 +32,23 @@ export class StepEvaluter extends CurveEvaluter {
         return i;
     }
     eval (x:number): number {
+        if (this.clamp) {
+            if (x < 0) {
+                return this.cp[0].y;
+            }
+            if (x > this.cp[this.cp.length-1].x) {
+                return this.cp[this.cp.length-1].y;
+            }
+        }
         let seg = this.getSegment(x);
         return this.cp[seg].y;
     }
 }
 
-export class LinearEvaluter extends CurveEvaluter {
+export class cwLinearEvaluter extends cwCurveEvaluter {
     h: Array<number>;
-    constructor (cp:Array<{x:number,y:number}>) {
-        super(cp);
+    constructor (cp:Array<{x:number,y:number}>, clamp:boolean = false) {
+        super(cp, clamp);
         this.h = new Array(cp.length-1);
         this.cp = cp;
         this.compute ();
@@ -61,17 +71,25 @@ export class LinearEvaluter extends CurveEvaluter {
         return i;
     }
     eval (x:number): number {
+        if (this.clamp) {
+            if (x < 0) {
+                return this.cp[0].y;
+            }
+            if (x > this.cp[this.cp.length-1].x) {
+                return this.cp[this.cp.length-1].y;
+            }
+        }
         let seg = this.getSegment(x);
         let t = x - this.cp[seg].x;
         return this.cp[seg].y + (this.cp[seg+1].y-this.cp[seg].y) * t / this.h[seg];
     }
 }
 
-export class PolynomialsEvaluter extends CurveEvaluter {
+export class cwPolynomialsEvaluter extends cwCurveEvaluter {
     a: Array<number>;
     h: Array<number>;
-    constructor (cp:Array<{x:number,y:number}>) {
-        super(cp);
+    constructor (cp:Array<{x:number,y:number}>, clamp:boolean = false) {
+        super(cp, clamp);
         this.a = new Array(cp.length);
         this.h = new Array(cp.length);
         this.cp = cp;
@@ -120,6 +138,14 @@ export class PolynomialsEvaluter extends CurveEvaluter {
         return i;
     }
     eval (x:number): number {
+        if (this.clamp) {
+            if (x < 0) {
+                return this.cp[0].y;
+            }
+            if (x > this.cp[this.cp.length-1].x) {
+                return this.cp[this.cp.length-1].y;
+            }
+        }
         let seg = this.getSegment(x) + 1;
         let t1 = x - this.cp[seg-1].x;
         let t2 = this.h[seg] - t1;

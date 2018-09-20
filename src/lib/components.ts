@@ -1,5 +1,79 @@
 import { cwComponent, cwSceneObject } from './core';
-import { cwEvent, cwCullEvent, cwHitTestEvent, cwDrawEvent } from './events';
+import { cwEvent, cwCullEvent, cwHitTestEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent } from './events';
+import { CurveEvaluter,StepEvaluter,LinearEvaluter,PolynomialsEvaluter} from './curve';
+
+export enum cwInterpolateMode {
+    imConstant = 'constant',
+    imLinear = 'linear',
+    imPoly = 'poly'
+}
+
+export class cwcKeyframeAnimation extends cwComponent {
+    static readonly type = 'KeyframeAnimation';
+    private _tracks: { [name:string]: { evalutor: CurveEvaluter, value: number } };
+    private _repeat: number;
+    private _duration: number;
+    private _startTime: number;
+    private _delay: number;
+    private _round: number;
+    private _autoRemove: boolean;
+    constructor (delay:number = 0, repeat:number = 1, autoRemove:boolean = true) {
+        super (cwcKeyframeAnimation.type);
+        this._tracks = {};
+        this._repeat = repeat;
+        this._duration = 0;
+        this._startTime = 0;
+        this._round = 0;
+        this._delay = delay;
+        this._autoRemove = autoRemove;
+        this.on (cwUpdateEvent.type, (ev:cwEvent) => {
+            const e = ev as cwUpdateEvent;
+            const timeNow = e.elapsedTime;
+            if (this._startTime == 0) {
+                this._startTime = timeNow;
+            }
+            if (this._startTime + this._delay > timeNow) {
+                return;
+            }
+            const t = timeNow - this._startTime - this._delay;
+            for (let track in this._tracks) {
+                this._tracks[track].value = this._tracks[track].evalutor.eval (t);
+            }
+        });
+    }
+    get repeat(): number {
+        return this._repeat;
+    }
+    set repeat (val:number) {
+        this._repeat = val;
+    }
+    get autoRemove (): boolean {
+        return this._autoRemove;
+    }
+    set autoRemove (val:boolean) {
+        this._autoRemove = val;
+    }
+    get delay (): number {
+        return this._delay;
+    }
+    set delay (delay:number) {
+        this._delay = delay;
+    }
+    setTrack (name:string, mode:cwInterpolateMode, clamp:boolean, keyFrames:Array<{x:number,y:number}>) {
+        if (keyFrames.length > 0) {
+            if (keyFrames[keyFrames.length-1].x > this._duration) {
+                this._duration = keyFrames[keyFrames.length-1].x;
+            }
+            if (mode == cwInterpolateMode.imConstant) {
+                this._tracks[name] = { evalutor: new StepEvaluter(keyFrames, clamp), value: 0 };
+            } else if (mode == cwInterpolateMode.imLinear) {
+                this._tracks[name] = { evalutor: new LinearEvaluter(keyFrames, clamp), value: 0 };
+            } else if (mode == cwInterpolateMode.imPoly) {
+                this._tracks[name] = { evalutor: new PolynomialsEvaluter(keyFrames, clamp), value: 0 };
+            }
+        }
+    }
+}
 
 export class cwcImage extends cwComponent {
     static readonly type = 'Image';
@@ -59,6 +133,38 @@ export class cwcImage extends cwComponent {
                 drawEvent.canvas.applyTransform (drawEvent.transform);
                 drawEvent.canvas.context.drawImage(this._image, -this._width/2, -this._height/2, this._width, this._height);
                 drawEvent.canvas.context.restore();
+            }
+        });
+        this.on (cwGetPropEvent.type, (ev:cwEvent) => {
+            const e = ev as cwGetPropEvent;
+            switch (e.propName) {
+            case 'width':
+                e.propValue = this._width;
+                e.eat ();
+                break;
+            case 'height':
+                e.propValue = this._height;
+                e.eat ();
+                break;
+            default:
+                break;
+            }
+        });
+        this.on (cwSetPropEvent.type, (ev:cwEvent) => {
+            const e = ev as cwSetPropEvent;
+            switch (e.propName) {
+            case 'width':
+                this._width = e.propValue as number;
+                this._image.width = this._width;
+                e.eat ();
+                break;
+            case 'height':
+                this._height = e.propValue as number;
+                this._image.height = this._height;
+                e.eat ();
+                break;
+            default:
+                break;
             }
         });
     }
