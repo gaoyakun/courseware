@@ -111,4 +111,42 @@ export class cwTransform2d {
         this.f = (-a21 * a00 + a01 * a20) * det;
         return this;
     };
+    getTranslationPart (): {x:number,y:number} {
+        return {x:this.e, y:this.f};
+    }
+    setTranslationPart (t:{x:number,y:number}) {
+        this.e = t.x;
+        this.f = t.y;
+    }
+    getScalePart (): {x:number,y:number} {
+        return {
+            x:Math.sqrt (this.a * this.a + this.b * this.b),
+            y:Math.sqrt (this.c * this.c + this.d * this.d)
+        }
+    }
+    setScalePart (s:{x:number,y:number}) {
+        let sc = this.getScalePart();
+        let s1 = s.x / sc.x;
+        this.a *= s1;
+        this.b *= s1;
+        let s2 = s.y / sc.y;
+        this.c *= s2;
+        this.d *= s2;
+    }
+    getRotationPart (): number {
+        let sc = Math.sqrt (this.a * this.a + this.b * this.b);
+        let ac = Math.max(Math.min(this.a/sc, 1), -1);
+        let as = Math.max(Math.min(this.b/sc, 1), -1);
+        let angle = Math.acos(ac);
+        return as >= 0 ? angle : 2*Math.PI-angle;
+    }
+    setRotationPart (r:number) {
+        let sc = this.getScalePart();
+        let sin = Math.sin(r);
+        let cos = Math.cos(r);
+        this.a = sc.x * cos;
+        this.b = sc.x * sin;
+        this.c = -sc.y * sin;
+        this.d = sc.y * cos;
+    }
 }

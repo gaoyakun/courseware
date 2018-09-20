@@ -284,6 +284,20 @@ export class cwSceneObject extends cwObject {
                 e.propValue = this.localTransform;
                 e.eat();
                 break;
+            case 'translation':
+                let t = this.translation;
+                e.propValue = [t.x,t.y];
+                e.eat();
+                break;
+            case 'scale':
+                let s = this.scale;
+                e.propValue = [t.x,t.y];
+                e.eat();
+                break;
+            case 'rotation':
+                e.propValue = this.rotation;
+                e.eat();
+                break;
             default:
                 break;
             }
@@ -302,6 +316,17 @@ export class cwSceneObject extends cwObject {
             case 'transform':
                 this.localTransform = e.propValue as cwTransform2d;
                 e.eat ();
+                break;
+            case 'translation':
+                let t = e.propValue as Array<number>;
+                this.translation = {x:t[0],y:t[1]};
+                break;
+            case 'scale':
+                let s = e.propValue as Array<number>;
+                this.scale = {x:s[0],y:s[1]};
+                break;
+            case 'rotation':
+                this.rotation = e.propValue as number;
                 break;
             default:
                 break;
@@ -328,6 +353,24 @@ export class cwSceneObject extends cwObject {
     }
     set localTransform (t:cwTransform2d) {
         this._localTransform = t;
+    }
+    get translation (): {x:number,y:number} {
+        return this._localTransform.getTranslationPart();
+    }
+    set translation (t:{x:number,y:number}) {
+        this._localTransform.setTranslationPart (t);
+    }
+    get scale (): {x:number,y:number} {
+        return this._localTransform.getScalePart ();
+    }
+    set scale (s:{x:number,y:number}) {
+        this._localTransform.setScalePart (s);
+    }
+    get rotation (): number {
+        return this._localTransform.getRotationPart ();
+    }
+    set rotation (r:number) {
+        this._localTransform.setRotationPart (r);
     }
     get worldTransform (): cwTransform2d {
         return this.parent ? cwTransform2d.transform(this.parent.worldTransform, this._localTransform) : this._localTransform;

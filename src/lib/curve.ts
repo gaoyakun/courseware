@@ -1,3 +1,9 @@
+export enum cwSplineType {
+    ctStep = 1,
+    ctLinear = 2,
+    ctPoly = 3
+}
+
 export class cwCurveEvaluter {
     cp: Array<{x:number,y:number}>;
     clamp: boolean;
@@ -153,3 +159,73 @@ export class cwPolynomialsEvaluter extends cwCurveEvaluter {
     }
 }
 
+export class cwSpline {
+    private _evalutors: Array<cwCurveEvaluter>;
+    private _array:boolean;
+    private initArray (type:cwSplineType, cp:Array<{x:number,y:Array<number>}>,clamp:boolean) {
+        const numElements = cp[0].y.length;
+        if (numElements > 0) {
+            for (let i = 0; i < numElements; i++) {
+                let t = [];
+                for (let j = 0; j < cp.length; j++) {
+                    let val = cp[j].y.length > i ? cp[j].y[i] : 0;
+                    t.push ({x:cp[j].x, y:val});
+                }
+                switch (type) {
+                case cwSplineType.ctStep:
+                    this._evalutors.push (new cwStepEvaluter(t, clamp));
+                    break;
+                case cwSplineType.ctLinear:
+                    this._evalutors.push (new cwLinearEvaluter(t, clamp));
+                    break;
+                case cwSplineType.ctPoly:
+                default:
+                    this._evalutors.push (new cwPolynomialsEvaluter(t, clamp));
+                    break;
+                }
+            }
+            this._array = true;
+        }
+    }
+    private initNonArray (type:cwSplineType, cp:Array<{x:number,y:number}>,clamp:boolean) {
+        switch (type) {
+        case cwSplineType.ctStep:
+            this._evalutors.push (new cwStepEvaluter(cp, clamp));
+            break;
+        case cwSplineType.ctLinear:
+            this._evalutors.push (new cwLinearEvaluter(cp, clamp));
+            break;
+        case cwSplineType.ctPoly:
+        default:
+            this._evalutors.push (new cwPolynomialsEvaluter(cp, clamp));
+            break;
+        }
+        this._array = false;
+    }
+    constructor (type:cwSplineType, cp:Array<{x:number,y:number}>|Array<{x:number,y:Array<number>}>, clamp:boolean = false) {
+        this._evalutors = [];
+        this._array = false;
+        if (cp.length > 0) {
+            if (typeof cp[0].y === 'number') {
+                this.initNonArray (type, cp as Array<{x:number,y:number}>, clamp);
+            } else {
+                this.initArray (type, cp as Array<{x:number,y:Array<number>}>, clamp);
+            }
+        }
+    }
+    eval (x:number): number|Array<number> {
+        if (this._evalutors.length > 0) {
+            if (this._array) {
+                let result:Array<number> = [];
+                this._evalutors.forEach ((evalutor:cwCurveEvaluter) => {
+                    result.push (evalutor.eval (x));
+                });
+                return result;
+            } else {
+                return this._evalutors[0].eval (x);
+            }
+        } else {
+            return null;
+        }
+    }
+}

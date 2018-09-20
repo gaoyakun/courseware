@@ -1,16 +1,10 @@
 import { cwComponent, cwSceneObject } from './core';
 import { cwEvent, cwCullEvent, cwHitTestEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent } from './events';
-import { CurveEvaluter,StepEvaluter,LinearEvaluter,PolynomialsEvaluter} from './curve';
-
-export enum cwInterpolateMode {
-    imConstant = 'constant',
-    imLinear = 'linear',
-    imPoly = 'poly'
-}
+import { cwSpline, cwSplineType } from './curve';
 
 export class cwcKeyframeAnimation extends cwComponent {
     static readonly type = 'KeyframeAnimation';
-    private _tracks: { [name:string]: { evalutor: CurveEvaluter, value: number } };
+    private _tracks: { [name:string]: { evalutor: cwSpline, value: any } };
     private _repeat: number;
     private _duration: number;
     private _startTime: number;
@@ -39,6 +33,17 @@ export class cwcKeyframeAnimation extends cwComponent {
             for (let track in this._tracks) {
                 this._tracks[track].value = this._tracks[track].evalutor.eval (t);
             }
+            if (t >= this._duration) {
+                this._round++;
+                if (this._repeat == 0 || this._round < this._repeat) {
+                    this._startTime = timeNow;
+                } else if (this._autoRemove) {
+                    this.object.removeComponent (this);
+                }
+            }
+            for (let prop in this._tracks) {
+                this.object.triggerEx (new cwSetPropEvent(prop, this._tracks[prop].value));
+            }
         });
     }
     get repeat(): number {
@@ -59,18 +64,12 @@ export class cwcKeyframeAnimation extends cwComponent {
     set delay (delay:number) {
         this._delay = delay;
     }
-    setTrack (name:string, mode:cwInterpolateMode, clamp:boolean, keyFrames:Array<{x:number,y:number}>) {
+    setTrack (name:string, type:cwSplineType, clamp:boolean, keyFrames:Array<{x:number,y:number}>|Array<{x:number,y:Array<number>}>) {
         if (keyFrames.length > 0) {
             if (keyFrames[keyFrames.length-1].x > this._duration) {
                 this._duration = keyFrames[keyFrames.length-1].x;
             }
-            if (mode == cwInterpolateMode.imConstant) {
-                this._tracks[name] = { evalutor: new StepEvaluter(keyFrames, clamp), value: 0 };
-            } else if (mode == cwInterpolateMode.imLinear) {
-                this._tracks[name] = { evalutor: new LinearEvaluter(keyFrames, clamp), value: 0 };
-            } else if (mode == cwInterpolateMode.imPoly) {
-                this._tracks[name] = { evalutor: new PolynomialsEvaluter(keyFrames, clamp), value: 0 };
-            }
+            this._tracks[name] = { evalutor: new cwSpline(type, keyFrames, clamp), value: null };
         }
     }
 }
