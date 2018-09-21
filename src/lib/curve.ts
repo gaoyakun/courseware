@@ -155,7 +155,7 @@ export class cwPolynomialsEvaluter extends cwCurveEvaluter {
         let seg = this.getSegment(x) + 1;
         let t1 = x - this.cp[seg-1].x;
         let t2 = this.h[seg] - t1;
-        return ((-this.a[seg - 1] / 6.0 * (t2 + this.h[seg]) * t1 + this.cp[seg - 1].y) * t2 + (this.a[seg] / 6.0 * (t1 + this.h[seg]) * t2 + this.cp[seg].y) * t1) / this.h[seg];
+        return ((-this.a[seg - 1] / 6.0 * (t2 + this.h[seg]) * t1 + this.cp[seg - 1].y) * t2 + (-this.a[seg] / 6.0 * (t1 + this.h[seg]) * t2 + this.cp[seg].y) * t1) / this.h[seg];
     }
 }
 

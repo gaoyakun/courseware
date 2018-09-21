@@ -11,15 +11,37 @@ export class cwcKeyframeAnimation extends cwComponent {
     private _delay: number;
     private _round: number;
     private _autoRemove: boolean;
-    constructor (delay:number = 0, repeat:number = 1, autoRemove:boolean = true) {
+    constructor (options?:{
+        delay?:number;
+        repeat?:number;
+        autoRemove?:boolean;
+        tracks?:{
+            [name:string]:{
+                cp:Array<{x:number,y:number}>|Array<{x:number,y:Array<number>}>;
+                type?:cwSplineType;
+                clamp?:boolean;
+            }
+        }
+    }) {
         super (cwcKeyframeAnimation.type);
         this._tracks = {};
-        this._repeat = repeat;
         this._duration = 0;
         this._startTime = 0;
         this._round = 0;
-        this._delay = delay;
-        this._autoRemove = autoRemove;
+
+        const opt = options||{};
+        this._delay = opt.delay === undefined ? 0 : opt.delay;
+        this._repeat = opt.repeat === undefined ? 0 : opt.repeat;
+        this._autoRemove = opt.autoRemove === undefined ? true : opt.autoRemove;
+        if (opt.tracks) {
+            for (const trackName in opt.tracks) {
+                const trackinfo = opt.tracks[trackName];
+                let type = trackinfo.type === undefined ? cwSplineType.ctPoly : trackinfo.type;
+                let clamp = trackinfo.clamp === undefined ? false : trackinfo.clamp;
+                this.setTrack (trackName, type, clamp, trackinfo.cp);
+            }
+        }
+        
         this.on (cwUpdateEvent.type, (ev:cwEvent) => {
             const e = ev as cwUpdateEvent;
             const timeNow = e.elapsedTime;

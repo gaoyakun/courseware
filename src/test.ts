@@ -1,27 +1,30 @@
 import { cwApp, cwScene, cwSceneObject } from './lib/core';
-import { cwUpdateEvent, cwEvent, cwClickEvent } from './lib/events';
-import { cwcImage } from './lib/components';
+import { cwcKeyframeAnimation, cwcImage } from './lib/components';
+import { cwSplineType } from './lib/curve';
 
 cwScene.init ();
-let view = cwScene.addView (document.querySelector('#test-canvas'));
+let view = cwScene.addView (document.querySelector('#test-canvas'), true);
 
-let angle = 0;
-let scale = 0;
 const testNode = new cwSceneObject(view.rootNode);
-testNode.on(cwUpdateEvent.type, (evt:cwEvent) => {
-    testNode.localTransform.makeIdentity ();
-    testNode.localTransform.translate (100, 100);
-    const s = Math.sin(scale)*0.5 + 1;
-    const c = Math.cos(scale)*0.5 + 1;
-    testNode.localTransform.scale (s, c)
-    testNode.localTransform.rotate (angle);
-    angle += 0.05;
-    scale += 0.1;
-});
 testNode.addComponent(new cwcImage('images/return.png', 60, 60));
-testNode.on (cwClickEvent.type, (_:cwEvent) => {
-    console.log ('clicked');
-});
+testNode.addComponent(new cwcKeyframeAnimation({
+    repeat:1,
+    autoRemove:true,
+    tracks:{
+        translation: {
+            type:cwSplineType.ctPoly,
+            cp:[{x:0,y:[0,300]},{x:1000,y:[100,200]},{x:2000,y:[200,300]},{x:3000,y:[300,400]},{x:4000,y:[400,300]}]
+        },
+        rotation: {
+            type:cwSplineType.ctLinear,
+            cp:[{x:0,y:0}, {x:4000,y:Math.PI*8}]            
+        },
+        scale: {
+            type:cwSplineType.ctPoly,
+            cp:[{x:0,y:[1,1]},{x:2000,y:[3,3]},{x:4000,y:[1,1]}]
+        }
+    }
+}));
 cwApp.run ();
 
 

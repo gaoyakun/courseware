@@ -1,5 +1,5 @@
 import {cwTransform2d} from './transform';
-import {CurveEvaluter,StepEvaluter,LinearEvaluter,PolynomialsEvaluter} from './curve';
+import {cwCurveEvaluter,cwStepEvaluter,cwLinearEvaluter,cwPolynomialsEvaluter} from './curve';
 
 export class EventObserver {
     private handlers: any;
@@ -207,8 +207,8 @@ export class Motion extends SceneNode {
 
 export class PathMotion extends Motion {
     node: SceneNode;
-    evalutor_x: CurveEvaluter;
-    evalutor_y: CurveEvaluter;
+    evalutor_x: cwCurveEvaluter;
+    evalutor_y: cwCurveEvaluter;
     constructor (node:SceneNode,cp:Array<{t:number,x:number,y:number}>, mode:string='poly', callback:(motion:Motion)=>void=null) {
         super(callback);
         this.node = node;
@@ -219,14 +219,14 @@ export class PathMotion extends Motion {
             y[i] = {x:cp[i].t,y:cp[i].y};
         }
         if (mode == 'step') {
-            this.evalutor_x = new StepEvaluter(x);
-            this.evalutor_y = new StepEvaluter(y);
+            this.evalutor_x = new cwStepEvaluter(x);
+            this.evalutor_y = new cwStepEvaluter(y);
         } else if (mode == 'linear') {
-            this.evalutor_x = new LinearEvaluter(x);
-            this.evalutor_y = new LinearEvaluter(y);
+            this.evalutor_x = new cwLinearEvaluter(x);
+            this.evalutor_y = new cwLinearEvaluter(y);
         } else /*if (mode == 'poly')*/ {
-            this.evalutor_x = new PolynomialsEvaluter(x);
-            this.evalutor_y = new PolynomialsEvaluter(y);
+            this.evalutor_x = new cwPolynomialsEvaluter(x);
+            this.evalutor_y = new cwPolynomialsEvaluter(y);
         }
     }
     onMotion (dt:number, rt:number): void {

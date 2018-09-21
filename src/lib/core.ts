@@ -533,9 +533,9 @@ export class cwScene extends cwObject {
     public static updateViews (): void {
 
     }
-    public static addView (canvas:HTMLCanvasElement): cwSceneView {
+    public static addView (canvas:HTMLCanvasElement, doubleBuffer?:boolean): cwSceneView {
         if (!cwScene.findView (canvas)) {
-            const view = new cwSceneView(canvas);
+            const view = new cwSceneView(canvas, doubleBuffer===undefined?false:doubleBuffer);
             cwScene.views.push (view);
             if (!cwScene.focusView) {
                 cwScene.setFocusView (view);
@@ -613,12 +613,12 @@ export class cwSceneView extends cwObject {
             }
         });
     }
-    constructor (canvas:HTMLCanvasElement) {
+    constructor (canvas:HTMLCanvasElement, doubleBuffer:boolean = false) {
         super ();
         this.hitObjects = [];
         this.rootNode = new cwSceneObject();
         this.clearColor = '#000';
-        this.canvas = new cwCanvas(canvas);
+        this.canvas = new cwCanvas(canvas, doubleBuffer);
         this.on (cwFrameEvent.type, (evt:cwEvent) => {
             let frameEvent = evt as cwFrameEvent;
             let updateEvent = new cwUpdateEvent(frameEvent.deltaTime,frameEvent.elapsedTime,frameEvent.frameStamp);
