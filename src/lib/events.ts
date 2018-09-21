@@ -4,8 +4,8 @@ export type cwCullResult = {[z:number]:Array<{object:cwEventObserver,z:number,tr
 export type cwEventHandler = (evt:cwEvent) => void;
 
 export enum cwEventListenerOrder {
-    First = 1,
-    Last = 2
+    FIRST = 1,
+    LAST = 2
 }
 
 export class cwEvent {
@@ -257,7 +257,7 @@ export class cwSetPropEvent extends cwEvent {
 
 export class cwEventObserver {
     on (type:string, handler:cwEventHandler, order?:cwEventListenerOrder): void {
-        cwApp.addEventListener (type, this, handler, order||cwEventListenerOrder.First);
+        cwApp.addEventListener (type, this, handler, order||cwEventListenerOrder.FIRST);
     }
     off (type:string, handler?:cwEventHandler): void {
         cwApp.removeEventListener (type, this, handler);

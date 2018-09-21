@@ -1,7 +1,7 @@
 export enum cwSplineType {
-    ctStep = 1,
-    ctLinear = 2,
-    ctPoly = 3
+    STEP = 1,
+    LINEAR = 2,
+    POLY = 3
 }
 
 export class cwCurveEvaluter {
@@ -172,13 +172,13 @@ export class cwSpline {
                     t.push ({x:cp[j].x, y:val});
                 }
                 switch (type) {
-                case cwSplineType.ctStep:
+                case cwSplineType.STEP:
                     this._evalutors.push (new cwStepEvaluter(t, clamp));
                     break;
-                case cwSplineType.ctLinear:
+                case cwSplineType.LINEAR:
                     this._evalutors.push (new cwLinearEvaluter(t, clamp));
                     break;
-                case cwSplineType.ctPoly:
+                case cwSplineType.POLY:
                 default:
                     this._evalutors.push (new cwPolynomialsEvaluter(t, clamp));
                     break;
@@ -189,13 +189,13 @@ export class cwSpline {
     }
     private initNonArray (type:cwSplineType, cp:Array<{x:number,y:number}>,clamp:boolean) {
         switch (type) {
-        case cwSplineType.ctStep:
+        case cwSplineType.STEP:
             this._evalutors.push (new cwStepEvaluter(cp, clamp));
             break;
-        case cwSplineType.ctLinear:
+        case cwSplineType.LINEAR:
             this._evalutors.push (new cwLinearEvaluter(cp, clamp));
             break;
-        case cwSplineType.ctPoly:
+        case cwSplineType.POLY:
         default:
             this._evalutors.push (new cwPolynomialsEvaluter(cp, clamp));
             break;

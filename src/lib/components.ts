@@ -36,7 +36,7 @@ export class cwcKeyframeAnimation extends cwComponent {
         if (opt.tracks) {
             for (const trackName in opt.tracks) {
                 const trackinfo = opt.tracks[trackName];
-                let type = trackinfo.type === undefined ? cwSplineType.ctPoly : trackinfo.type;
+                let type = trackinfo.type === undefined ? cwSplineType.POLY : trackinfo.type;
                 let clamp = trackinfo.clamp === undefined ? false : trackinfo.clamp;
                 this.setTrack (trackName, type, clamp, trackinfo.cp);
             }

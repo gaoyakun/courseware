@@ -80,7 +80,7 @@ export class cwApp {
         let handlerList = cwApp.eventListeners[eventType]||[];
         for (let i = 0; i < handlerList.length; i++) {
             if (handlerList[i].bindObject === bindObject) {
-                if (order == cwEventListenerOrder.First) {
+                if (order == cwEventListenerOrder.FIRST) {
                     handlerList[i].handlers = {
                         handler: handler,
                         next: handlerList[i].handlers
@@ -581,7 +581,6 @@ export class cwScene extends cwObject {
 export class cwSceneView extends cwObject {
     readonly rootNode: cwSceneObject;
     readonly canvas: cwCanvas;
-    clearColor: string|null;
     private hitObjects: Array<cwSceneObject>;
     public updateHitObjects (ev:cwMouseEvent) {
         const hitTestResult = this.hitTest (ev.x, ev.y);
@@ -617,7 +616,6 @@ export class cwSceneView extends cwObject {
         super ();
         this.hitObjects = [];
         this.rootNode = new cwSceneObject();
-        this.clearColor = '#000';
         this.canvas = new cwCanvas(canvas, doubleBuffer);
         this.on (cwFrameEvent.type, (evt:cwEvent) => {
             let frameEvent = evt as cwFrameEvent;
