@@ -18,7 +18,6 @@ import {
     cwKeyUpEvent,
     cwKeyPressEvent,
     cwFocusEvent,
-    cwMouseEvent,
     cwUpdateEvent,
     cwCullEvent,
     cwDrawEvent,
@@ -254,18 +253,26 @@ export class cwObject extends cwEventObserver {
 }
 
 export class cwSceneObject extends cwObject {
+    private _view:cwSceneView;
     private _parent:cwSceneObject|null;
     private _z:number;
     private _visible:boolean;
     private _children: Array<cwSceneObject>;
     private _localTransform: cwTransform2d;
+    private _worldTranslation: {x:number,y:number}|null;
+    private _worldRotation: number|null;
+    private _worldScale: {x:number,y:number}|null;
     constructor (parent:cwSceneObject = null) {
         super();
+        this._view = null;
         this._parent = null;
         this._z = 0;
         this._visible = true;
         this._children = [];
         this._localTransform = new cwTransform2d();
+        this._worldTranslation = null;
+        this._worldRotation = null;
+        this._worldScale = null;
         if (parent) {
             parent.addChild (this);
         }
@@ -333,6 +340,12 @@ export class cwSceneObject extends cwObject {
             }
         });
     }
+    get view () {
+        return this._view;
+    }
+    set view (v:cwSceneView) {
+        this._view = v;
+    }
     get parent () {
         return this._parent;
     }
@@ -373,8 +386,36 @@ export class cwSceneObject extends cwObject {
         this._localTransform.setRotationPart (r);
     }
     get worldTransform (): cwTransform2d {
-        return this.parent ? cwTransform2d.transform(this.parent.worldTransform, this._localTransform) : this._localTransform;
+        let t = this.parent ? cwTransform2d.transform(this.parent.worldTransform, this._localTransform) : this._localTransform;
+        if (this._worldTranslation !== null) {
+            t.setTranslationPart (this._worldTranslation);
+        }
+        if (this._worldRotation !== null) {
+            t.setRotationPart (this._worldRotation);
+        }
+        if (this._worldScale !== null) {
+            t.setScalePart (this._worldScale);
+        }
+        return t;
     };
+    get worldTranslation (): {x:number,y:number}|null {
+        return this._worldTranslation;
+    }
+    set worldTranslation ( value: {x:number,y:number}|null ) {
+        this._worldTranslation = value;
+    }
+    get worldRotation (): number|null {
+        return this._worldRotation;
+    }
+    set worldRotation ( value: number|null ) {
+        this._worldRotation = value;
+    }
+    get worldScale (): {x:number,y:number}|null {
+        return this._worldScale;
+    }
+    set worldScale ( value: {x:number,y:number}|null) {
+        this._worldScale = value;
+    }
     get numChildren () {
         return this._children.length;
     }
@@ -390,6 +431,7 @@ export class cwSceneObject extends cwObject {
     addChild (child:cwSceneObject): void {
         if (child._parent === null) {
             child._parent = this;
+            child._view = this._view;
             this._children.push (child);
         }
     }
@@ -404,6 +446,18 @@ export class cwSceneObject extends cwObject {
             let child = this._children[index];
             this._children.splice (index, 1);
             child._parent = null;
+            child._view = null;
+        }
+    }
+    removeChildren (): void {
+        while (this._children.length > 0) {
+            this.removeChildAt (0);
+        }
+    }
+    unrefChildren (): void {
+        while (this._children.length > 0) {
+            this._children[0].unrefChildren ();
+            this.removeChildAt (0);
         }
     }
     remove (): void {
@@ -426,6 +480,12 @@ export class cwSceneObject extends cwObject {
         this.forEachChild ((child:cwSceneObject, index:number) => {
             child.triggerRecursiveEx (evt);
         });
+    }
+    setCapture (): void {
+        this._view && this._view.setCaptureObject (this);
+    }
+    releaseCapture (): void {
+        this._view && this._view.captureObject === this && this._view.setCaptureObject (null);
     }
     toString (): string {
         return '<cwSceneObject>';
@@ -496,17 +556,19 @@ export class cwScene extends cwObject {
         });
         window.addEventListener ('mousemove', (ev:MouseEvent) => {
             let view = cwScene.hitView (ev.clientX, ev.clientY);
+            let x = view ? ev.clientX-view.canvas.canvas.offsetLeft : 0;
+            let y = view ? ev.clientY-view.canvas.canvas.offsetTop : 0;
             if (view != cwScene.hoverView) {
                 if (cwScene.hoverView) {
                     cwScene.hoverView.triggerEx (new cwMouseLeaveEvent (ev.clientX-cwScene.hoverView.canvas.canvas.offsetLeft, ev.clientY-cwScene.hoverView.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
                     cwScene.hoverView = null;
                 }
+                if (view !== null) {
+                    cwScene.hoverView = view;
+                    view.triggerEx (new cwMouseEnterEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                }
             }
             if (view !== null) {
-                cwScene.hoverView = view;
-                let x = ev.clientX-view.canvas.canvas.offsetLeft;
-                let y = ev.clientY-view.canvas.canvas.offsetTop;
-                view.triggerEx (new cwMouseEnterEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
                 view.updateHitObjects (ev);
                 view.handleMouseMove (ev);
             }
@@ -526,9 +588,6 @@ export class cwScene extends cwObject {
                 cwScene.focusView.trigger (new cwKeyPressEvent(ev.key,ev.keyCode,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
             }
         });
-    }
-    public static updateViews (): void {
-
     }
     public static addView (canvas:HTMLCanvasElement, doubleBuffer?:boolean): cwSceneView {
         if (!cwScene.findView (canvas)) {
@@ -576,33 +635,39 @@ export class cwScene extends cwObject {
 }
 
 export class cwSceneView extends cwObject {
-    readonly rootNode: cwSceneObject;
-    readonly canvas: cwCanvas;
-    private hitObjects: Array<cwSceneObject>;
+    private _canvas: cwCanvas;
+    private _rootNode: cwSceneObject;
+    private _captureObject: cwSceneObject;
+    private _hitObjects: Array<cwSceneObject>;
     public updateHitObjects (ev:MouseEvent) {
         const x = ev.clientX-this.canvas.canvas.offsetLeft;
         const y = ev.clientY-this.canvas.canvas.offsetTop;
         const hitTestResult = this.hitTest (x, y);
-        for (let i = 0; i < this.hitObjects.length; ) {
-            if (hitTestResult.indexOf(this.hitObjects[i]) < 0) {
-                this.hitObjects[i].trigger (new cwMouseLeaveEvent(x,y,ev.button,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
-                this.hitObjects.splice(i, 1);
+        for (let i = 0; i < this._hitObjects.length; ) {
+            if (hitTestResult.indexOf(this._hitObjects[i]) < 0) {
+                this._hitObjects[i].trigger (new cwMouseLeaveEvent(x,y,ev.button,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
+                this._hitObjects.splice(i, 1);
             } else {
                 i++;
             }
         }
         for (let i = 0; i < hitTestResult.length; i++) {
-            if (this.hitObjects.indexOf(hitTestResult[i]) < 0) {
+            if (this._hitObjects.indexOf(hitTestResult[i]) < 0) {
                 hitTestResult[i].trigger (new cwMouseEnterEvent(x,y,ev.button,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
             }
         }
-        this.hitObjects = hitTestResult;
+        this._hitObjects = hitTestResult;
+    }
+    private isValidObject (object:cwSceneObject) {
+        return object && object.view === this;
     }
     constructor (canvas:HTMLCanvasElement, doubleBuffer:boolean = false) {
         super ();
-        this.hitObjects = [];
-        this.rootNode = new cwSceneObject();
-        this.canvas = new cwCanvas(canvas, doubleBuffer);
+        this._captureObject = null;
+        this._hitObjects = [];
+        this._rootNode = new cwSceneObject();
+        this._rootNode.view = this;
+        this._canvas = new cwCanvas(canvas, doubleBuffer);
         this.on (cwFrameEvent.type, (evt:cwEvent) => {
             let frameEvent = evt as cwFrameEvent;
             let updateEvent = new cwUpdateEvent(frameEvent.deltaTime,frameEvent.elapsedTime,frameEvent.frameStamp);
@@ -613,46 +678,80 @@ export class cwSceneView extends cwObject {
             this.canvas.resize ();
         });
     }
+    get rootNode (): cwSceneObject {
+        return this._rootNode;
+    }
+    get canvas (): cwCanvas {
+        return this._canvas;
+    }
+    get captureObject (): cwSceneObject {
+        return this._captureObject;
+    }
+    get hitObjects (): Array<cwSceneObject> {
+        return this._hitObjects;
+    }
+    unref (): void {
+        if (this._rootNode) {
+            this._rootNode.unrefChildren ();
+            this._rootNode.view = null;
+            this._rootNode = null;
+        }
+    }
+    setCaptureObject (object:cwSceneObject): void {
+        this._captureObject = object;
+    }
     handleMouseDown (ev:MouseEvent): void {
         const e = new cwMouseDownEvent (ev.clientX-this.canvas.canvas.offsetLeft, ev.clientY-this.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
-        for (let i = 0; i < this.hitObjects.length; i++) {
-            this.hitObjects[i].triggerEx (e);
-            if (!e.bubble) {
-                break;
+        if (this.isValidObject(this._captureObject)) {
+            this._captureObject.triggerEx (e);
+        } else {
+            for (let i = 0; i < this._hitObjects.length; i++) {
+                this._hitObjects[i].triggerEx (e);
+                if (!e.bubble) {
+                    break;
+                }
             }
-        }
-        if (e.bubble) {
-            this.triggerEx (e);
+            if (e.bubble) {
+                this.triggerEx (e);
+            }
         }
     }
     handleMouseUp (ev:MouseEvent): void {
         const e = new cwMouseUpEvent (ev.clientX-this.canvas.canvas.offsetLeft, ev.clientY-this.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
-        for (let i = 0; i < this.hitObjects.length; i++) {
-            this.hitObjects[i].triggerEx (e);
-            if (!e.bubble) {
-                break;
+        if (this.isValidObject(this._captureObject)) {
+            this._captureObject.triggerEx (e);
+        } else {
+            for (let i = 0; i < this._hitObjects.length; i++) {
+                this._hitObjects[i].triggerEx (e);
+                if (!e.bubble) {
+                    break;
+                }
             }
-        }
-        if (e.bubble) {
-            this.triggerEx (e);
+            if (e.bubble) {
+                this.triggerEx (e);
+            }
         }
     }
     handleMouseMove (ev:MouseEvent): void {
         const e = new cwMouseMoveEvent (ev.clientX-this.canvas.canvas.offsetLeft, ev.clientY-this.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
-        for (let i = 0; i < this.hitObjects.length; i++) {
-            this.hitObjects[i].triggerEx (e);
-            if (!e.bubble) {
-                break;
+        if (this.isValidObject (this._captureObject)) {
+            this._captureObject.triggerEx (e);
+        } else {
+            for (let i = 0; i < this._hitObjects.length; i++) {
+                this._hitObjects[i].triggerEx (e);
+                if (!e.bubble) {
+                    break;
+                }
             }
-        }
-        if (e.bubble) {
-            this.triggerEx (e);
+            if (e.bubble) {
+                this.triggerEx (e);
+            }
         }
     }
     handleClick (ev:MouseEvent): void {
         const e = new cwClickEvent (ev.clientX-this.canvas.canvas.offsetLeft, ev.clientY-this.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
-        for (let i = 0; i < this.hitObjects.length; i++) {
-            this.hitObjects[i].triggerEx (e);
+        for (let i = 0; i < this._hitObjects.length; i++) {
+            this._hitObjects[i].triggerEx (e);
             if (!e.bubble) {
                 break;
             }
@@ -663,8 +762,8 @@ export class cwSceneView extends cwObject {
     }
     handleDblClick (ev:MouseEvent): void {
         const e = new cwDblClickEvent (ev.clientX-this.canvas.canvas.offsetLeft, ev.clientY-this.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
-        for (let i = 0; i < this.hitObjects.length; i++) {
-            this.hitObjects[i].triggerEx (e);
+        for (let i = 0; i < this._hitObjects.length; i++) {
+            this._hitObjects[i].triggerEx (e);
             if (!e.bubble) {
                 break;
             }

@@ -1,4 +1,4 @@
-import { cwApp, cwCanvas } from './core';
+import { cwApp, cwObject, cwCanvas } from './core';
 import { cwTransform2d } from './transform';
 export type cwCullResult = {[z:number]:Array<{object:cwEventObserver,z:number,transform:cwTransform2d}>};
 export type cwEventHandler = (evt:cwEvent) => void;
@@ -52,15 +52,19 @@ export class cwCullEvent extends cwEvent {
     readonly canvasWidth:number;
     readonly canvasHeight:number;
     readonly result:cwCullResult;
+    force_z:number|null;
+    force_transform:cwTransform2d|null;
     constructor (w:number, h:number) {
         super (cwCullEvent.type);
         this.canvasWidth = w;
         this.canvasHeight = h;
         this.result = {};
+        this.force_z = null;
+        this.force_transform = null;
     }
     addObject (object:cwEventObserver, z:number, transform:cwTransform2d): void {
         let objectList = this.result[z]||[];
-        objectList.push ({object:object,z:z,transform:transform});
+        objectList.push ({object:object,z:this.force_z===null?z:this.force_z,transform:this.force_transform===null?transform:this.force_transform});
         this.result[z] = objectList;
     }
 }
@@ -223,6 +227,39 @@ export class cwDblClickEvent extends cwMouseEvent {
     static readonly type: string = '@dblclick';
     constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
         super (cwDblClickEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+    }
+}
+
+export class cwDragBeginEvent extends cwMouseEvent {
+    static readonly type: string = '@dragbegin';
+    readonly object:cwObject;
+    data:any;
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean,object:cwObject) {
+        super (cwDragBeginEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+        this.object = object;
+        this.data = null;
+    }
+}
+
+export class cwDragOverEvent extends cwMouseEvent {
+    static readonly type: string = '@dragover';
+    readonly object:cwObject;
+    readonly data:any;
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean,object:cwObject,data:any) {
+        super (cwDragOverEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+        this.object = object;
+        this.data = data;
+    }
+}
+
+export class cwDragDropEvent extends cwMouseEvent {
+    static readonly type: string = '@dragdrop';
+    readonly object:cwObject;
+    readonly data:any;
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean,object:cwObject,data:any) {
+        super (cwDragDropEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+        this.object = object;
+        this.data = data;
     }
 }
 

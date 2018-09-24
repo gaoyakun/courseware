@@ -1,15 +1,12 @@
 import { cwApp, cwScene, cwSceneObject } from './lib/core';
-import { cwcKeyframeAnimation, cwcImage } from './lib/components';
-import { cwEvent, cwClickEvent } from './lib/events';
+import { cwcKeyframeAnimation, cwcImage, cwcDraggable } from './lib/components';
+import { cwEvent, cwClickEvent, cwMouseDownEvent, cwMouseUpEvent } from './lib/events';
 import { cwSplineType } from './lib/curve';
 
 cwScene.init ();
 let view = cwScene.addView (document.querySelector('#test-canvas'), true);
-view.on (cwClickEvent.type, (ev:cwEvent) => {
-    console.log ('clicked');
-});
-
 const testNode = new cwSceneObject(view.rootNode);
+testNode.translation = { x:100, y:100 };
 testNode.addComponent(new cwcImage('images/return.png', 60, 60));
 testNode.addComponent(new cwcKeyframeAnimation({
     repeat:0,
@@ -25,6 +22,7 @@ testNode.addComponent(new cwcKeyframeAnimation({
         }
     }
 }));
+testNode.addComponent(new cwcDraggable());
 cwApp.run ();
 
 

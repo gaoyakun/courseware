@@ -1,5 +1,5 @@
-import { cwComponent, cwSceneObject } from './core';
-import { cwEvent, cwCullEvent, cwHitTestEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent } from './events';
+import { cwComponent, cwSceneObject, cwScene } from './core';
+import { cwEvent, cwCullEvent, cwHitTestEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent, cwMouseMoveEvent, cwMouseDownEvent, cwMouseUpEvent } from './events';
 import { cwSpline, cwSplineType } from './curve';
 
 export class cwcKeyframeAnimation extends cwComponent {
@@ -93,6 +93,32 @@ export class cwcKeyframeAnimation extends cwComponent {
             }
             this._tracks[name] = { evalutor: new cwSpline(type, keyFrames, clamp), value: null };
         }
+    }
+}
+
+export class cwcDraggable extends cwComponent {
+    static readonly type = 'Draggable';
+    private _dragging:boolean;
+    constructor () {
+        super (cwcDraggable.type);
+        this._dragging = false;
+        this.on (cwMouseDownEvent.type, (ev:cwEvent) => {
+            (this.object as cwSceneObject).setCapture ();
+            this._dragging = true;
+            const e = ev as cwMouseMoveEvent;
+            (this.object as cwSceneObject).worldTranslation = {x:e.x, y:e.y};
+        });
+        this.on (cwMouseUpEvent.type, (ev:cwEvent) => {
+            (this.object as cwSceneObject).releaseCapture ();
+            this._dragging = false;
+            (this.object as cwSceneObject).worldTranslation = null;
+        });
+        this.on (cwMouseMoveEvent.type, (ev:cwEvent) => {
+            if (this._dragging) {
+                const e = ev as cwMouseMoveEvent;
+                (this.object as cwSceneObject).worldTranslation = {x:e.x, y:e.y};
+            }
+        });
     }
 }
 
