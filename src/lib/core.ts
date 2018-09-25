@@ -29,7 +29,7 @@ import {
 } from './events';
 
 type cwHitTestResult = Array<cwSceneObject>;
-type cwEventHandlerList = { handler:cwEventHandler, next:cwEventHandlerList };
+type cwEventHandlerList = { handler:cwEventHandler<any>, next:cwEventHandlerList };
 type cwEventHandlerEntry = { handlers:cwEventHandlerList,bindObject:any };
 
 export class cwApp {
@@ -75,7 +75,7 @@ export class cwApp {
             cwApp.processEvent (evt.evt,evt.target);
         });
     }
-    static addEventListener (eventType:string, bindObject:any, handler:cwEventHandler, order:cwEventListenerOrder) {
+    static addEventListener (eventType:string, bindObject:any, handler:cwEventHandler<any>, order:cwEventListenerOrder) {
         let handlerList = cwApp.eventListeners[eventType]||[];
         for (let i = 0; i < handlerList.length; i++) {
             if (handlerList[i].bindObject === bindObject) {
@@ -103,7 +103,7 @@ export class cwApp {
         });
         this.eventListeners[eventType] = handlerList;
     }
-    static removeEventListener (eventType:string, bindObject:any, handler?:cwEventHandler) {
+    static removeEventListener (eventType:string, bindObject:any, handler?:cwEventHandler<any>) {
         let handlerList = cwApp.eventListeners[eventType]||[];
         for (let i = 0; i < handlerList.length; i++) {
             if (handlerList[i].bindObject === bindObject) {
@@ -276,64 +276,62 @@ export class cwSceneObject extends cwObject {
         if (parent) {
             parent.addChild (this);
         }
-        this.on (cwGetPropEvent.type, (ev:cwEvent) => {
-            const e = ev as cwGetPropEvent;
-            switch (e.propName) {
+        this.on (cwGetPropEvent.type, (ev:cwGetPropEvent) => {
+            switch (ev.propName) {
             case 'z':
-                e.propValue = this.z;
-                e.eat();
+                ev.propValue = this.z;
+                ev.eat();
                 break;
             case 'visible':
-                e.propValue = this.visible;
-                e.eat();
+                ev.propValue = this.visible;
+                ev.eat();
                 break;
             case 'transform':
-                e.propValue = this.localTransform;
-                e.eat();
+                ev.propValue = this.localTransform;
+                ev.eat();
                 break;
             case 'translation':
                 let t = this.translation;
-                e.propValue = [t.x,t.y];
-                e.eat();
+                ev.propValue = [t.x,t.y];
+                ev.eat();
                 break;
             case 'scale':
                 let s = this.scale;
-                e.propValue = [t.x,t.y];
-                e.eat();
+                ev.propValue = [t.x,t.y];
+                ev.eat();
                 break;
             case 'rotation':
-                e.propValue = this.rotation;
-                e.eat();
+                ev.propValue = this.rotation;
+                ev.eat();
                 break;
             default:
                 break;
             }
         });
-        this.on (cwSetPropEvent.type, (ev:cwEvent) => {
-            const e = ev as cwSetPropEvent;
-            switch (e.propName) {
+        this.on (cwSetPropEvent.type, (ev:cwSetPropEvent) => {
+            switch (ev.propName) {
             case 'z':
-                this.z = e.propValue as number;
-                e.eat ();
+                this.z = ev.propValue as number;
+                ev.eat ();
                 break;
             case 'visible':
-                this.visible = e.propValue as boolean;
-                e.eat ();
+                this.visible = ev.propValue as boolean;
+                ev.eat ();
                 break;
             case 'transform':
-                this.localTransform = e.propValue as cwTransform2d;
-                e.eat ();
+                this.localTransform = ev.propValue as cwTransform2d;
+                ev.eat ();
                 break;
             case 'translation':
-                let t = e.propValue as Array<number>;
+                let t = ev.propValue as Array<number>;
                 this.translation = {x:t[0],y:t[1]};
                 break;
             case 'scale':
-                let s = e.propValue as Array<number>;
+                let s = ev.propValue as Array<number>;
                 this.scale = {x:s[0],y:s[1]};
                 break;
             case 'rotation':
-                this.rotation = e.propValue as number;
+                this.rotation = ev.propValue as number;
                 break;
             default:
                 break;
@@ -416,8 +414,19 @@ export class cwSceneObject extends cwObject {
     set worldScale ( value: {x:number,y:number}|null) {
         this._worldScale = value;
     }
-    get numChildren () {
+    get numChildren (): number {
         return this._children.length;
+    }
+    collapseTransform (): void {
+        const wt = this.worldTransform;
+        this.worldTranslation = null;
+        this.worldRotation = null;
+        this.worldScale = null;
+        if (this.parent) {
+            this.localTransform = cwTransform2d.invert(this.parent.worldTransform).transform(wt);
+        } else {
+            this.localTransform = wt;
+        }
     }
     getLocalPoint (x:number, y:number): {x:number,y:number} {
         return cwTransform2d.invert(this.worldTransform).transformPoint({x:x,y:y});
@@ -506,13 +515,9 @@ export class cwScene extends cwObject {
             return cwScene.capturedView;
         }
         for (let i = 0; i < cwScene.views.length; i++) {
-            let view = cwScene.views[i];
-            let canvas = view.canvas.canvas;
-            let l = canvas.offsetLeft;
-            let t = canvas.offsetTop;
-            let r = l + canvas.offsetWidth;
-            let b = t + canvas.offsetHeight;
-            if (x >= l && x < r && y >= t && y < b) {
+            const view = cwScene.views[i];
+            const rc = view.canvas.viewport_rect;
+            if (x >= rc.x && x < rc.x + rc.w && y >= rc.y && y < rc.y + rc.h) {
                 return view;
             }
         }
@@ -556,20 +561,18 @@ export class cwScene extends cwObject {
         });
         window.addEventListener ('mousemove', (ev:MouseEvent) => {
             let view = cwScene.hitView (ev.clientX, ev.clientY);
-            let x = view ? ev.clientX-view.canvas.canvas.offsetLeft : 0;
-            let y = view ? ev.clientY-view.canvas.canvas.offsetTop : 0;
             if (view != cwScene.hoverView) {
                 if (cwScene.hoverView) {
-                    cwScene.hoverView.triggerEx (new cwMouseLeaveEvent (ev.clientX-cwScene.hoverView.canvas.canvas.offsetLeft, ev.clientY-cwScene.hoverView.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                    cwScene.hoverView.triggerEx (new cwMouseLeaveEvent ());
                     cwScene.hoverView = null;
                 }
                 if (view !== null) {
                     cwScene.hoverView = view;
-                    view.triggerEx (new cwMouseEnterEvent (x, y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+                    view.triggerEx (new cwMouseEnterEvent ());
                 }
             }
             if (view !== null) {
-                view.updateHitObjects (ev);
+                view.updateHitObjects (ev.clientX, ev.clientY);
                 view.handleMouseMove (ev);
             }
         });
@@ -589,14 +592,20 @@ export class cwScene extends cwObject {
             }
         });
     }
-    public static addView (canvas:HTMLCanvasElement, doubleBuffer?:boolean): cwSceneView {
-        if (!cwScene.findView (canvas)) {
-            const view = new cwSceneView(canvas, doubleBuffer===undefined?false:doubleBuffer);
+    public static addView (view:cwSceneView): boolean {
+        if (view && view.canvas && !cwScene.findView (view.canvas.canvas)) {
             cwScene.views.push (view);
             if (!cwScene.focusView) {
                 cwScene.setFocusView (view);
             }
-            return view;
+            return true;
+        }
+        return false;
+    }
+    public static addCanvas (canvas:HTMLCanvasElement, doubleBuffer?:boolean): cwSceneView {
+        if (!cwScene.findView (canvas)) {
+            const view = new cwSceneView(canvas, doubleBuffer===undefined?false:doubleBuffer);
+            return cwScene.addView (view) ? view : null;
         }
         return null;
     }
@@ -639,13 +648,12 @@ export class cwSceneView extends cwObject {
     private _rootNode: cwSceneObject;
     private _captureObject: cwSceneObject;
     private _hitObjects: Array<cwSceneObject>;
-    public updateHitObjects (ev:MouseEvent) {
-        const x = ev.clientX-this.canvas.canvas.offsetLeft;
-        const y = ev.clientY-this.canvas.canvas.offsetTop;
-        const hitTestResult = this.hitTest (x, y);
+    public updateHitObjects (x:number, y:number) {
+        const rc = this.canvas.viewport_rect;
+        const hitTestResult = this.hitTest (x - rc.x, y - rc.y);
         for (let i = 0; i < this._hitObjects.length; ) {
             if (hitTestResult.indexOf(this._hitObjects[i]) < 0) {
-                this._hitObjects[i].trigger (new cwMouseLeaveEvent(x,y,ev.button,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
+                this._hitObjects[i].trigger (new cwMouseLeaveEvent());
                 this._hitObjects.splice(i, 1);
             } else {
                 i++;
@@ -653,7 +661,7 @@ export class cwSceneView extends cwObject {
         }
         for (let i = 0; i < hitTestResult.length; i++) {
             if (this._hitObjects.indexOf(hitTestResult[i]) < 0) {
-                hitTestResult[i].trigger (new cwMouseEnterEvent(x,y,ev.button,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
+                hitTestResult[i].trigger (new cwMouseEnterEvent());
             }
         }
         this._hitObjects = hitTestResult;
@@ -668,10 +676,11 @@ export class cwSceneView extends cwObject {
         this._rootNode = new cwSceneObject();
         this._rootNode.view = this;
         this._canvas = new cwCanvas(canvas, doubleBuffer);
-        this.on (cwFrameEvent.type, (evt:cwEvent) => {
-            let frameEvent = evt as cwFrameEvent;
-            let updateEvent = new cwUpdateEvent(frameEvent.deltaTime,frameEvent.elapsedTime,frameEvent.frameStamp);
-            this.rootNode.triggerRecursiveEx (updateEvent);
+        this.on (cwFrameEvent.type, (ev:cwFrameEvent) => {
+            let updateEvent = new cwUpdateEvent(ev.deltaTime,ev.elapsedTime,ev.frameStamp);
+            if (this.rootNode) {
+                this.rootNode.triggerRecursiveEx (updateEvent);
+            }
             this.draw ();
         });
         this.on (cwResizeEvent.type, () => {
@@ -690,9 +699,14 @@ export class cwSceneView extends cwObject {
     get hitObjects (): Array<cwSceneObject> {
         return this._hitObjects;
     }
-    unref (): void {
+    empty (): void {
         if (this._rootNode) {
             this._rootNode.unrefChildren ();
+        }
+    }
+    unref (): void {
+        this.empty ();
+        if (this._rootNode) {
             this._rootNode.view = null;
             this._rootNode = null;
         }
@@ -701,14 +715,18 @@ export class cwSceneView extends cwObject {
         this._captureObject = object;
     }
     handleMouseDown (ev:MouseEvent): void {
-        const e = new cwMouseDownEvent (ev.clientX-this.canvas.canvas.offsetLeft, ev.clientY-this.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
+        const rc = this.canvas.viewport_rect;
+        const e = new cwMouseDownEvent (ev.clientX-rc.x, ev.clientY-rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
         if (this.isValidObject(this._captureObject)) {
             this._captureObject.triggerEx (e);
         } else {
             for (let i = 0; i < this._hitObjects.length; i++) {
-                this._hitObjects[i].triggerEx (e);
-                if (!e.bubble) {
-                    break;
+                const obj = this._hitObjects[i];
+                if (this.isValidObject(obj)) {
+                    obj.triggerEx (e);
+                    if (!e.bubble) {
+                        break;
+                    }
                 }
             }
             if (e.bubble) {
@@ -717,14 +735,18 @@ export class cwSceneView extends cwObject {
         }
     }
     handleMouseUp (ev:MouseEvent): void {
-        const e = new cwMouseUpEvent (ev.clientX-this.canvas.canvas.offsetLeft, ev.clientY-this.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
+        const rc = this.canvas.viewport_rect;
+        const e = new cwMouseUpEvent (ev.clientX-rc.x, ev.clientY-rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
         if (this.isValidObject(this._captureObject)) {
             this._captureObject.triggerEx (e);
         } else {
             for (let i = 0; i < this._hitObjects.length; i++) {
-                this._hitObjects[i].triggerEx (e);
-                if (!e.bubble) {
-                    break;
+                const obj = this._hitObjects[i];
+                if (this.isValidObject (obj)) {
+                    obj.triggerEx (e);
+                    if (!e.bubble) {
+                        break;
+                    }
                 }
             }
             if (e.bubble) {
@@ -733,14 +755,18 @@ export class cwSceneView extends cwObject {
         }
     }
     handleMouseMove (ev:MouseEvent): void {
-        const e = new cwMouseMoveEvent (ev.clientX-this.canvas.canvas.offsetLeft, ev.clientY-this.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
+        const rc = this.canvas.viewport_rect;
+        const e = new cwMouseMoveEvent (ev.clientX-rc.x, ev.clientY-rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
         if (this.isValidObject (this._captureObject)) {
             this._captureObject.triggerEx (e);
         } else {
             for (let i = 0; i < this._hitObjects.length; i++) {
-                this._hitObjects[i].triggerEx (e);
-                if (!e.bubble) {
-                    break;
+                const obj = this._hitObjects[i];
+                if (this.isValidObject (obj)) {
+                    obj.triggerEx (e);
+                    if (!e.bubble) {
+                        break;
+                    }
                 }
             }
             if (e.bubble) {
@@ -749,11 +775,15 @@ export class cwSceneView extends cwObject {
         }
     }
     handleClick (ev:MouseEvent): void {
-        const e = new cwClickEvent (ev.clientX-this.canvas.canvas.offsetLeft, ev.clientY-this.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
+        const rc = this.canvas.viewport_rect;
+        const e = new cwClickEvent (ev.clientX-rc.x, ev.clientY-rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
         for (let i = 0; i < this._hitObjects.length; i++) {
-            this._hitObjects[i].triggerEx (e);
-            if (!e.bubble) {
-                break;
+            const obj = this._hitObjects[i];
+            if (this.isValidObject (obj)) {
+                obj.triggerEx (e);
+                if (!e.bubble) {
+                    break;
+                }
             }
         }
         if (e.bubble) {
@@ -761,11 +791,15 @@ export class cwSceneView extends cwObject {
         }
     }
     handleDblClick (ev:MouseEvent): void {
-        const e = new cwDblClickEvent (ev.clientX-this.canvas.canvas.offsetLeft, ev.clientY-this.canvas.canvas.offsetTop, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
+        const rc = this.canvas.viewport_rect;
+        const e = new cwDblClickEvent (ev.clientX-rc.x, ev.clientY-rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
         for (let i = 0; i < this._hitObjects.length; i++) {
-            this._hitObjects[i].triggerEx (e);
-            if (!e.bubble) {
-                break;
+            const obj = this._hitObjects[i];
+            if (this.isValidObject (obj)) {
+                obj.triggerEx (e);
+                if (!e.bubble) {
+                    break;
+                }
             }
         }
         if (e.bubble) {
@@ -777,12 +811,15 @@ export class cwSceneView extends cwObject {
     }
     draw (): void {
         this.canvas.clear ();
-        let cullEvent = new cwCullEvent(this.canvas.width, this.canvas.height);
-        this.rootNode.triggerRecursiveEx (cullEvent);
-        for (let i in cullEvent.result) {
-            let group = cullEvent.result[i];
-            for (let j = 0; j < group.length; j++) {
-                group[j].object.trigger (new cwDrawEvent(this.canvas, group[j].z, group[j].transform));
+        this.triggerEx (new cwDrawEvent(this.canvas, 0, new cwTransform2d()));
+        if (this.rootNode) {
+            let cullEvent = new cwCullEvent(this.canvas.width, this.canvas.height);
+            this.rootNode.triggerRecursiveEx (cullEvent);
+            for (let i in cullEvent.result) {
+                let group = cullEvent.result[i];
+                for (let j = 0; j < group.length; j++) {
+                    group[j].object.trigger (new cwDrawEvent(this.canvas, group[j].z, group[j].transform));
+                }
             }
         }
         this.canvas.flip ();
@@ -802,10 +839,10 @@ export class cwSceneView extends cwObject {
         const hitTestResult:cwHitTestResult = [];
         if (this.rootNode) {
             hitTest_r (this.rootNode, hitTestResult);
+            hitTestResult.sort ((a:cwSceneObject, b:cwSceneObject):number => {
+                return b.z - a.z;
+            });
         }
-        hitTestResult.sort ((a:cwSceneObject, b:cwSceneObject):number => {
-            return b.z - a.z;
-        });
         return hitTestResult;
     }
 }
@@ -858,6 +895,14 @@ export class cwCanvas extends cwObject {
     }
     get context():CanvasRenderingContext2D {
         return this._doubleBuffer ? this._offscreenCtx : this._screenCtx;
+    }
+    get viewport_rect(): {x:number,y:number,w:number,h:number} {
+        const rc = this._canvas.getBoundingClientRect ();
+        const x = rc.left - document.documentElement.clientLeft;
+        const y = rc.top - document.documentElement.clientTop;
+        const w = rc.right - rc.left;
+        const h = rc.bottom - rc.top;
+        return {x:x,y:y,w:w,h:h};
     }
     clear (rect?:{x:number,y:number,w:number,h:number}): void {
         const x = rect ? rect.x : 0;

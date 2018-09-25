@@ -1,5 +1,5 @@
 import { cwComponent, cwSceneObject, cwScene } from './core';
-import { cwEvent, cwCullEvent, cwHitTestEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent, cwMouseMoveEvent, cwMouseDownEvent, cwMouseUpEvent } from './events';
+import { cwEvent, cwCullEvent, cwHitTestEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent, cwMouseMoveEvent, cwMouseDownEvent, cwMouseUpEvent, cwDragBeginEvent, cwDragDropEvent, cwDragOverEvent } from './events';
 import { cwSpline, cwSplineType } from './curve';
 
 export class cwcKeyframeAnimation extends cwComponent {
@@ -42,8 +42,7 @@ export class cwcKeyframeAnimation extends cwComponent {
             }
         }
         
-        this.on (cwUpdateEvent.type, (ev:cwEvent) => {
-            const e = ev as cwUpdateEvent;
+        this.on (cwUpdateEvent.type, (e:cwUpdateEvent) => {
             const timeNow = e.elapsedTime;
             if (this._startTime == 0) {
                 this._startTime = timeNow;
@@ -99,26 +98,60 @@ export class cwcKeyframeAnimation extends cwComponent {
 export class cwcDraggable extends cwComponent {
     static readonly type = 'Draggable';
     private _dragging:boolean;
+    private _draggingData:any;
     constructor () {
         super (cwcDraggable.type);
         this._dragging = false;
-        this.on (cwMouseDownEvent.type, (ev:cwEvent) => {
+        this._draggingData = null;
+        this.on (cwMouseDownEvent.type, (e:cwMouseDownEvent) => {
+            console.log ('draggable: mouse down');
             (this.object as cwSceneObject).setCapture ();
             this._dragging = true;
-            const e = ev as cwMouseMoveEvent;
-            (this.object as cwSceneObject).worldTranslation = {x:e.x, y:e.y};
+            const dragBeginEvent = new cwDragBeginEvent(e.x, e.y, e.button, e.shiftDown, e.altDown, e.ctrlDown, e.metaDown);
+            this.object.triggerEx (dragBeginEvent);
+            this._draggingData = dragBeginEvent.data;
         });
-        this.on (cwMouseUpEvent.type, (ev:cwEvent) => {
-            (this.object as cwSceneObject).releaseCapture ();
+        this.on (cwMouseUpEvent.type, (e:cwMouseUpEvent) => {
+            const obj = this.object as cwSceneObject;
+            obj.releaseCapture ();
             this._dragging = false;
-            (this.object as cwSceneObject).worldTranslation = null;
+
+            obj.view.updateHitObjects (e.x, e.y);
+            let dragDropEvent = new cwDragDropEvent (e.x, e.y, e.button, e.shiftDown, e.altDown, e.ctrlDown, e.metaDown, obj, this._draggingData);
+            for (let i = 0; i < obj.view.hitObjects.length; i++) {
+                obj.view.hitObjects[i].triggerEx (dragDropEvent);
+                if (!dragDropEvent.bubble) {
+                    break;
+                }
+            }
+            if (dragDropEvent.bubble) {
+                obj.view.triggerEx (dragDropEvent);
+            }
+            this._draggingData = null;
         });
-        this.on (cwMouseMoveEvent.type, (ev:cwEvent) => {
+        this.on (cwMouseMoveEvent.type, (e:cwMouseMoveEvent) => {
             if (this._dragging) {
-                const e = ev as cwMouseMoveEvent;
-                (this.object as cwSceneObject).worldTranslation = {x:e.x, y:e.y};
+                const obj = this.object as cwSceneObject;
+                obj.view.updateHitObjects (e.x, e.y);
+                let dragOverEvent = new cwDragOverEvent (e.x, e.y, e.button, e.shiftDown, e.altDown, e.ctrlDown, e.metaDown, obj, this._draggingData);
+                for (let i = 0; i < obj.view.hitObjects.length; i++) {
+                    obj.view.hitObjects[i].triggerEx (dragOverEvent);
+                    if (!dragOverEvent.bubble) {
+                        break;
+                    }
+                }
+                if (dragOverEvent.bubble) {
+                    obj.view.triggerEx (dragOverEvent);
+                }
             }
         });
+    }
+}
+
+export class cwcDroppable extends cwComponent {
+    static readonly type = 'Droppable';
+    constructor () {
+        super (cwcDroppable.type);
     }
 }
 
@@ -160,55 +193,50 @@ export class cwcImage extends cwComponent {
         } else {
             this._loaded = true;
         }
-        this.on (cwCullEvent.type, (evt:cwEvent) => {
+        this.on (cwCullEvent.type, (evt:cwCullEvent) => {
             if (this._loaded) {
-                const cullEvent = evt as cwCullEvent;
                 const node = this.object as cwSceneObject;
-                cullEvent.addObject (this, node.z, node.worldTransform);
+                evt.addObject (this, node.z, node.worldTransform);
             }
         });
-        this.on (cwHitTestEvent.type, (evt:cwEvent) => {
+        this.on (cwHitTestEvent.type, (evt:cwHitTestEvent) => {
             if (this._loaded) {
-                const hittestEvent = evt as cwHitTestEvent;
-                hittestEvent.result = hittestEvent.x >= -this._width/2 && hittestEvent.x < this._width/2 && hittestEvent.y >= -this._height/2 && hittestEvent.y < this._height/2;
+                evt.result = evt.x >= -this._width/2 && evt.x < this._width/2 && evt.y >= -this._height/2 && evt.y < this._height/2;
             }
         });
-        this.on (cwDrawEvent.type, (evt:cwEvent) => {
+        this.on (cwDrawEvent.type, (evt:cwDrawEvent) => {
             if (this._loaded) {
-                const drawEvent = evt as cwDrawEvent;
-                drawEvent.canvas.context.save();
-                drawEvent.canvas.applyTransform (drawEvent.transform);
-                drawEvent.canvas.context.drawImage(this._image, -this._width/2, -this._height/2, this._width, this._height);
-                drawEvent.canvas.context.restore();
+                evt.canvas.context.save();
+                evt.canvas.applyTransform (evt.transform);
+                evt.canvas.context.drawImage(this._image, -this._width/2, -this._height/2, this._width, this._height);
+                evt.canvas.context.restore();
             }
         });
-        this.on (cwGetPropEvent.type, (ev:cwEvent) => {
-            const e = ev as cwGetPropEvent;
-            switch (e.propName) {
+        this.on (cwGetPropEvent.type, (ev:cwGetPropEvent) => {
+            switch (ev.propName) {
             case 'width':
-                e.propValue = this._width;
-                e.eat ();
+                ev.propValue = this._width;
+                ev.eat ();
                 break;
             case 'height':
-                e.propValue = this._height;
-                e.eat ();
+                ev.propValue = this._height;
+                ev.eat ();
                 break;
             default:
                 break;
             }
         });
-        this.on (cwSetPropEvent.type, (ev:cwEvent) => {
-            const e = ev as cwSetPropEvent;
-            switch (e.propName) {
+        this.on (cwSetPropEvent.type, (ev:cwSetPropEvent) => {
+            switch (ev.propName) {
             case 'width':
-                this._width = e.propValue as number;
+                this._width = ev.propValue as number;
                 this._image.width = this._width;
-                e.eat ();
+                ev.eat ();
                 break;
             case 'height':
-                this._height = e.propValue as number;
+                this._height = ev.propValue as number;
                 this._image.height = this._height;
-                e.eat ();
+                ev.eat ();
                 break;
             default:
                 break;

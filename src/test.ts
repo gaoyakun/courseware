@@ -1,14 +1,12 @@
-import { cwApp, cwScene, cwSceneObject } from './lib/core';
+import { cwApp, cwScene, cwSceneObject, cwObject } from './lib/core';
 import { cwcKeyframeAnimation, cwcImage, cwcDraggable } from './lib/components';
-import { cwEvent, cwClickEvent, cwMouseDownEvent, cwMouseUpEvent } from './lib/events';
+import { cwEvent, cwClickEvent, cwMouseDownEvent, cwMouseUpEvent, cwDragOverEvent, cwDragDropEvent, cwDragBeginEvent } from './lib/events';
 import { cwSplineType } from './lib/curve';
 
 cwScene.init ();
-let view = cwScene.addView (document.querySelector('#test-canvas'), true);
+let view = cwScene.addCanvas (document.querySelector('#test-canvas'), true);
 const testNode = new cwSceneObject(view.rootNode);
-testNode.translation = { x:100, y:100 };
-testNode.addComponent(new cwcImage('images/return.png', 60, 60));
-testNode.addComponent(new cwcKeyframeAnimation({
+const frameAnimation = new cwcKeyframeAnimation({
     repeat:0,
     autoRemove:true,
     tracks:{
@@ -21,8 +19,21 @@ testNode.addComponent(new cwcKeyframeAnimation({
             cp:[{x:0,y:[1,1]},{x:2000,y:[3,3]},{x:4000,y:[1,1]}]
         }
     }
-}));
+});
+testNode.translation = { x:100, y:100 };
+testNode.addComponent(new cwcImage('images/return.png', 60, 60));
+testNode.addComponent(frameAnimation);
 testNode.addComponent(new cwcDraggable());
+testNode.on (cwDragBeginEvent.type, function(ev:cwDragBeginEvent) {
+    this.removeComponent (frameAnimation);
+});
+view.on (cwDragOverEvent.type, function(ev:cwDragOverEvent) {
+    ev.object.worldTranslation = {x:ev.x, y:ev.y};
+});
+view.on (cwDragDropEvent.type, function(ev:cwDragDropEvent) {
+    ev.object.worldTranslation = null;;
+    testNode.addComponent (frameAnimation);
+});
 cwApp.run ();
 
 

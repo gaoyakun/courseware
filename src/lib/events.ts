@@ -1,7 +1,7 @@
-import { cwApp, cwObject, cwCanvas } from './core';
+import { cwApp, cwObject, cwCanvas, cwSceneObject } from './core';
 import { cwTransform2d } from './transform';
 export type cwCullResult = {[z:number]:Array<{object:cwEventObserver,z:number,transform:cwTransform2d}>};
-export type cwEventHandler = (evt:cwEvent) => void;
+export type cwEventHandler<T extends cwEvent> = (evt:T) => void;
 
 export enum cwEventListenerOrder {
     FIRST = 1,
@@ -15,7 +15,7 @@ export class cwEvent {
         this.type = type;
         this.eaten = false;
     }
-    eat () {
+    eat (): void {
         this.eaten = true;
     }
 }
@@ -202,17 +202,17 @@ export class cwMouseMoveEvent extends cwMouseEvent {
     }
 }
 
-export class cwMouseEnterEvent extends cwMouseEvent {
+export class cwMouseEnterEvent extends cwEvent {
     static readonly type: string = '@mouseenter';
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseEnterEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+    constructor () {
+        super (cwMouseEnterEvent.type);
     }
 }
 
-export class cwMouseLeaveEvent extends cwMouseEvent {
+export class cwMouseLeaveEvent extends cwEvent {
     static readonly type: string = '@mouseleave';
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
-        super (cwMouseLeaveEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
+    constructor () {
+        super (cwMouseLeaveEvent.type);
     }
 }
 
@@ -232,20 +232,18 @@ export class cwDblClickEvent extends cwMouseEvent {
 
 export class cwDragBeginEvent extends cwMouseEvent {
     static readonly type: string = '@dragbegin';
-    readonly object:cwObject;
     data:any;
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean,object:cwObject) {
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean) {
         super (cwDragBeginEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
-        this.object = object;
         this.data = null;
     }
 }
 
 export class cwDragOverEvent extends cwMouseEvent {
     static readonly type: string = '@dragover';
-    readonly object:cwObject;
+    readonly object:cwSceneObject;
     readonly data:any;
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean,object:cwObject,data:any) {
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean,object:cwSceneObject,data:any) {
         super (cwDragOverEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
         this.object = object;
         this.data = data;
@@ -254,9 +252,9 @@ export class cwDragOverEvent extends cwMouseEvent {
 
 export class cwDragDropEvent extends cwMouseEvent {
     static readonly type: string = '@dragdrop';
-    readonly object:cwObject;
+    readonly object:cwSceneObject;
     readonly data:any;
-    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean,object:cwObject,data:any) {
+    constructor (x:number,y:number,button:number,shiftDown:boolean,altDown:boolean,ctrlDown:boolean,metaDown:boolean,object:cwSceneObject,data:any) {
         super (cwDragDropEvent.type,x,y,button,shiftDown,altDown,ctrlDown,metaDown);
         this.object = object;
         this.data = data;
@@ -293,16 +291,16 @@ export class cwSetPropEvent extends cwEvent {
 }
 
 export class cwEventObserver {
-    on (type:string, handler:cwEventHandler, order?:cwEventListenerOrder): void {
+    on<T extends cwEvent> (type:string, handler:cwEventHandler<T>, order?:cwEventListenerOrder): void {
         cwApp.addEventListener (type, this, handler, order||cwEventListenerOrder.FIRST);
     }
-    off (type:string, handler?:cwEventHandler): void {
+    off<T extends cwEvent> (type:string, handler?:cwEventHandler<T>): void {
         cwApp.removeEventListener (type, this, handler);
     }
-    trigger (evt:cwEvent): void {
+    trigger<T extends cwEvent> (evt:T): void {
         cwApp.triggerEvent (this, evt);
     }
-    post (evt:cwEvent): void {
+    post<T extends cwEvent> (evt:T): void {
         cwApp.postEvent (this, evt);
     }
 }

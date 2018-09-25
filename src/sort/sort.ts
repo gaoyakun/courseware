@@ -2,11 +2,14 @@ import $ from 'jquery';
 import {CousewareFramework} from '../lib/presentation';
 import {Graph} from '../lib/graph';
 import {NumberSequenceScene} from '../lib/demo';
+import {DemoBase} from './demobase';
+import { cwScene, cwApp } from '../lib/core';
 
 export class CourseSort extends CousewareFramework {
     private graphRandUnsort: Graph;
     private graphRandSorted: Graph;
-    private bubbleDemo: NumberSequenceScene;
+    //private bubbleDemo: NumberSequenceScene;
+    private bubbleDemo: DemoBase;
 
     constructor () {
         super();
@@ -30,24 +33,24 @@ export class CourseSort extends CousewareFramework {
             paddingH:5
         });
 
-        this.bubbleDemo = new NumberSequenceScene($('#demo-bubble-sort'));
-
+        this.bubbleDemo = new DemoBase(document.querySelector('#demo-bubble-sort'));
         window.addEventListener ('pageIn', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
-                this.bubbleDemo.start ('rgba(0,0,128,255)',[3,2,8,4,8,6,9,1,0,6,1,5,3],{
+                this.bubbleDemo.start ([3,2,8,4,8,6,9,1,0,6,1,5,3],{
                     margin_h: 50,
                     margin_v: 50,
                     padding: 0
                 });
             }
         });        
-
         window.addEventListener ('pageOut', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
                 this.bubbleDemo.end ();
             }
-        });        
+        });     
+        
+        cwScene.init ();
+        cwApp.run ();
     }
-
 }
 
