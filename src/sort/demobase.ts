@@ -200,6 +200,7 @@ export class DemoBase {
     end () {
         if (this.view) {
             this.view.empty ();
+            this.view.draw ();
         }
     }
 }

@@ -523,75 +523,91 @@ export class cwScene extends cwObject {
         }
         return null;
     }
-    private static initEventListeners (): void {
-        window.addEventListener ('resize', (ev: UIEvent) => {
-            let e = new cwResizeEvent();
-            cwScene.views.forEach ((view:cwSceneView) => {
-                view.triggerEx (e);
-            });
+    private static resizeHandler () {
+        let e = new cwResizeEvent();
+        cwScene.views.forEach ((view:cwSceneView) => {
+            view.triggerEx (e);
         });
-        window.addEventListener ('mousedown', (ev:MouseEvent) => {
-            cwScene.clickTick = Date.now();
-            let view = cwScene.hitView (ev.clientX, ev.clientY);
-            if (view !== null) {
-                view.handleMouseDown (ev);
-            }
-        });
-        window.addEventListener ('mouseup', (ev:MouseEvent) => {
-            let view = cwScene.hitView (ev.clientX, ev.clientY);
-            if (view !== null) {
-                let tick = Date.now();
-                if (tick < cwScene.clickTick + cwScene.clickTime) {
-                    if (tick < cwScene.dblClickTick + cwScene.dblclickTime) {
-                        view.handleDblClick (ev);
-                        cwScene.dblClickTick = 0;
-                    } else {
-                        view.handleClick (ev);
-                        cwScene.dblClickTick = tick;
-                    }
-                } else {
+    }
+    private static mouseDownHandler (ev:MouseEvent) {
+        cwScene.clickTick = Date.now();
+        let view = cwScene.hitView (ev.clientX, ev.clientY);
+        if (view !== null) {
+            view.handleMouseDown (ev);
+        }
+    }
+    private static mouseUpHandler (ev:MouseEvent) {
+        let view = cwScene.hitView (ev.clientX, ev.clientY);
+        if (view !== null) {
+            let tick = Date.now();
+            if (tick < cwScene.clickTick + cwScene.clickTime) {
+                if (tick < cwScene.dblClickTick + cwScene.dblclickTime) {
+                    view.handleDblClick (ev);
                     cwScene.dblClickTick = 0;
+                } else {
+                    view.handleClick (ev);
+                    cwScene.dblClickTick = tick;
                 }
-                view.handleMouseUp (ev);
-                cwScene.clickTick = 0;
             } else {
-                cwScene.clickTick = 0;
                 cwScene.dblClickTick = 0;
             }
-        });
-        window.addEventListener ('mousemove', (ev:MouseEvent) => {
-            let view = cwScene.hitView (ev.clientX, ev.clientY);
-            if (view != cwScene.hoverView) {
-                if (cwScene.hoverView) {
-                    cwScene.hoverView.triggerEx (new cwMouseLeaveEvent ());
-                    cwScene.hoverView = null;
-                }
-                if (view !== null) {
-                    cwScene.hoverView = view;
-                    view.triggerEx (new cwMouseEnterEvent ());
-                }
+            view.handleMouseUp (ev);
+            cwScene.clickTick = 0;
+        } else {
+            cwScene.clickTick = 0;
+            cwScene.dblClickTick = 0;
+        }
+    }
+    private static mouseMoveHandler (ev:MouseEvent) {
+        let view = cwScene.hitView (ev.clientX, ev.clientY);
+        if (view != cwScene.hoverView) {
+            if (cwScene.hoverView) {
+                cwScene.hoverView.triggerEx (new cwMouseLeaveEvent ());
+                cwScene.hoverView = null;
             }
             if (view !== null) {
-                const rc = view.canvas.viewport_rect;
-                view.updateHitObjects (ev.clientX - rc.x, ev.clientY - rc.y);
-                view.handleMouseMove (ev);
+                cwScene.hoverView = view;
+                view.triggerEx (new cwMouseEnterEvent ());
             }
-        });
-        window.addEventListener ('keydown', (ev:KeyboardEvent) => {
-            if (cwScene.focusView) {
-                cwScene.focusView.trigger (new cwKeyDownEvent(ev.key,ev.keyCode,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
-            }
-        });
-        window.addEventListener ('keyup', (ev:KeyboardEvent) => {
-            if (cwScene.focusView) {
-                cwScene.focusView.trigger (new cwKeyUpEvent(ev.key,ev.keyCode,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
-            }
-        });
-        window.addEventListener ('keypress', (ev:KeyboardEvent) => {
-            if (cwScene.focusView) {
-                cwScene.focusView.trigger (new cwKeyPressEvent(ev.key,ev.keyCode,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
-            }
-        });
+        }
+        if (view !== null) {
+            const rc = view.canvas.viewport_rect;
+            view.updateHitObjects (ev.clientX - rc.x, ev.clientY - rc.y);
+            view.handleMouseMove (ev);
+        }
+    }
+    private static keyDownHandler (ev:KeyboardEvent) {
+        if (cwScene.focusView) {
+            cwScene.focusView.trigger (new cwKeyDownEvent(ev.key,ev.keyCode,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
+        }
+    }
+    private static keyUpHandler (ev:KeyboardEvent) {
+        if (cwScene.focusView) {
+            cwScene.focusView.trigger (new cwKeyUpEvent(ev.key,ev.keyCode,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
+        }
+    }
+    private static keyPressHandler (ev:KeyboardEvent) {
+        if (cwScene.focusView) {
+            cwScene.focusView.trigger (new cwKeyPressEvent(ev.key,ev.keyCode,ev.shiftKey,ev.altKey,ev.ctrlKey,ev.metaKey));
+        }
+    }
+    private static initEventListeners (): void {
+        window.addEventListener ('resize', cwScene.resizeHandler);
+        window.addEventListener ('mousedown', cwScene.mouseDownHandler);
+        window.addEventListener ('mouseup', cwScene.mouseUpHandler);
+        window.addEventListener ('mousemove', cwScene.mouseMoveHandler);
+        window.addEventListener ('keydown', cwScene.keyDownHandler);
+        window.addEventListener ('keyup', cwScene.keyUpHandler);
+        window.addEventListener ('keypress', cwScene.keyPressHandler);
+    }
+    private static doneEventListeners (): void {
+        window.removeEventListener ('resize', cwScene.resizeHandler);
+        window.removeEventListener ('mousedown', cwScene.mouseDownHandler);
+        window.removeEventListener ('mouseup', cwScene.mouseUpHandler);
+        window.removeEventListener ('mousemove', cwScene.mouseMoveHandler);
+        window.removeEventListener ('keydown', cwScene.keyDownHandler);
+        window.removeEventListener ('keyup', cwScene.keyUpHandler);
+        window.removeEventListener ('keypress', cwScene.keyPressHandler);
     }
     public static addView (view:cwSceneView): boolean {
         if (view && view.canvas && !cwScene.findView (view.canvas.canvas)) {
@@ -641,6 +657,9 @@ export class cwScene extends cwObject {
     }
     public static init () {
         cwScene.initEventListeners ();
+    }
+    public static done () {
+        cwScene.doneEventListeners ();
     }
 }
 

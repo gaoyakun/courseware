@@ -35,6 +35,8 @@ export class CourseSort extends CousewareFramework {
         this.bubbleDemo = new DemoBase(document.querySelector('#demo-bubble-sort'));
         window.addEventListener ('pageIn', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
+                cwScene.init ();
+                cwApp.run ();
                 this.bubbleDemo.start ([3,2,8,4,8,6,9,1,0,6,1,5,3],{
                     margin_h: 50,
                     margin_v: 50,
@@ -45,11 +47,10 @@ export class CourseSort extends CousewareFramework {
         window.addEventListener ('pageOut', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
                 this.bubbleDemo.end ();
+                cwScene.done ();
+                cwApp.stop ();
             }
         });     
-        
-        cwScene.init ();
-        cwApp.run ();
     }
 }
 
