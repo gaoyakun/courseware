@@ -572,7 +572,8 @@ export class cwScene extends cwObject {
                 }
             }
             if (view !== null) {
-                view.updateHitObjects (ev.clientX, ev.clientY);
+                const rc = view.canvas.viewport_rect;
+                view.updateHitObjects (ev.clientX - rc.x, ev.clientY - rc.y);
                 view.handleMouseMove (ev);
             }
         });
@@ -649,8 +650,7 @@ export class cwSceneView extends cwObject {
     private _captureObject: cwSceneObject;
     private _hitObjects: Array<cwSceneObject>;
     public updateHitObjects (x:number, y:number) {
-        const rc = this.canvas.viewport_rect;
-        const hitTestResult = this.hitTest (x - rc.x, y - rc.y);
+        const hitTestResult = this.hitTest (x, y);
         for (let i = 0; i < this._hitObjects.length; ) {
             if (hitTestResult.indexOf(this._hitObjects[i]) < 0) {
                 this._hitObjects[i].trigger (new cwMouseLeaveEvent());
