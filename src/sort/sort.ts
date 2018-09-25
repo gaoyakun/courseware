@@ -1,7 +1,6 @@
 import $ from 'jquery';
 import {CousewareFramework} from '../lib/presentation';
 import {Graph} from '../lib/graph';
-import {NumberSequenceScene} from '../lib/demo';
 import {DemoBase} from './demobase';
 import { cwScene, cwApp } from '../lib/core';
 

@@ -38,7 +38,6 @@ export class CousewareFramework {
 			that.back ();
         });
         $('.page-nav').on ('click',function(){
-			console.log(this);
             that.navigateTo ($('#' + $(this).attr('target')));
         });
         if (activePage) {
@@ -71,7 +70,6 @@ export class CousewareFramework {
 
     setActivePage (currentPage:any, nextPage:any, animationType:number): boolean {
 		nextPage.addClass ('page-active');
-		console.log(nextPage.hasClass('page-active'));
         if (currentPage && currentPage.attr('id') != nextPage.attr('id')) {
             this.getAnimationClass (animationType);
 

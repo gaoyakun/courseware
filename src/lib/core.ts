@@ -1,5 +1,4 @@
 import {cwTransform2d} from './transform';
-import $ from 'jquery';
 import {
     cwEvent, 
     cwEventListenerOrder, 
@@ -873,8 +872,8 @@ export class cwCanvas extends cwObject {
     constructor (canvas:HTMLCanvasElement, doubleBuffer:boolean = false) {
         super ();
         this._canvas = canvas;
-        this._width = $(canvas).width();
-        this._height = $(canvas).height();
+        this._width = parseInt(window.getComputedStyle(canvas).width);
+        this._height = parseInt(window.getComputedStyle(canvas).height);
         this._canvas.width = this._width;
         this._canvas.height = this._height;
         this._screenCtx = this._canvas.getContext ("2d");
@@ -925,8 +924,8 @@ export class cwCanvas extends cwObject {
         }
     }
     resize (): void {
-        this._width = $(this._canvas).width();
-        this._height = $(this._canvas).height();
+        this._width = parseInt(window.getComputedStyle(this._canvas).width);
+        this._height = parseInt(window.getComputedStyle(this._canvas).height);
         this._canvas.width = this._width;
         this._canvas.height = this._height;
     }
