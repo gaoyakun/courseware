@@ -62,8 +62,10 @@ export class cwcKeyframeAnimation extends cwComponent {
                     this.object.removeComponent (this);
                 }
             }
-            for (let prop in this._tracks) {
-                this.object.triggerEx (new cwSetPropEvent(prop, this._tracks[prop].value));
+            if (this.object) {
+                for (let prop in this._tracks) {
+                    this.object.triggerEx (new cwSetPropEvent(prop, this._tracks[prop].value));
+                }
             }
         });
     }
@@ -104,30 +106,33 @@ export class cwcDraggable extends cwComponent {
         this._dragging = false;
         this._draggingData = null;
         this.on (cwMouseDownEvent.type, (e:cwMouseDownEvent) => {
-            console.log ('draggable: mouse down');
             (this.object as cwSceneObject).setCapture ();
             this._dragging = true;
             const dragBeginEvent = new cwDragBeginEvent(e.x, e.y, e.button, e.shiftDown, e.altDown, e.ctrlDown, e.metaDown);
             this.object.triggerEx (dragBeginEvent);
             this._draggingData = dragBeginEvent.data;
+            e.cancelBubble();
         });
         this.on (cwMouseUpEvent.type, (e:cwMouseUpEvent) => {
             const obj = this.object as cwSceneObject;
             obj.releaseCapture ();
-            this._dragging = false;
 
-            obj.view.updateHitObjects (e.x, e.y);
-            let dragDropEvent = new cwDragDropEvent (e.x, e.y, e.button, e.shiftDown, e.altDown, e.ctrlDown, e.metaDown, obj, this._draggingData);
-            for (let i = 0; i < obj.view.hitObjects.length; i++) {
-                obj.view.hitObjects[i].triggerEx (dragDropEvent);
-                if (!dragDropEvent.bubble) {
-                    break;
+            if (this._dragging) {
+                this._dragging = false;
+                obj.view.updateHitObjects (e.x, e.y);
+                let dragDropEvent = new cwDragDropEvent (e.x, e.y, e.button, e.shiftDown, e.altDown, e.ctrlDown, e.metaDown, obj, this._draggingData);
+                for (let i = 0; i < obj.view.hitObjects.length; i++) {
+                    obj.view.hitObjects[i].triggerEx (dragDropEvent);
+                    if (!dragDropEvent.bubble) {
+                        break;
+                    }
                 }
+                if (dragDropEvent.bubble) {
+                    obj.view.triggerEx (dragDropEvent);
+                }
+                this._draggingData = null;
+                e.cancelBubble ();
             }
-            if (dragDropEvent.bubble) {
-                obj.view.triggerEx (dragDropEvent);
-            }
-            this._draggingData = null;
         });
         this.on (cwMouseMoveEvent.type, (e:cwMouseMoveEvent) => {
             if (this._dragging) {
@@ -143,6 +148,7 @@ export class cwcDraggable extends cwComponent {
                 if (dragOverEvent.bubble) {
                     obj.view.triggerEx (dragOverEvent);
                 }
+                e.cancelBubble ();
             }
         });
     }

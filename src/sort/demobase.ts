@@ -1,6 +1,7 @@
 import { cwSceneObject, cwSceneView, cwScene } from "../lib/core";
 import { cwDragOverEvent, cwDragDropEvent, cwDrawEvent, cwDragBeginEvent, cwHitTestEvent } from "../lib/events";
-import { cwcImage, cwcDraggable } from "../lib/components";
+import { cwcImage, cwcDraggable, cwcKeyframeAnimation } from "../lib/components";
+import { cwSplineType } from "../lib/curve";
 
 export class DemoBase {
     private rects: {x:number,y:number,w:number,h:number,node:cwSceneObject,selected:boolean}[];
@@ -26,11 +27,38 @@ export class DemoBase {
         }
         return -1;
     }
-    setNodePosition (node:cwSceneObject, pos:number): void {
+    setNodePosition (node:cwSceneObject, pos:number, noAnimation?:boolean): void {
         this.rects[pos].node = node;
         if (node) {
-            node.translation = {x:this.rects[pos].x + this.rects[pos].w/2,y:this.rects[pos].y + this.rects[pos].h/2};
+            if (noAnimation===undefined) {
+                noAnimation = false;
+            }
+            node.removeComponentsByType (cwcKeyframeAnimation.type);
+            if (noAnimation ) {
+                node.translation = {x:this.rects[pos].x + this.rects[pos].w/2,y:this.rects[pos].y + this.rects[pos].h/2};
+            } else {
+                const worldTransform = node.worldTransform;
+                node.addComponent (new cwcKeyframeAnimation({
+                    repeat: 1,
+                    tracks: {
+                        translation: { type:cwSplineType.LINEAR, cp:[{x:0,y:[worldTransform.e, worldTransform.f]}, {x:100,y:[this.rects[pos].x+this.rects[pos].w/2, this.rects[pos].y+this.rects[pos].h/2]}]}
+                    }
+                }));
+            }
         }
+    }
+    scheduleNodeAnimation () {
+        this.rects.forEach ((rc, index) => {
+            this.setNodePosition (rc.node, index, false);
+        });
+    }
+    dump (prefix:string) {
+        return;
+        let str = `${prefix}:`;
+        this.rects.forEach (rc => {
+            str += ` ${rc.node ? rc.node.number : '-'}`;
+        });
+        console.log (str)
     }
     addNode (node:cwSceneObject): number {
         let slot = -1;
@@ -44,8 +72,9 @@ export class DemoBase {
             }
         }
         if (slot >= 0) {
-            this.setNodePosition (node, slot);
+            this.setNodePosition (node, slot, true);
         }
+        this.dump ('addNode');
         return slot;
     }
     insertNode (pos:number, node:cwSceneObject): boolean {
@@ -61,7 +90,8 @@ export class DemoBase {
         for (let i = slot; i >= pos; i--) {
             this.rects[i+1].node = this.rects[i].node;
         }
-        this.setNodePosition (node, pos);
+        this.rects[pos].node = node;
+        this.dump ('insertNode');
     }
     packNodes (): void {
         let slot = -1;
@@ -74,12 +104,14 @@ export class DemoBase {
                 slot++;
             }
         }
+        this.dump ('packNodes');
     }
     removeNode (node:cwSceneObject): number {
         let slot = this.findNode(node);
         if (slot >= 0) {
             this.rects[slot].node = null;
             this.packNodes ();
+            this.dump ('removeNode');
         }
         return slot;
     }
@@ -88,9 +120,8 @@ export class DemoBase {
         let slot2 = this.findNode(node2);
         if (slot1 >= 0 && slot2 >= 0 && slot1 != slot2) {
             this.rects[slot1].node = node2;
-            node2.translation = {x:this.rects[slot1].x+this.rects[slot1].w/2, y:this.rects[slot1].y+this.rects[slot1].h/2};
             this.rects[slot2].node = node1;
-            node1.translation = {x:this.rects[slot2].x+this.rects[slot2].w/2, y:this.rects[slot2].y+this.rects[slot2].h/2};
+            this.dump ('swapNodes');
             return true;
         }
         return false;
@@ -114,30 +145,30 @@ export class DemoBase {
                     } else {
                         this.insertNode (rect, data.node);
                     }
+                    this.scheduleNodeAnimation ();
                 } else if (rect < 0) {
-                    this.removeNode (data.node);
-                    data.node.worldTranslation = {x:ev.x, y:ev.y};
-                    data.node.collapseTransform ();
+                    if (this.removeNode (data.node) >= 0) {
+                        this.scheduleNodeAnimation ();
+                    }
                 }
+                data.node.worldTranslation = {x:ev.x, y:ev.y};
             }
         });
         this.view.on (cwDragDropEvent.type,  (ev:cwDragDropEvent) => {
             const data = ev.data;
             if (data.type == 'number') {
-                let rect = this.rectTest (ev.x, ev.y);
-                if (rect < 0) {
-                    data.node.translation = {x:ev.x, y:ev.y};
-                }
+                data.node.collapseTransform ();
+                this.packNodes ();
+                this.scheduleNodeAnimation ();
             }
-            this.packNodes ();
         });
         this.view.on (cwDrawEvent.type, (ev:cwDrawEvent) => {
-            ev.canvas.context.fillStyle = '#000';
-            ev.canvas.context.strokeStyle = '#fff';
+            ev.canvas.context.strokeStyle = '#080';
             ev.canvas.context.lineWidth = 2;
-            ev.canvas.context.fillRect (0, 0, ev.canvas.width, ev.canvas.height);
+            ev.canvas.context.fillStyle = '#0ff';
             for (let i = 0; i < this.rects.length; i++) {
                 const rc = this.rects[i];
+                ev.canvas.context.fillRect (rc.x, rc.y, rc.w, rc.h);
                 ev.canvas.context.strokeRect (rc.x, rc.y, rc.w, rc.h);
             }
         });
@@ -156,6 +187,7 @@ export class DemoBase {
             }
             for (let i = 0; i < numbers.length; i++) {
                 const numNode = new cwSceneObject (this.view.rootNode);
+                numNode.number = numbers[i];
                 numNode.addComponent (new cwcImage(`images/number-${numbers[i]}.png`, width, height));
                 numNode.addComponent (new cwcDraggable());
                 numNode.on (cwDragBeginEvent.type, function(ev:cwDragBeginEvent) {

@@ -179,6 +179,7 @@ export class cwComponent extends cwEventObserver {
 
 export class cwObject extends cwEventObserver {
     private components:{[type:string]:Array<cwComponent>};
+    [name:string]:any;
     constructor () {
         super ();
         this.components = {}
