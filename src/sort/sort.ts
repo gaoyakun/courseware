@@ -3,6 +3,7 @@ import {CousewareFramework} from '../lib/presentation';
 import {Graph} from '../lib/graph';
 import {DemoBase} from './demobase';
 import { cwScene, cwApp } from '../lib/core';
+import { cwClickEvent } from '../lib/events';
 
 export class CourseSort extends CousewareFramework {
     private graphRandUnsort: Graph;
@@ -33,13 +34,16 @@ export class CourseSort extends CousewareFramework {
         });
 
         this.bubbleDemo = new DemoBase(document.querySelector('#demo-bubble-sort'));
+        this.bubbleDemo.view.on (cwClickEvent.type, (ev:cwClickEvent)=>{
+            this.bubbleDemo.playShuffleDemo ();
+        });
         window.addEventListener ('pageIn', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
                 cwScene.init ();
                 cwApp.run ();
                 this.bubbleDemo.start ([3,2,8,4,8,6,9,1,0,6,1,5,3],{
-                    margin_h: 50,
-                    margin_v: 50,
+                    margin_h: 10,
+                    margin_v: 60,
                     padding: 0
                 });
             }
