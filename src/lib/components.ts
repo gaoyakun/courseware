@@ -1,4 +1,4 @@
-import { cwComponent, cwSceneObject, cwScene } from './core';
+import { cwComponent, cwSceneObject, cwScene, cwApp } from './core';
 import { cwEvent, cwCullEvent, cwHitTestEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent, cwMouseMoveEvent, cwMouseDownEvent, cwMouseUpEvent, cwDragBeginEvent, cwDragDropEvent, cwDragOverEvent } from './events';
 import { cwSpline, cwSplineType } from './curve';
 
@@ -93,6 +93,22 @@ export class cwcKeyframeAnimation extends cwComponent {
                 this._duration = keyFrames[keyFrames.length-1].x;
             }
             this._tracks[name] = { evalutor: new cwSpline(type, keyFrames, clamp), value: null };
+        }
+    }
+    finish (): void {
+        for (let track in this._tracks) {
+            this._tracks[track].value = this._tracks[track].evalutor.evalLast ();
+        }
+        this._round++;
+        if (this._repeat == 0 || this._round < this._repeat) {
+            this._startTime = cwApp.elapsedTime;
+        } else if (this._autoRemove) {
+            this.object.removeComponent (this);
+        }
+        if (this.object) {
+            for (let prop in this._tracks) {
+                this.object.triggerEx (new cwSetPropEvent(prop, this._tracks[prop].value));
+            }
         }
     }
 }

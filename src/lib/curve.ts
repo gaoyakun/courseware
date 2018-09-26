@@ -14,6 +14,12 @@ export class cwCurveEvaluter {
     eval (x:number): number {
         return 0;
     }
+    evalFirst (): number {
+        return this.cp.length > 0 ? this.cp[0].y : 0;
+    }
+    evalLast (): number {
+        return this.cp.length > 0 ? this.cp[this.cp.length-1].y : 0;
+    }
 }
 
 export class cwStepEvaluter extends cwCurveEvaluter {
@@ -225,7 +231,37 @@ export class cwSpline {
                 return this._evalutors[0].eval (x);
             }
         } else {
-            return null;
+            return 0;
+        }
+    }
+    evalFirst (): number|Array<number> {
+        if (this._evalutors.length > 0) {
+            if (this._array) {
+                let result:Array<number> = [];
+                this._evalutors.forEach ((evalutor:cwCurveEvaluter) => {
+                    result.push (evalutor.evalFirst ());
+                });
+                return result;
+            } else {
+                return this._evalutors[0].evalFirst ();
+            }
+        } else {
+            return 0;
+        }
+    }
+    evalLast (): number|Array<number> {
+        if (this._evalutors.length > 0) {
+            if (this._array) {
+                let result:Array<number> = [];
+                this._evalutors.forEach ((evalutor:cwCurveEvaluter) => {
+                    result.push (evalutor.evalLast ());
+                });
+                return result;
+            } else {
+                return this._evalutors[0].evalLast ();
+            }
+        } else {
+            return 0;
         }
     }
 }

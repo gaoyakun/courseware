@@ -162,7 +162,7 @@ export class DemoBase {
                 }
             }
         }
-        this.playDemo (sequence, 500);
+        this.playDemo (sequence, 200);
         return true;
     }
     moveNode (pos1:number, pos2:number, delay:number, animationDuration:number): boolean {
@@ -180,6 +180,9 @@ export class DemoBase {
             const y1 = this.rects[i].y+this.rects[i].h/2;
             const x2 = this.rects[j].x+this.rects[i+step].w/2;
             const y2 = this.rects[j].y+this.rects[i+step].h/2;
+            (node.getComponents (cwcKeyframeAnimation.type)||[]).forEach (comp=>{
+                (comp as cwcKeyframeAnimation).finish ();
+            });
             node.removeComponentsByType (cwcKeyframeAnimation.type);
             node.addComponent (new cwcKeyframeAnimation({
                 delay:delay,
@@ -205,6 +208,9 @@ export class DemoBase {
             const t2 = node2.translation;
             const h = this.rects[0].h;
             this.rects[pos1].node = node2;
+            (node2.getComponents (cwcKeyframeAnimation.type)||[]).forEach (comp=>{
+                (comp as cwcKeyframeAnimation).finish ();
+            });
             node2.removeComponentsByType (cwcKeyframeAnimation.type);
             node2.addComponent (new cwcKeyframeAnimation({
                 delay:delay,
