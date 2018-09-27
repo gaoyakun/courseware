@@ -54,6 +54,9 @@ a {
 .flex-align-y-baseline {
     align-items: baseline;
 }
+.flex-fill {
+    flex: 1;
+}
 .page-title {
     position:absolute;
     left:0;
