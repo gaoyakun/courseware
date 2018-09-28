@@ -1,10 +1,11 @@
 import { cwComponent, cwSceneObject, cwScene, cwApp } from './core';
-import { cwEvent, cwCullEvent, cwHitTestEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent, cwMouseMoveEvent, cwMouseDownEvent, cwMouseUpEvent, cwDragBeginEvent, cwDragDropEvent, cwDragOverEvent } from './events';
+import { cwEvent, cwCullEvent, cwHitTestEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent, cwMouseMoveEvent, cwMouseDownEvent, cwMouseUpEvent, cwDragBeginEvent, cwDragDropEvent, cwDragOverEvent, cwComponentAttachedEvent, cwComponentBeforeAttachEvent } from './events';
 import { cwSpline, cwSplineType } from './curve';
 
 export class cwcKeyframeAnimation extends cwComponent {
     static readonly type = 'KeyframeAnimation';
     private _tracks: { [name:string]: { evalutor: cwSpline, value: any } };
+    private _exclusive: boolean;
     private _repeat: number;
     private _duration: number;
     private _startTime: number;
@@ -14,6 +15,7 @@ export class cwcKeyframeAnimation extends cwComponent {
     constructor (options?:{
         delay?:number;
         repeat?:number;
+        exclusive?:boolean;
         autoRemove?:boolean;
         tracks?:{
             [name:string]:{
@@ -33,6 +35,7 @@ export class cwcKeyframeAnimation extends cwComponent {
         this._delay = opt.delay === undefined ? 0 : opt.delay;
         this._repeat = opt.repeat === undefined ? 0 : opt.repeat;
         this._autoRemove = opt.autoRemove === undefined ? true : opt.autoRemove;
+        this._exclusive = !!opt.exclusive;
         if (opt.tracks) {
             for (const trackName in opt.tracks) {
                 const trackinfo = opt.tracks[trackName];
@@ -41,7 +44,14 @@ export class cwcKeyframeAnimation extends cwComponent {
                 this.setTrack (trackName, type, clamp, trackinfo.cp);
             }
         }
-        
+        this.on (cwComponentBeforeAttachEvent.type, (ev:cwComponentBeforeAttachEvent) => {
+            if (this._exclusive) {
+                ev.object.removeComponentsByType (this.type);
+                if (ev.object.getComponents (this.type).length > 0) {
+                    ev.allow = false;
+                }
+            }
+        });        
         this.on (cwUpdateEvent.type, (e:cwUpdateEvent) => {
             const timeNow = e.elapsedTime;
             if (this._startTime == 0) {

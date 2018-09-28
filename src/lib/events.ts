@@ -20,10 +20,30 @@ export class cwEvent {
     }
 }
 
+export class cwComponentBeforeAttachEvent extends cwEvent {
+    static readonly type: string = '@componentBeforeAttach';
+    object: cwObject;
+    allow: boolean;
+    constructor (object:cwObject) {
+        super (cwComponentAttachedEvent.type);
+        this.object = object;
+        this.allow = true;
+    }
+}
+
 export class cwComponentAttachedEvent extends cwEvent {
     static readonly type: string = '@componentAttached';
     constructor () {
         super (cwComponentAttachedEvent.type);
+    }
+}
+
+export class cwComponentBeforeDetachEvent extends cwEvent {
+    static readonly type: string = '@componentBeforeDetach';
+    allow: boolean;
+    constructor () {
+        super (cwComponentDetachedEvent.type);
+        this.allow = true;
     }
 }
 

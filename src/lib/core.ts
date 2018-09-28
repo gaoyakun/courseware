@@ -24,7 +24,9 @@ import {
     cwResizeEvent,
     cwGetPropEvent,
     cwSetPropEvent,
-    cwEventHandler
+    cwEventHandler,
+    cwComponentBeforeAttachEvent,
+    cwComponentBeforeDetachEvent
 } from './events';
 
 type cwHitTestResult = Array<cwSceneObject>;
@@ -190,9 +192,15 @@ export class cwObject extends cwEventObserver {
         if (component.object === null) {
             let componentArray = this.components[component.type]||[];
             if (componentArray.indexOf(component) < 0) {
-                componentArray.push (component);
-                component.object = this;
-                component.trigger (new cwComponentAttachedEvent());
+                const ev = new cwComponentBeforeAttachEvent(this);
+                component.trigger (ev);
+                ev.object = null;
+                if (ev.allow) {
+                    componentArray.push (component);
+                    component.object = this;
+                    component.trigger (new cwComponentAttachedEvent());
+                }
+
             }
             this.components[component.type] = componentArray;
         }
@@ -208,9 +216,13 @@ export class cwObject extends cwEventObserver {
     removeComponentByIndex (type:string, index:number): cwObject {
         const components = this.components[type];
         if (components && index>=0 && index<components.length) {
-            components[index].object = null;
-            components[index].trigger (new cwComponentDetachedEvent());
-            components.splice(index, 1);
+            const ev = new cwComponentBeforeDetachEvent();
+            components[index].trigger (ev);
+            if (ev.allow) {
+                components[index].object = null;
+                components[index].trigger (new cwComponentDetachedEvent());
+                components.splice(index, 1);
+            }
         }
         return this;
     }

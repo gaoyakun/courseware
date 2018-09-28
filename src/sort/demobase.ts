@@ -183,10 +183,10 @@ export class DemoBase {
             (node.getComponents (cwcKeyframeAnimation.type)||[]).forEach (comp=>{
                 (comp as cwcKeyframeAnimation).finish ();
             });
-            node.removeComponentsByType (cwcKeyframeAnimation.type);
             node.addComponent (new cwcKeyframeAnimation({
                 delay:delay,
                 repeat:1,
+                exclusive:true,
                 tracks: {
                     translation: {
                         cp: [{x:0,y:[x1,y1]}, {x:animationDuration/2,y:[(x1+x2)/2,(y1+y2)/2-h]}, {x:animationDuration,y:[x2,y2]}],
@@ -211,10 +211,10 @@ export class DemoBase {
             (node2.getComponents (cwcKeyframeAnimation.type)||[]).forEach (comp=>{
                 (comp as cwcKeyframeAnimation).finish ();
             });
-            node2.removeComponentsByType (cwcKeyframeAnimation.type);
             node2.addComponent (new cwcKeyframeAnimation({
                 delay:delay,
                 repeat:1,
+                exclusive:true,
                 tracks: {
                     translation: {
                         cp: [{x:0,y:[t2.x,t2.y]},{x:animationDuration/2,y:[(t1.x+t2.x)/2,(t1.y+t2.y)/2-h/2]},{x:animationDuration,y:[t1.x,t1.y]}],
