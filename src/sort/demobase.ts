@@ -223,10 +223,10 @@ export class DemoBase {
                 }
             }));
             this.rects[pos2].node = node1;
-            node1.removeComponentsByType (cwcKeyframeAnimation.type);
             node1.addComponent (new cwcKeyframeAnimation({
                 delay:delay,
                 repeat:1,
+                exclusive:true,
                 tracks: {
                     translation: {
                         cp: [{x:0,y:[t1.x,t1.y]},{x:animationDuration/2,y:[(t1.x+t2.x)/2,(t1.y+t2.y)/2+h/2]},{x:animationDuration,y:[t2.x,t2.y]}],
