@@ -71,17 +71,21 @@
                 </div>
                 <div class="presentation-page flex-v flex-align-y-center" id="page-sort-kinds" page-title="排序算法的分类">
                     <ol class="content-list">
+                        <li>按照待排序数据的存储方式可分为内部排序和外部排序。</li>
                         <li>按照稳定性可分为稳定排序和不稳定排序。</li>
                         <li>按照排序方式可分为基于比较的排序和非基于比较的排序。</li>
                     </ol>
                 </div>
                 <div class="presentation-page flex-v flex-align-y-center" id="page-sort-algorithms" page-title="主要排序算法">
-                    <ol class="content-list">
+                    <ol class="content-list" style="font-size:32px;">
                         <li><a class="page-nav" target="page-bubble-sort" href="javascript:void(0);">冒泡排序</a></li>
                         <li><a class="page-nav" target="page-insertion-sort" href="javascript:void(0);">插入排序</a></li>
+                        <li><a class="page-nav" target="page-shell-sort" href="javascript:void(0);">希尔排序</a></li>
                         <li><a class="page-nav" target="page-merge-sort" href="javascript:void(0);">归并排序</a></li>
                         <li><a class="page-nav" target="page-quick-sort" href="javascript:void(0);">快速排序</a></li>
                         <li><a class="page-nav" target="page-heap-sort" href="javascript:void(0);">堆排序</a></li>
+                        <li><a class="page-nav" target="page-bucket-sort" href="javascript:void(0);">桶排序</a></li>
+                        <li><a class="page-nav" target="page-radix-sort" href="javascript:void(0);">基数排序</a></li>
                     </ol>
                 </div>
                 <div class="presentation-page flex-v flex-align-y-expand" id="page-bubble-sort" page-title="冒泡排序">
@@ -94,7 +98,7 @@
                         </div>
                         <div id="code-bubble-sort" style="padding:10px;width:60%;font-size:18px;">
                             <pre style="border:1px solid #000;background-color:#fff;"><code class="cpp">
-void bubbleSort (int *numbers, int count) {
+void bubbleSort (int numbers[], int count) {
     for (int i = count - 1; i &gt;= 0; i--)
         for (int j = 0; j &lt i; j++) {
             if (numbers[j] > numbers[j+1]) {

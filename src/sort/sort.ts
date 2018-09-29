@@ -33,9 +33,6 @@ export class CourseSort extends CousewareFramework {
         });
 
         this.bubbleDemo = new DemoBase(document.querySelector('#demo-bubble-sort'));
-        this.bubbleDemo.view.on (cwClickEvent.type, (ev:cwClickEvent)=>{
-            this.bubbleDemo.playBubbleSortDemo ();
-        });
         window.addEventListener ('pageIn', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
                 cwScene.init ();
