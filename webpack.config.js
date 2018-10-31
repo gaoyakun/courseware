@@ -4,12 +4,10 @@ let ExtractTextWebpackPlugin = require('extract-text-webpack-plugin');
 let CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-  mode: "development",
   entry: {
     index: './src/index.ts',
     test: './src/test.ts'
   },
-  devtool: "source-map",
   output: {
     //The output directory as an absolute path.
     path: path.resolve(__dirname, 'dist'),
@@ -29,6 +27,7 @@ module.exports = {
     rules: [
       { test: /\.tsx?$/, loader: 'ts-loader', exclude: /(node_modules)/, },
       { test: /\.css$/, use:['style-loader','css-loader']},
+      { test: /\.cpp$/, use:'raw-loader'},
       { test: /\.(png|jpg|gif|jpeg)$/, loader: 'url-loader?limit=25000&name=images/[hash:8].[name].[ext]' }
     ]
   },
