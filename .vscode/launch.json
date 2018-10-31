@@ -9,7 +9,8 @@
             "type": "chrome",
             "request": "launch",
             "name": "排序",
-            "url": "${workspaceFolder}/dist/index.html",
+            "port": 9222,
+            "url": "http://localhost:8008/index.html",
             "webRoot": "${workspaceFolder}/dist"
         }
     ]

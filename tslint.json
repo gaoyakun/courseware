@@ -3,7 +3,19 @@
     "extends": [
         "tslint:recommended"
     ],
-    "jsRules": {},
-    "rules": {},
+    "jsRules": {
+        "max-line-length": {
+            "options": [500]
+        }
+    },
+    "rules": {
+        "max-line-length": {
+            "options": [500]
+        },
+        "new-parens": true,
+        "no-arg": true,
+        "no-conditional-assignment": true,
+        "no-consecutive-blank-lines": false,
+    },
     "rulesDirectory": []
 }

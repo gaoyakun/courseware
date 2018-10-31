@@ -4,14 +4,22 @@ let ExtractTextWebpackPlugin = require('extract-text-webpack-plugin');
 let CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
+  mode: "development",
   entry: {
     index: './src/index.ts',
     test: './src/test.ts'
   },
+  devtool: "source-map",
   output: {
     //The output directory as an absolute path.
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].bundle.js'
+  },
+  devServer: {
+    contentBase:'./dist',
+    port:8008,
+    compress:true,
+    open:true
   },
   resolve: {
       // Add '.ts' and '.tsx' as a resolvable extension.

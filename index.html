@@ -12,6 +12,14 @@
             .MathJax {
                 outline:0;
             }
+            .code-container {
+                padding:10px;
+                font-size:18px;
+            }
+            .code-container pre {
+                border:1px solid #000;
+                background-color:#fff;
+            }
         </style>
         <script type="text/x-mathjax-config">
             MathJax.Hub.Config({
@@ -35,6 +43,7 @@
         <script src="js/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>    
         <script src="js/highlightjs/highlight.pack.js"></script>    
         <script>hljs.initHighlightingOnLoad();</script>
+        <script src="js/code.js"></script>
     </head>
     <body class="flex-h flex-align-x-center flex-align-y-center">
         <div class="content-main">
@@ -96,19 +105,8 @@
                             <p style="font-weight:bold;font-size:32px;">空间复杂度：$O(1)$</p>
                             <p style="font-weight:bold;font-size:32px;">稳定性：稳定排序</p>
                         </div>
-                        <div id="code-bubble-sort" style="padding:10px;width:60%;font-size:18px;">
-                            <pre style="border:1px solid #000;background-color:#fff;"><code class="cpp">
-void bubbleSort (int numbers[], int count) {
-    for (int i = count - 1; i &gt;= 0; i--)
-        for (int j = 0; j &lt i; j++) {
-            if (numbers[j] > numbers[j+1]) {
-                int tmp = numbers[j];
-                numbers[j] = numbers[j+1];
-                numbers[j+1] = tmp;
-            }
-        }
-}
-                            </code></pre>
+                        <div class="code-container" id="code-bubble-sort" style="width:60%;">
+                            <pre><code class="cpp"><script>document.write(window.Code.bubble_sort);</script></code></pre>
                         </div>
                     </div>
                 </div>

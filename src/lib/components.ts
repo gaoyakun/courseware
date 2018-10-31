@@ -31,50 +31,56 @@ export class cwcKeyframeAnimation extends cwComponent {
         this._startTime = 0;
         this._round = 0;
 
-        const opt = options||{};
+        const opt = options || {};
         this._delay = opt.delay === undefined ? 0 : opt.delay;
         this._repeat = opt.repeat === undefined ? 0 : opt.repeat;
         this._autoRemove = opt.autoRemove === undefined ? true : opt.autoRemove;
         this._exclusive = !!opt.exclusive;
         if (opt.tracks) {
             for (const trackName in opt.tracks) {
-                const trackinfo = opt.tracks[trackName];
-                let type = trackinfo.type === undefined ? cwSplineType.POLY : trackinfo.type;
-                let clamp = trackinfo.clamp === undefined ? false : trackinfo.clamp;
-                this.setTrack (trackName, type, clamp, trackinfo.cp);
+                if (opt.tracks.hasOwnProperty(trackName)) {
+                    const trackinfo = opt.tracks[trackName];
+                    const type = trackinfo.type === undefined ? cwSplineType.POLY : trackinfo.type;
+                    const clamp = trackinfo.clamp === undefined ? false : trackinfo.clamp;
+                    this.setTrack (trackName, type, clamp, trackinfo.cp);
+                }
             }
         }
-        this.on (cwComponentBeforeAttachEvent.type, (ev:cwComponentBeforeAttachEvent) => {
+        this.on (cwComponentBeforeAttachEvent.type, (ev: cwComponentBeforeAttachEvent) => {
             if (this._exclusive) {
                 ev.object.removeComponentsByType (this.type);
                 if (ev.object.getComponents (this.type).length > 0) {
                     ev.allow = false;
                 }
             }
-        });        
-        this.on (cwUpdateEvent.type, (e:cwUpdateEvent) => {
+        });
+        this.on (cwUpdateEvent.type, (e: cwUpdateEvent) => {
             const timeNow = e.elapsedTime;
-            if (this._startTime == 0) {
+            if (this._startTime === 0) {
                 this._startTime = timeNow;
             }
             if (this._startTime + this._delay > timeNow) {
                 return;
             }
             const t = timeNow - this._startTime - this._delay;
-            for (let track in this._tracks) {
-                this._tracks[track].value = this._tracks[track].evalutor.eval (t);
+            for (const track in this._tracks) {
+                if (this._tracks.hasOwnProperty(track)) {
+                    this._tracks[track].value = this._tracks[track].evalutor.eval (t);
+                }
             }
             if (t >= this._duration) {
                 this._round++;
-                if (this._repeat == 0 || this._round < this._repeat) {
+                if (this._repeat === 0 || this._round < this._repeat) {
                     this._startTime = timeNow;
                 } else if (this._autoRemove) {
                     this.object.removeComponent (this);
                 }
             }
             if (this.object) {
-                for (let prop in this._tracks) {
-                    this.object.triggerEx (new cwSetPropEvent(prop, this._tracks[prop].value));
+                for (const prop in this._tracks) {
+                    if (this._tracks.hasOwnProperty(prop)) {
+                        this.object.triggerEx (new cwSetPropEvent(prop, this._tracks[prop].value));
+                    }
                 }
             }
         });
@@ -82,19 +88,19 @@ export class cwcKeyframeAnimation extends cwComponent {
     get repeat(): number {
         return this._repeat;
     }
-    set repeat (val:number) {
+    set repeat(val: number) {
         this._repeat = val;
     }
-    get autoRemove (): boolean {
+    get autoRemove(): boolean {
         return this._autoRemove;
     }
-    set autoRemove (val:boolean) {
+    set autoRemove(val: boolean) {
         this._autoRemove = val;
     }
-    get delay (): number {
+    get delay(): number {
         return this._delay;
     }
-    set delay (delay:number) {
+    set delay(delay: number) {
         this._delay = delay;
     }
     setTrack (name:string, type:cwSplineType, clamp:boolean, keyFrames:Array<{x:number,y:number}>|Array<{x:number,y:Array<number>}>) {

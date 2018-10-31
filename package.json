@@ -11,20 +11,25 @@
   "devDependencies": {
     "autoprefixer": "^9.1.2",
     "copy-webpack-plugin": "^4.5.2",
+    "cross-env": "^5.2.0",
     "css-loader": "^1.0.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "file-loader": "^1.1.11",
     "html-webpack-plugin": "^3.2.0",
+    "nodemon": "^1.18.4",
+    "raw-loader": "^0.5.1",
     "style-loader": "^0.22.1",
     "ts-loader": "^4.5.0",
     "typescript": "^3.0.1",
     "url-loader": "^1.1.1",
     "webpack": "^4.16.5",
     "webpack-cli": "^3.1.0",
-    "webpack-command": "^0.4.1"
+    "webpack-command": "^0.4.1",
+    "webpack-dev-server": "^3.1.9"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "cross-env NODE_ENV=dev nodemon --watch webpack.config.js --exec \"webpack-dev-server --config webpack.config.js --mode development\" --progress --colors",
+    "build": "webpack --config webpack.config.js --mode development --progress"
   },
   "repository": {
     "type": "git",
