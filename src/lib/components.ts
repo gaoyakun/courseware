@@ -4,7 +4,7 @@ import { cwSpline, cwSplineType } from './curve';
 
 export class cwcKeyframeAnimation extends cwComponent {
     static readonly type = 'KeyframeAnimation';
-    private _tracks: { [name:string]: { evalutor: cwSpline, value: any } };
+    private _tracks: { [name: string]: { evalutor: cwSpline, value: any } };
     private _exclusive: boolean;
     private _repeat: number;
     private _duration: number;
@@ -12,20 +12,20 @@ export class cwcKeyframeAnimation extends cwComponent {
     private _delay: number;
     private _round: number;
     private _autoRemove: boolean;
-    constructor (options?:{
-        delay?:number;
-        repeat?:number;
-        exclusive?:boolean;
-        autoRemove?:boolean;
-        tracks?:{
-            [name:string]:{
-                cp:Array<{x:number,y:number}>|Array<{x:number,y:Array<number>}>;
-                type?:cwSplineType;
-                clamp?:boolean;
+    constructor(options?: {
+        delay?: number;
+        repeat?: number;
+        exclusive?: boolean;
+        autoRemove?: boolean;
+        tracks?: {
+            [name: string]: {
+                cp: Array<{ x: number, y: number }> | Array<{ x: number, y: Array<number> }>;
+                type?: cwSplineType;
+                clamp?: boolean;
             }
         }
     }) {
-        super (cwcKeyframeAnimation.type);
+        super(cwcKeyframeAnimation.type);
         this._tracks = {};
         this._duration = 0;
         this._startTime = 0;
@@ -42,19 +42,19 @@ export class cwcKeyframeAnimation extends cwComponent {
                     const trackinfo = opt.tracks[trackName];
                     const type = trackinfo.type === undefined ? cwSplineType.POLY : trackinfo.type;
                     const clamp = trackinfo.clamp === undefined ? false : trackinfo.clamp;
-                    this.setTrack (trackName, type, clamp, trackinfo.cp);
+                    this.setTrack(trackName, type, clamp, trackinfo.cp);
                 }
             }
         }
-        this.on (cwComponentBeforeAttachEvent.type, (ev: cwComponentBeforeAttachEvent) => {
+        this.on(cwComponentBeforeAttachEvent.type, (ev: cwComponentBeforeAttachEvent) => {
             if (this._exclusive) {
-                ev.object.removeComponentsByType (this.type);
-                if (ev.object.getComponents (this.type).length > 0) {
+                ev.object.removeComponentsByType(this.type);
+                if (ev.object.getComponents(this.type).length > 0) {
                     ev.allow = false;
                 }
             }
         });
-        this.on (cwUpdateEvent.type, (e: cwUpdateEvent) => {
+        this.on(cwUpdateEvent.type, (e: cwUpdateEvent) => {
             const timeNow = e.elapsedTime;
             if (this._startTime === 0) {
                 this._startTime = timeNow;
@@ -65,7 +65,7 @@ export class cwcKeyframeAnimation extends cwComponent {
             const t = timeNow - this._startTime - this._delay;
             for (const track in this._tracks) {
                 if (this._tracks.hasOwnProperty(track)) {
-                    this._tracks[track].value = this._tracks[track].evalutor.eval (t);
+                    this._tracks[track].value = this._tracks[track].evalutor.eval(t);
                 }
             }
             if (t >= this._duration) {
@@ -73,13 +73,13 @@ export class cwcKeyframeAnimation extends cwComponent {
                 if (this._repeat === 0 || this._round < this._repeat) {
                     this._startTime = timeNow;
                 } else if (this._autoRemove) {
-                    this.object.removeComponent (this);
+                    this.object.removeComponent(this);
                 }
             }
             if (this.object) {
                 for (const prop in this._tracks) {
                     if (this._tracks.hasOwnProperty(prop)) {
-                        this.object.triggerEx (new cwSetPropEvent(prop, this._tracks[prop].value));
+                        this.object.triggerEx(new cwSetPropEvent(prop, this._tracks[prop].value));
                     }
                 }
             }
@@ -103,27 +103,27 @@ export class cwcKeyframeAnimation extends cwComponent {
     set delay(delay: number) {
         this._delay = delay;
     }
-    setTrack (name:string, type:cwSplineType, clamp:boolean, keyFrames:Array<{x:number,y:number}>|Array<{x:number,y:Array<number>}>) {
+    setTrack(name: string, type: cwSplineType, clamp: boolean, keyFrames: Array<{ x: number, y: number }> | Array<{ x: number, y: Array<number> }>) {
         if (keyFrames.length > 0) {
-            if (keyFrames[keyFrames.length-1].x > this._duration) {
-                this._duration = keyFrames[keyFrames.length-1].x;
+            if (keyFrames[keyFrames.length - 1].x > this._duration) {
+                this._duration = keyFrames[keyFrames.length - 1].x;
             }
             this._tracks[name] = { evalutor: new cwSpline(type, keyFrames, clamp), value: null };
         }
     }
-    finish (): void {
+    finish(): void {
         for (let track in this._tracks) {
-            this._tracks[track].value = this._tracks[track].evalutor.evalLast ();
+            this._tracks[track].value = this._tracks[track].evalutor.evalLast();
         }
         this._round++;
         if (this._repeat == 0 || this._round < this._repeat) {
             this._startTime = cwApp.elapsedTime;
         } else if (this._autoRemove) {
-            this.object.removeComponent (this);
+            this.object.removeComponent(this);
         }
         if (this.object) {
             for (let prop in this._tracks) {
-                this.object.triggerEx (new cwSetPropEvent(prop, this._tracks[prop].value));
+                this.object.triggerEx(new cwSetPropEvent(prop, this._tracks[prop].value));
             }
         }
     }
@@ -131,56 +131,56 @@ export class cwcKeyframeAnimation extends cwComponent {
 
 export class cwcDraggable extends cwComponent {
     static readonly type = 'Draggable';
-    private _dragging:boolean;
-    private _draggingData:any;
-    constructor () {
-        super (cwcDraggable.type);
+    private _dragging: boolean;
+    private _draggingData: any;
+    constructor() {
+        super(cwcDraggable.type);
         this._dragging = false;
         this._draggingData = null;
-        this.on (cwMouseDownEvent.type, (e:cwMouseDownEvent) => {
-            (this.object as cwSceneObject).setCapture ();
+        this.on(cwMouseDownEvent.type, (e: cwMouseDownEvent) => {
+            (this.object as cwSceneObject).setCapture();
             this._dragging = true;
             const dragBeginEvent = new cwDragBeginEvent(e.x, e.y, e.button, e.shiftDown, e.altDown, e.ctrlDown, e.metaDown);
-            this.object.triggerEx (dragBeginEvent);
+            this.object.triggerEx(dragBeginEvent);
             this._draggingData = dragBeginEvent.data;
             e.cancelBubble();
         });
-        this.on (cwMouseUpEvent.type, (e:cwMouseUpEvent) => {
+        this.on(cwMouseUpEvent.type, (e: cwMouseUpEvent) => {
             const obj = this.object as cwSceneObject;
-            obj.releaseCapture ();
+            obj.releaseCapture();
 
             if (this._dragging) {
                 this._dragging = false;
-                obj.view.updateHitObjects (e.x, e.y);
-                let dragDropEvent = new cwDragDropEvent (e.x, e.y, e.button, e.shiftDown, e.altDown, e.ctrlDown, e.metaDown, obj, this._draggingData);
+                obj.view.updateHitObjects(e.x, e.y);
+                let dragDropEvent = new cwDragDropEvent(e.x, e.y, e.button, e.shiftDown, e.altDown, e.ctrlDown, e.metaDown, obj, this._draggingData);
                 for (let i = 0; i < obj.view.hitObjects.length; i++) {
-                    obj.view.hitObjects[i].triggerEx (dragDropEvent);
+                    obj.view.hitObjects[i].triggerEx(dragDropEvent);
                     if (!dragDropEvent.bubble) {
                         break;
                     }
                 }
                 if (dragDropEvent.bubble) {
-                    obj.view.triggerEx (dragDropEvent);
+                    obj.view.triggerEx(dragDropEvent);
                 }
                 this._draggingData = null;
-                e.cancelBubble ();
+                e.cancelBubble();
             }
         });
-        this.on (cwMouseMoveEvent.type, (e:cwMouseMoveEvent) => {
+        this.on(cwMouseMoveEvent.type, (e: cwMouseMoveEvent) => {
             if (this._dragging) {
                 const obj = this.object as cwSceneObject;
-                obj.view.updateHitObjects (e.x, e.y);
-                let dragOverEvent = new cwDragOverEvent (e.x, e.y, e.button, e.shiftDown, e.altDown, e.ctrlDown, e.metaDown, obj, this._draggingData);
+                obj.view.updateHitObjects(e.x, e.y);
+                let dragOverEvent = new cwDragOverEvent(e.x, e.y, e.button, e.shiftDown, e.altDown, e.ctrlDown, e.metaDown, obj, this._draggingData);
                 for (let i = 0; i < obj.view.hitObjects.length; i++) {
-                    obj.view.hitObjects[i].triggerEx (dragOverEvent);
+                    obj.view.hitObjects[i].triggerEx(dragOverEvent);
                     if (!dragOverEvent.bubble) {
                         break;
                     }
                 }
                 if (dragOverEvent.bubble) {
-                    obj.view.triggerEx (dragOverEvent);
+                    obj.view.triggerEx(dragOverEvent);
                 }
-                e.cancelBubble ();
+                e.cancelBubble();
             }
         });
     }
@@ -188,19 +188,19 @@ export class cwcDraggable extends cwComponent {
 
 export class cwcDroppable extends cwComponent {
     static readonly type = 'Droppable';
-    constructor () {
-        super (cwcDroppable.type);
+    constructor() {
+        super(cwcDroppable.type);
     }
 }
 
 export class cwcImage extends cwComponent {
     static readonly type = 'Image';
-    private _image:HTMLImageElement;
-    private _width:number;
-    private _height:number;
-    private _loaded:boolean;
-    constructor (filename:string = null, width:number = 0, height:number = 0) {
-        super (cwcImage.type);
+    private _image: HTMLImageElement;
+    private _width: number;
+    private _height: number;
+    private _loaded: boolean;
+    constructor(filename: string = null, width: number = 0, height: number = 0) {
+        super(cwcImage.type);
         this._image = new Image();
         if (filename) {
             this._image.src = filename;
@@ -231,53 +231,53 @@ export class cwcImage extends cwComponent {
         } else {
             this._loaded = true;
         }
-        this.on (cwCullEvent.type, (evt:cwCullEvent) => {
+        this.on(cwCullEvent.type, (evt: cwCullEvent) => {
             if (this._loaded) {
                 const node = this.object as cwSceneObject;
-                evt.addObject (this, node.z, node.worldTransform);
+                evt.addObject(this, node.z, node.worldTransform);
             }
         });
-        this.on (cwHitTestEvent.type, (evt:cwHitTestEvent) => {
+        this.on(cwHitTestEvent.type, (evt: cwHitTestEvent) => {
             if (this._loaded) {
-                evt.result = evt.x >= -this._width/2 && evt.x < this._width/2 && evt.y >= -this._height/2 && evt.y < this._height/2;
+                evt.result = evt.x >= -this._width / 2 && evt.x < this._width / 2 && evt.y >= -this._height / 2 && evt.y < this._height / 2;
             }
         });
-        this.on (cwDrawEvent.type, (evt:cwDrawEvent) => {
+        this.on(cwDrawEvent.type, (evt: cwDrawEvent) => {
             if (this._loaded) {
                 evt.canvas.context.save();
-                evt.canvas.applyTransform (evt.transform);
-                evt.canvas.context.drawImage(this._image, -this._width/2, -this._height/2, this._width, this._height);
+                evt.canvas.applyTransform(evt.transform);
+                evt.canvas.context.drawImage(this._image, -this._width / 2, -this._height / 2, this._width, this._height);
                 evt.canvas.context.restore();
             }
         });
-        this.on (cwGetPropEvent.type, (ev:cwGetPropEvent) => {
+        this.on(cwGetPropEvent.type, (ev: cwGetPropEvent) => {
             switch (ev.propName) {
-            case 'width':
-                ev.propValue = this._width;
-                ev.eat ();
-                break;
-            case 'height':
-                ev.propValue = this._height;
-                ev.eat ();
-                break;
-            default:
-                break;
+                case 'width':
+                    ev.propValue = this._width;
+                    ev.eat();
+                    break;
+                case 'height':
+                    ev.propValue = this._height;
+                    ev.eat();
+                    break;
+                default:
+                    break;
             }
         });
-        this.on (cwSetPropEvent.type, (ev:cwSetPropEvent) => {
+        this.on(cwSetPropEvent.type, (ev: cwSetPropEvent) => {
             switch (ev.propName) {
-            case 'width':
-                this._width = ev.propValue as number;
-                this._image.width = this._width;
-                ev.eat ();
-                break;
-            case 'height':
-                this._height = ev.propValue as number;
-                this._image.height = this._height;
-                ev.eat ();
-                break;
-            default:
-                break;
+                case 'width':
+                    this._width = ev.propValue as number;
+                    this._image.width = this._width;
+                    ev.eat();
+                    break;
+                case 'height':
+                    this._height = ev.propValue as number;
+                    this._image.height = this._height;
+                    ev.eat();
+                    break;
+                default:
+                    break;
             }
         });
     }

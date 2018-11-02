@@ -1,116 +1,116 @@
 import $ from 'jquery';
 
-const animEndEventNames:any = {
-    'WebkitAnimation' : 'webkitAnimationEnd',
-    'OAnimation' : 'oAnimationEnd',
-    'msAnimation' : 'MSAnimationEnd',
-    'animation' : 'animationend'
+const animEndEventNames: any = {
+	'WebkitAnimation': 'webkitAnimationEnd',
+	'OAnimation': 'oAnimationEnd',
+	'msAnimation': 'MSAnimationEnd',
+	'animation': 'animationend'
 };
 const animEndEventName = animEndEventNames['animation'];//(animEndEventNames as any)[ (Modernizr as any).prefixed( 'animation' ) ]
 const navForwardAnimation = 48;
 const navBackwardAnimation = 49;
 
 export class CousewareFramework {
-    pageList: any;
-    endCurrentPage: boolean;
-    endNextPage: boolean;
-    outClass: string;
-    inClass: string;
-    navHistory: Array<any>;
+	pageList: any;
+	endCurrentPage: boolean;
+	endNextPage: boolean;
+	outClass: string;
+	inClass: string;
+	navHistory: Array<any>;
 
-    constructor () {
-        this.pageList = null;
-        this.endCurrentPage = false;
-        this.endNextPage = false;
-        this.outClass = '';
+	constructor() {
+		this.pageList = null;
+		this.endCurrentPage = false;
+		this.endNextPage = false;
+		this.outClass = '';
 		this.inClass = '';
 		this.navHistory = [];
-    }
+	}
 
-    setup (activePage:any): void {
+	setup(activePage: any): void {
 		let that = this;
-        that.pageList = $(".presentation-page");
-        that.pageList.each (function(){
-            var page:any = $(this);
-            page.data('originalClassList', page.attr('class'));
+		that.pageList = $(".presentation-page");
+		that.pageList.each(function () {
+			var page: any = $(this);
+			page.data('originalClassList', page.attr('class'));
 		});
-		$('#page-back').on ('click',function(){
-			that.back ();
-        });
-        $('.page-nav').on ('click',function(){
-            that.navigateTo ($('#' + $(this).attr('target')));
-        });
-        if (activePage) {
-            $('#page-title').html(activePage.attr('page-title'));
-            activePage.addClass ('page-active');
-            let eventPageIn:any = new Event('pageIn');
-            eventPageIn['id'] = activePage.attr('id');
-            window.dispatchEvent(eventPageIn);
-        }
-    }
-
-	navigateTo (page:any): void {
-        var currentPage = $(".page-active").eq(0);
-		if (this.setActivePage (currentPage, page, navForwardAnimation)) {
-			this.navHistory.push (currentPage);
-			$('#page-back').css('visibility','visible');
+		$('#page-back').on('click', function () {
+			that.back();
+		});
+		$('.page-nav').on('click', function () {
+			that.navigateTo($('#' + $(this).attr('target')));
+		});
+		if (activePage) {
+			$('#page-title').html(activePage.attr('page-title'));
+			activePage.addClass('page-active');
+			let eventPageIn: any = new Event('pageIn');
+			eventPageIn['id'] = activePage.attr('id');
+			window.dispatchEvent(eventPageIn);
 		}
 	}
 
-	back (): void {
+	navigateTo(page: any): void {
+		var currentPage = $(".page-active").eq(0);
+		if (this.setActivePage(currentPage, page, navForwardAnimation)) {
+			this.navHistory.push(currentPage);
+			$('#page-back').css('visibility', 'visible');
+		}
+	}
+
+	back(): void {
 		if (this.navHistory.length > 0) {
 			let lastPage = this.navHistory.pop();
 			let currentPage = $(".page-active").eq(0);
-			this.setActivePage (currentPage, lastPage, navBackwardAnimation);
-        }
-        if (this.navHistory.length == 0) {
-			$('#page-back').css('visibility','hidden');
+			this.setActivePage(currentPage, lastPage, navBackwardAnimation);
+		}
+		if (this.navHistory.length == 0) {
+			$('#page-back').css('visibility', 'hidden');
 		}
 	}
 
-    setActivePage (currentPage:any, nextPage:any, animationType:number): boolean {
-		nextPage.addClass ('page-active');
-        if (currentPage && currentPage.attr('id') != nextPage.attr('id')) {
-            this.getAnimationClass (animationType);
+	setActivePage(currentPage: any, nextPage: any, animationType: number): boolean {
+		nextPage.addClass('page-active');
+		if (currentPage && currentPage.attr('id') != nextPage.attr('id')) {
+			this.getAnimationClass(animationType);
 
-            currentPage.addClass(this.outClass).on (animEndEventName, ()=>{
-                currentPage.off (animEndEventName);
-                this.endCurrentPage = true;
-                if (this.endNextPage) {
-                    this.onEndAnimation (currentPage, nextPage);
-                }
-            });
-            nextPage.addClass(this.inClass).on (animEndEventName, ()=>{
-                nextPage.off (animEndEventName);
-                this.endNextPage = true;
-                if (this.endCurrentPage) {
-                    this.onEndAnimation (currentPage, nextPage);
-                }
+			currentPage.addClass(this.outClass).on(animEndEventName, () => {
+				currentPage.off(animEndEventName);
+				this.endCurrentPage = true;
+				if (this.endNextPage) {
+					this.onEndAnimation(currentPage, nextPage);
+				}
 			});
-			
-            $('#page-title').html(nextPage.attr('page-title'));
+			nextPage.addClass(this.inClass).on(animEndEventName, () => {
+				nextPage.off(animEndEventName);
+				this.endNextPage = true;
+				if (this.endCurrentPage) {
+					this.onEndAnimation(currentPage, nextPage);
+				}
+			});
+
+			$('#page-title').html(nextPage.attr('page-title'));
 			return true;
 		}
 		return false;
-    }
+	}
 
-    onEndAnimation (outPage:any, inPage:any): void {
-        this.endCurrentPage = false;
-        this.endNextPage = false;
-        outPage.attr('class', outPage.data('originalClassList'));
-        inPage.attr('class', inPage.data('originalClassList')+' page-active');
-        
-        var eventPageOut:any = new Event('pageOut');
-        eventPageOut['id'] = outPage.attr('id');
-        window.dispatchEvent(eventPageOut);
-        var eventPageIn:any = new Event('pageIn');
-        eventPageIn['id'] = inPage.attr('id');
-        window.dispatchEvent(eventPageIn);
-    }
+	onEndAnimation(outPage: any, inPage: any): void {
+		this.endCurrentPage = false;
+		this.endNextPage = false;
+		outPage.attr('class', outPage.data('originalClassList'));
+		inPage.attr('class', inPage.data('originalClassList') + ' page-active');
 
-    getAnimationClass (animationType:number): void {
-		switch(animationType) {
-			case 1:		
+		var eventPageOut: any = new Event('pageOut');
+		eventPageOut['id'] = outPage.attr('id');
+		window.dispatchEvent(eventPageOut);
+		var eventPageIn: any = new Event('pageIn');
+		eventPageIn['id'] = inPage.attr('id');
+		window.dispatchEvent(eventPageIn);
+	}
+
+	getAnimationClass(animationType: number): void {
+		switch (animationType) {
+			case 1:
 				this.outClass = 'pt-page-moveToLeft';
 				this.inClass = 'pt-page-moveFromRight';
 				break;
@@ -378,6 +378,6 @@ export class CousewareFramework {
 				this.outClass = 'pt-page-rotateSlideOut';
 				this.inClass = 'pt-page-rotateSlideIn';
 				break;
-        }
-    }
+		}
+	}
 }
