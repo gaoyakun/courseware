@@ -62,18 +62,10 @@ export class cwcKeyframeAnimation extends cwComponent {
             if (this._startTime + this._delay > timeNow) {
                 return;
             }
-            const t = timeNow - this._startTime - this._delay;
+            let t = timeNow - this._startTime - this._delay;
             for (const track in this._tracks) {
                 if (this._tracks.hasOwnProperty(track)) {
                     this._tracks[track].value = this._tracks[track].evalutor.eval(t);
-                }
-            }
-            if (t >= this._duration) {
-                this._round++;
-                if (this._repeat === 0 || this._round < this._repeat) {
-                    this._startTime = timeNow;
-                } else if (this._autoRemove) {
-                    this.object.removeComponent(this);
                 }
             }
             if (this.object) {
@@ -81,6 +73,14 @@ export class cwcKeyframeAnimation extends cwComponent {
                     if (this._tracks.hasOwnProperty(prop)) {
                         this.object.triggerEx(new cwSetPropEvent(prop, this._tracks[prop].value));
                     }
+                }
+            }
+            if (t >= this._duration) {
+                this._round++;
+                if (this._repeat === 0 || this._round < this._repeat) {
+                    this._startTime = timeNow + t - this._duration;
+                } else if (this._autoRemove) {
+                    this.object.removeComponent(this);
                 }
             }
         });
@@ -115,16 +115,16 @@ export class cwcKeyframeAnimation extends cwComponent {
         for (let track in this._tracks) {
             this._tracks[track].value = this._tracks[track].evalutor.evalLast();
         }
+        if (this.object) {
+            for (let prop in this._tracks) {
+                this.object.triggerEx(new cwSetPropEvent(prop, this._tracks[prop].value));
+            }
+        }
         this._round++;
         if (this._repeat == 0 || this._round < this._repeat) {
             this._startTime = cwApp.elapsedTime;
         } else if (this._autoRemove) {
             this.object.removeComponent(this);
-        }
-        if (this.object) {
-            for (let prop in this._tracks) {
-                this.object.triggerEx(new cwSetPropEvent(prop, this._tracks[prop].value));
-            }
         }
     }
 }
