@@ -210,6 +210,7 @@ export class DemoBase {
             this.rects[pos1].node = node2;
             (node2.getComponents (cwcKeyframeAnimation.type)||[]).forEach (comp=>{
                 (comp as cwcKeyframeAnimation).finish ();
+                node2.removeComponentsByType (cwcKeyframeAnimation.type);
             });
             node2.addComponent (new cwcKeyframeAnimation({
                 delay:delay,
