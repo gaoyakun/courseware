@@ -1,4 +1,4 @@
-import * as playground from '../playground';
+import * as tool from './tool';
 import * as core from '../../lib/core';
 import * as events from '../../lib/events';
 import * as command from '../commands';
@@ -31,11 +31,11 @@ export class cwPGSelectComponent extends core.cwComponent {
     }
 }
 
-export class cwPGSelectTool extends playground.cwPGTool {
+export class cwPGSelectTool extends tool.cwPGTool {
     public static readonly toolname: string = 'PGTool_Select';
     private selectedObjects: Array<core.cwSceneObject>;
     public constructor() {
-        super();
+        super(cwPGSelectTool.toolname);
         this.selectedObjects = [];
     }
     public activateObject(object: core.cwSceneObject) {

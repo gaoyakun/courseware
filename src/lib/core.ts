@@ -288,6 +288,9 @@ export class cwSceneObject extends cwObject {
         if (parent) {
             parent.addChild(this);
         }
+        this.on(cwCullEvent.type, (evt: cwCullEvent) => {
+            evt.addObject(this, this.z, this.worldTransform);
+        });
         this.on(cwGetPropEvent.type, (ev: cwGetPropEvent) => {
             switch (ev.propName) {
                 case 'z':
