@@ -1,4 +1,5 @@
 import * as core from '../../lib/core';
+import * as events from '../../lib/events';
 import * as tool from '../tools';
 
 export class cwPGComponent extends core.cwComponent {
@@ -11,6 +12,10 @@ export class cwPGComponent extends core.cwComponent {
         this.on(tool.cwPGToolDeactivateEvent.type, (ev: tool.cwPGToolDeactivateEvent) => {
             ev.tool.deactivateObject(this.object as core.cwSceneObject);
         })
+        this.on(events.cwComponentAttachedEvent.type, (ev: events.cwComponentAttachedEvent) => {
+        });
+        this.on(events.cwComponentDetachedEvent.type, (ev: events.cwComponentDetachedEvent) => {
+        });
     }
 }
 

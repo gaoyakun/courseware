@@ -25,7 +25,7 @@ export class cwComponentBeforeAttachEvent extends cwEvent {
     object: cwObject;
     allow: boolean;
     constructor(object: cwObject) {
-        super(cwComponentAttachedEvent.type);
+        super(cwComponentBeforeAttachEvent.type);
         this.object = object;
         this.allow = true;
     }
@@ -42,7 +42,7 @@ export class cwComponentBeforeDetachEvent extends cwEvent {
     static readonly type: string = '@componentBeforeDetach';
     allow: boolean;
     constructor() {
-        super(cwComponentDetachedEvent.type);
+        super(cwComponentBeforeDetachEvent.type);
         this.allow = true;
     }
 }

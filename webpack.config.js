@@ -18,7 +18,7 @@ module.exports = {
     contentBase:'./dist',
     port:8008,
     compress:true,
-    open:true
+    open:false
   },
   resolve: {
       // Add '.ts' and '.tsx' as a resolvable extension.

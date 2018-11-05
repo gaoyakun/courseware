@@ -15,7 +15,7 @@ export class cwPGToolDeactivateEvent extends events.cwEvent {
     static readonly type: string = '@PGToolDeactivate';
     tool: cwPGTool;
     constructor(tool: cwPGTool) {
-        super(cwPGToolActivateEvent.type);
+        super(cwPGToolDeactivateEvent.type);
         this.tool = tool;
     }
 }

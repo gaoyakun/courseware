@@ -219,8 +219,8 @@ export class cwObject extends cwEventObserver {
             const ev = new cwComponentBeforeDetachEvent();
             components[index].trigger(ev);
             if (ev.allow) {
-                components[index].object = null;
                 components[index].trigger(new cwComponentDetachedEvent());
+                components[index].object = null;
                 components.splice(index, 1);
             }
         }
@@ -895,12 +895,10 @@ export class cwCanvas extends cwObject {
         this._canvas.addEventListener('mouseenter', (ev: MouseEvent) => {
             if (!this._mouseOver) {
                 this._mouseOver = true;
-                console.log('Canvas mouse entered');
             }
         });
         this._canvas.addEventListener('mouseleave', (ev: MouseEvent) => {
             this._mouseOver = false;
-            console.log('Canvas mouse leaved');
         });
     }
     constructor(canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {

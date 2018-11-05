@@ -38,22 +38,35 @@ export class cwPGSelectTool extends tool.cwPGTool {
         super(cwPGSelectTool.toolname);
         this.selectedObjects = [];
     }
+    public activate() {
+        super.activate ();
+        this.selectedObjects.length = 0;
+    }
+    public deactivate() {
+        super.deactivate ();
+        this.selectedObjects.length = 0;
+    }
     public activateObject(object: core.cwSceneObject) {
+        this.deactivateObject (object);
         object.addComponent(new cwPGSelectComponent(this));
     }
     public deactivateObject(object: core.cwSceneObject) {
-        object.removeComponentsByType(cwPGSelectComponent.type);
+        const components = object.getComponents(cwPGSelectComponent.type);
+        if (components && components.length > 0) {
+            object.triggerEx (new cwPGDeselectEvent());
+            object.removeComponentsByType(cwPGSelectComponent.type);
+        }
     }
     public executeCommand(cmd: command.IPGCommand): void {
     }
     public selectObject(object: core.cwSceneObject, ev: events.cwMouseEvent) {
         if (this.selectedObjects.indexOf(object) < 0) {
-            const e = new cwPGSelectEvent(ev.x, ev.y, ev.button, ev.shiftDown, ev.altDown, ev.ctrlDown, ev.metaDown);
-            object.triggerEx(e);
             if (!ev.ctrlDown) {
                 this.deselectAll();
             }
             this.selectedObjects.push(object);
+            const e = new cwPGSelectEvent(ev.x, ev.y, ev.button, ev.shiftDown, ev.altDown, ev.ctrlDown, ev.metaDown);
+            object.triggerEx(e);
         }
     }
     public deselectObject(object: core.cwSceneObject) {

@@ -33,8 +33,16 @@ export class cwPlayground {
         const factory = this._factories[type];
         if (factory) {
             entity = factory.createEntity(options);
+            entity.entityName = name;
             if (entity) {
+                this.view.rootNode.addChild (entity);
                 this._entities[name] = entity;
+                if (this._currentTool !== '') {
+                    const curTool = this._tools[this._currentTool];
+                    if (curTool) {
+                        entity.triggerEx (new tool.cwPGToolActivateEvent(curTool));
+                    }
+                }
             }
         }
         return entity;
@@ -52,14 +60,17 @@ export class cwPlayground {
     public executeCommand(cmd: command.IPGCommand) {
         if (cmd.command == 'UseTool') {
             if (this._currentTool !== cmd.name) {
-                const newTool = this._tools[cmd.name];
-                if (newTool) {
-                    if (this._currentTool !== '') {
-                        const prevTool = this._tools[this._currentTool];
-                        prevTool.deactivate();
+                if (this._currentTool !== '') {
+                    const prevTool = this._tools[this._currentTool];
+                    prevTool.deactivate();
+                }
+                this._currentTool = '';
+                if (cmd.name) {
+                    const newTool = this._tools[cmd.name];
+                    if (newTool) {
+                        this._currentTool = cmd.name;
+                        newTool.activate();
                     }
-                    this._currentTool = cmd.name;
-                    newTool.activate();
                 }
             }
         } else if (cmd.command == 'CreateObject') {
@@ -70,7 +81,6 @@ export class cwPlayground {
             const y = Number(cmd.y || 0);
             const obj = this.createEntity (type, name, failOnExists, cmd);
             obj.translation = { x: x, y: y };
-            this.view.rootNode.addChild (obj);
         } else if (cmd.command == 'DeleteObject') {
             this.deleteEntity (cmd.name);
         } else if (this._currentTool !== '') {
