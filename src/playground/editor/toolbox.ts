@@ -4,16 +4,10 @@ import * as commands from '../commands';
 export interface IToolDef {
     states: Array<{
         command: string;
-        label?: string;
-        labelColor?: string;
-        labelFontSize?: number;
-        labelFontStyle?: string;
-        labelFontWeight?: string;
-        labelFontFamily?: string;
-        background?: string;
+        iconClass: string;
+        color?: string;
     }>;
-    width?: number;
-    height?: number;
+    fontSize: string;
 }
 
 export class cwPGEditorToolbox {
@@ -38,40 +32,35 @@ export class cwPGEditorToolbox {
     loadTools (tools: Array<IToolDef>) {
         tools.forEach ((tool: IToolDef) => {
             this._tools.push (tool);
-            const toolDiv: HTMLDivElement = document.createElement ('div');
-            toolDiv.style.width = tool.width == undefined ? '60px' : `${tool.width}px`;
-            toolDiv.style.height = tool.height == undefined ? '60px' : `${tool.height}px`;
-            toolDiv.style.textAlign = 'center';
-            toolDiv.style.lineHeight = toolDiv.style.height;
-            toolDiv.style.border = '1px #000 solid';
-            toolDiv.setAttribute ('toolIndex', String(this._tools.length-1));
-            toolDiv.setAttribute ('togglable', tool.states.length > 1 ? 'true' : 'false');
-            toolDiv.setAttribute ('toggleState', '0');
-            this.applyToolStyles (toolDiv);
+            const toolIcon: HTMLElement = document.createElement ('i');
+            toolIcon.classList.add ()
 
-            this._container.appendChild (toolDiv);
-            toolDiv.addEventListener ('click', () => {
-                const togglable = toolDiv.getAttribute ('togglable');
-                let toggleState = Number(toolDiv.getAttribute ('toggleState'));
+            toolIcon.style.fontSize = tool.fontSize || '60px';
+            toolIcon.setAttribute ('toolIndex', String(this._tools.length-1));
+            toolIcon.setAttribute ('togglable', tool.states.length > 1 ? 'true' : 'false');
+            toolIcon.setAttribute ('toggleState', '0');
+            this.applyToolStyles (toolIcon);
+
+            this._container.appendChild (toolIcon);
+            toolIcon.addEventListener ('click', () => {
+                const togglable = toolIcon.getAttribute ('togglable');
+                let toggleState = Number(toolIcon.getAttribute ('toggleState'));
                 if (togglable == 'true') {
-                    toggleState = 1 - Number(toolDiv.getAttribute ('toggleState'));
+                    toggleState = 1 - Number(toolIcon.getAttribute ('toggleState'));
                 }
-                const toolIndex = Number(toolDiv.getAttribute ('toolIndex'));
-                toolDiv.setAttribute ('toggleState', String(toggleState));
-                this.applyToolStyles (toolDiv);
+                const toolIndex = Number(toolIcon.getAttribute ('toolIndex'));
+                toolIcon.setAttribute ('toggleState', String(toggleState));
+                this.applyToolStyles (toolIcon);
                 this._pg.executeCommand (commands.cwPGCommandParser.parse(this._tools[toolIndex].states[toggleState].command));
             });
         });
     }
-    private applyToolStyles (toolDiv: HTMLDivElement) {
-        const index = Number(toolDiv.getAttribute ('toggleState'));
-        const toolIndex = Number(toolDiv.getAttribute ('toolIndex'));
-        toolDiv.style.fontSize = this._tools[toolIndex].states[index].labelFontSize == undefined ? '16px' : `${this._tools[toolIndex].states[index].labelFontSize}px`;
-        toolDiv.style.fontStyle = this._tools[toolIndex].states[index].labelFontStyle || 'normal';
-        toolDiv.style.fontWeight = this._tools[toolIndex].states[index].labelFontWeight || 'normal';
-        toolDiv.style.fontFamily = this._tools[toolIndex].states[index].labelFontFamily || '微软雅黑';
-        toolDiv.style.color = this._tools[toolIndex].states[index].labelColor || '#000';
-        toolDiv.style.backgroundColor = this._tools[toolIndex].states[index].background || '#fff';
-        toolDiv.innerText = this._tools[toolIndex].states[index].label || '';
+    private applyToolStyles (toolIcon: HTMLElement) {
+        const index = Number(toolIcon.getAttribute ('toggleState'));
+        const toolIndex = Number(toolIcon.getAttribute ('toolIndex'));
+        this._tools[toolIndex].states[index].iconClass.split (' ').forEach ((token: string) => {
+            toolIcon.classList.add (token);
+        });
+        toolIcon.style.color = this._tools[toolIndex].states[index].color || '#888';
     }
 }

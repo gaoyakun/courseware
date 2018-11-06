@@ -6,33 +6,26 @@ import * as pgeditor from './playground/editor';
 cwScene.init ();
 
 const PG = new playground.cwPlayground (document.querySelector('#playground-canvas'), true);
-const cmdInput:HTMLInputElement = document.querySelector('#command');
-cmdInput.addEventListener ('keypress', (ev) => {
-    const e = ev as KeyboardEvent;
-    if (e.keyCode == 13) {
-        PG.executeCommand (cwPGCommandParser.parse(cmdInput.value));
-    }
-});
 const toolboxDiv: HTMLDivElement = document.querySelector('#toolbox');
 const toolbox = new pgeditor.cwPGEditorToolbox (toolboxDiv, PG);
 toolbox.loadTools ([
     {
         states: [{
             command: 'UseTool',
-            label: '选'
+            iconClass: 'fas fa-mouse-pointer fa-fw',
+            color: '#888'
         },{
             command: 'UseTool name=PGTool_Select',
-            label: '选'
+            iconClass: 'fas fa-home fa-fw',
+            color: '#00f'
         }],
-        width: 30,
-        height: 30
+        fontSize: '24px'
     }, {
         states: [{
             command: 'CreateObject type=Label text=标签',
-            label: 'L'
+            iconClass: 'fas fa-font fa-fw'
         }],
-        width: 30,
-        height: 30
+        fontSize: '24px'
     }
 ]);
 
