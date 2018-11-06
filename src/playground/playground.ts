@@ -25,10 +25,21 @@ export class cwPlayground {
     public addFactory(factory: objects.cwPGFactory): void {
         this._factories[factory.name] = factory;
     }
-    public createEntity(type: string, name: string, failOnExists: boolean, options: any): core.cwSceneObject {
-        let entity = this.findEntity(name);
-        if (entity !== null) {
-            return failOnExists ? null : entity;
+    public createEntity(type: string, name: string|null, failOnExists: boolean, options: any): core.cwSceneObject {
+        let entity = null;
+        if (name === null) {
+            let id = 1;
+            while (true) {
+                name = `${type.toLowerCase()}${id++}`;
+                if (this.findEntity(name) === null) {
+                    break;
+                }
+            }
+        } else {
+            entity = this.findEntity(name);
+            if (entity !== null) {
+                return failOnExists ? null : entity;
+            }
         }
         const factory = this._factories[type];
         if (factory) {
@@ -75,12 +86,11 @@ export class cwPlayground {
             }
         } else if (cmd.command == 'CreateObject') {
             const type = cmd.type;
-            const name = cmd.name;
+            const name = cmd.name||null;
             const failOnExists = !!cmd.failOnExists;
-            const x = Number(cmd.x || 0);
-            const y = Number(cmd.y || 0);
             const obj = this.createEntity (type, name, failOnExists, cmd);
-            obj.translation = { x: x, y: y };
+            obj.translation = { x: -10000, y: -10000 };
+            obj.triggerEx (new objects.cwPGStartMoveEvent());
         } else if (cmd.command == 'DeleteObject') {
             this.deleteEntity (cmd.name);
         } else if (this._currentTool !== '') {

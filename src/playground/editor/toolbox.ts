@@ -4,16 +4,16 @@ import * as commands from '../commands';
 export interface IToolDef {
     states: Array<{
         command: string;
-        label: string;
-        labelColor: string;
-        labelFontSize: number;
-        labelFontStyle: string;
-        labelFontWeight: string;
-        labelFontFamily: string;
-        background: string;
+        label?: string;
+        labelColor?: string;
+        labelFontSize?: number;
+        labelFontStyle?: string;
+        labelFontWeight?: string;
+        labelFontFamily?: string;
+        background?: string;
     }>;
-    width: number;
-    height: number;
+    width?: number;
+    height?: number;
 }
 
 export class cwPGEditorToolbox {
@@ -23,7 +23,7 @@ export class cwPGEditorToolbox {
     constructor (container: HTMLDivElement, pg: playground.cwPlayground) {
         this._container = container;
         this._pg = pg;
-        this._tools = null;
+        this._tools = [];
         this.create (this._container);
     }
     create (container: HTMLDivElement) {
@@ -43,6 +43,7 @@ export class cwPGEditorToolbox {
             toolDiv.style.height = tool.height == undefined ? '60px' : `${tool.height}px`;
             toolDiv.style.textAlign = 'center';
             toolDiv.style.lineHeight = toolDiv.style.height;
+            toolDiv.style.border = '1px #000 solid';
             toolDiv.setAttribute ('toolIndex', String(this._tools.length-1));
             toolDiv.setAttribute ('togglable', tool.states.length > 1 ? 'true' : 'false');
             toolDiv.setAttribute ('toggleState', '0');
@@ -51,13 +52,14 @@ export class cwPGEditorToolbox {
             this._container.appendChild (toolDiv);
             toolDiv.addEventListener ('click', () => {
                 const togglable = toolDiv.getAttribute ('togglable');
+                let toggleState = Number(toolDiv.getAttribute ('toggleState'));
                 if (togglable == 'true') {
-                    const toggleState = 1 - Number(toolDiv.getAttribute ('toggleState'));
-                    const toolIndex = Number(toolDiv.getAttribute ('toolIndex'));
-                    toolDiv.setAttribute ('toggleState', String(toggleState));
-                    this.applyToolStyles (toolDiv);
-                    this._pg.executeCommand (commands.cwPGCommandParser.parse(this._tools[toolIndex].states[toggleState].command));
+                    toggleState = 1 - Number(toolDiv.getAttribute ('toggleState'));
                 }
+                const toolIndex = Number(toolDiv.getAttribute ('toolIndex'));
+                toolDiv.setAttribute ('toggleState', String(toggleState));
+                this.applyToolStyles (toolDiv);
+                this._pg.executeCommand (commands.cwPGCommandParser.parse(this._tools[toolIndex].states[toggleState].command));
             });
         });
     }
@@ -70,6 +72,6 @@ export class cwPGEditorToolbox {
         toolDiv.style.fontFamily = this._tools[toolIndex].states[index].labelFontFamily || '微软雅黑';
         toolDiv.style.color = this._tools[toolIndex].states[index].labelColor || '#000';
         toolDiv.style.backgroundColor = this._tools[toolIndex].states[index].background || '#fff';
-        toolDiv.innerText = this._tools[toolIndex].states[index].label;
+        toolDiv.innerText = this._tools[toolIndex].states[index].label || '';
     }
 }
