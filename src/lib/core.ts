@@ -881,11 +881,93 @@ export class cwSceneView extends cwObject {
     }
 }
 
+export function ResizeSensor(element:HTMLElement, callback:Function)
+{
+    let zIndex = parseInt(window.getComputedStyle(element).zIndex);
+    if(isNaN(zIndex)) { 
+        zIndex = 0; 
+    };
+    zIndex--;
+
+    let expand = document.createElement('div');
+    expand.style.position = "absolute";
+    expand.style.left = "0px";
+    expand.style.top = "0px";
+    expand.style.right = "0px";
+    expand.style.bottom = "0px";
+    expand.style.overflow = "hidden";
+    expand.style.zIndex = String(zIndex);
+    expand.style.visibility = "hidden";
+
+    let expandChild = document.createElement('div');
+    expandChild.style.position = "absolute";
+    expandChild.style.left = "0px";
+    expandChild.style.top = "0px";
+    expandChild.style.width = "10000000px";
+    expandChild.style.height = "10000000px";
+    expand.appendChild(expandChild);
+
+    let shrink = document.createElement('div');
+    shrink.style.position = "absolute";
+    shrink.style.left = "0px";
+    shrink.style.top = "0px";
+    shrink.style.right = "0px";
+    shrink.style.bottom = "0px";
+    shrink.style.overflow = "hidden";
+    shrink.style.zIndex = String(zIndex);
+    shrink.style.visibility = "hidden";
+
+    let shrinkChild = document.createElement('div');
+    shrinkChild.style.position = "absolute";
+    shrinkChild.style.left = "0px";
+    shrinkChild.style.top = "0px";
+    shrinkChild.style.width = "200%";
+    shrinkChild.style.height = "200%";
+    shrink.appendChild(shrinkChild);
+
+    element.appendChild(expand);
+    element.appendChild(shrink);
+
+    function setScroll()
+    {
+        expand.scrollLeft = 10000000;
+        expand.scrollTop = 10000000;
+
+        shrink.scrollLeft = 10000000;
+        shrink.scrollTop = 10000000;
+    };
+    setScroll();
+
+    let size = element.getBoundingClientRect();
+
+    let currentWidth = size.width;
+    let currentHeight = size.height;
+
+    let onScroll = function() {
+        let size = element.getBoundingClientRect();
+
+        let newWidth = size.width;
+        let newHeight = size.height;
+
+        if(newWidth != currentWidth || newHeight != currentHeight) {
+            currentWidth = newWidth;
+            currentHeight = newHeight;
+
+            callback();
+        }
+
+        setScroll();
+    };
+
+    expand.addEventListener('scroll', onScroll);
+    shrink.addEventListener('scroll', onScroll);
+}
+
 export class cwCanvas extends cwObject {
     private readonly _canvas: HTMLCanvasElement;
-    private readonly _buffer: HTMLCanvasElement;
-    private readonly _screenCtx: CanvasRenderingContext2D;
-    private readonly _offscreenCtx: CanvasRenderingContext2D;
+    private _buffer: HTMLCanvasElement;
+    private _screenCtx: CanvasRenderingContext2D;
+    private _offscreenCtx: CanvasRenderingContext2D;
     private _width: number;
     private _height: number;
     private _mouseOver: boolean;
@@ -901,11 +983,10 @@ export class cwCanvas extends cwObject {
             this._mouseOver = false;
         });
     }
-    constructor(canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
-        super();
-        this._canvas = canvas;
-        this._width = parseInt(window.getComputedStyle(canvas).width);
-        this._height = parseInt(window.getComputedStyle(canvas).height);
+    private adjustCanvasSize (canvas:HTMLCanvasElement) {
+        const computedStyle = window.getComputedStyle (canvas.parentElement);
+        this._width = canvas.parentElement.clientWidth - parseFloat (computedStyle.paddingLeft) - parseFloat (computedStyle.paddingRight);
+        this._height = canvas.parentElement.clientHeight - parseFloat (computedStyle.paddingTop) - parseFloat (computedStyle.paddingBottom);
         this._canvas.width = this._width;
         this._canvas.height = this._height;
         this._screenCtx = this._canvas.getContext("2d");
@@ -913,6 +994,16 @@ export class cwCanvas extends cwObject {
         this._buffer.width = this._width;
         this._buffer.height = this._height;
         this._offscreenCtx = this._buffer.getContext("2d");
+    }
+    constructor(canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
+        super();
+        this._canvas = canvas;
+        if (this._canvas) {
+            this.adjustCanvasSize (this._canvas);
+            ResizeSensor (this._canvas.parentElement, () => {
+                this.adjustCanvasSize (this._canvas);
+            });
+        }
         this._mouseOver = false;
         this._doubleBuffer = doubleBuffer;
     }

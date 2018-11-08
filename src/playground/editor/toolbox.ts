@@ -22,12 +22,12 @@ export class cwPGEditorToolbox {
     }
     create (container: HTMLDivElement) {
         this._container = container;
-        container.style.display = 'flex';
-        container.style.flexDirection = 'row';
-        container.style.flexWrap = 'wrap';
-        container.style.justifyContent = 'flex-start';
-        container.style.alignItems = 'flex-start';
-        container.style.alignContent = 'flex-start';
+        // container.style.display = 'flex';
+        // container.style.flexDirection = 'row';
+        // container.style.flexWrap = 'wrap';
+        // container.style.justifyContent = 'flex-start';
+        // container.style.alignItems = 'flex-start';
+        // container.style.alignContent = 'flex-start';
     }
     loadTools (tools: Array<IToolDef>) {
         tools.forEach ((tool: IToolDef) => {
@@ -36,6 +36,7 @@ export class cwPGEditorToolbox {
             toolIcon.classList.add ()
 
             toolIcon.style.fontSize = tool.fontSize || '60px';
+            toolIcon.style.lineHeight = tool.fontSize || '60px';
             toolIcon.setAttribute ('toolIndex', String(this._tools.length-1));
             toolIcon.setAttribute ('togglable', tool.states.length > 1 ? 'true' : 'false');
             toolIcon.setAttribute ('toggleState', '0');
