@@ -33,18 +33,21 @@ export class cwPGSelectComponent extends core.cwComponent {
 
 export class cwPGSelectTool extends tool.cwPGTool {
     public static readonly toolname: string = 'PGTool_Select';
-    private selectedObjects: Array<core.cwSceneObject>;
+    private _selectedObjects: core.cwSceneObject[];
     public constructor() {
         super(cwPGSelectTool.toolname);
-        this.selectedObjects = [];
+        this._selectedObjects = [];
+    }
+    get selectedObjects () {
+        return this._selectedObjects;
     }
     public activate() {
         super.activate ();
-        this.selectedObjects.length = 0;
+        this._selectedObjects.length = 0;
     }
     public deactivate() {
         super.deactivate ();
-        this.selectedObjects.length = 0;
+        this._selectedObjects.length = 0;
     }
     public activateObject(object: core.cwSceneObject) {
         this.deactivateObject (object);
@@ -57,29 +60,27 @@ export class cwPGSelectTool extends tool.cwPGTool {
             object.removeComponentsByType(cwPGSelectComponent.type);
         }
     }
-    public executeCommand(cmd: command.IPGCommand): void {
-    }
     public selectObject(object: core.cwSceneObject, ev: events.cwMouseEvent) {
-        if (this.selectedObjects.indexOf(object) < 0) {
+        if (this._selectedObjects.indexOf(object) < 0) {
             if (!ev.ctrlDown) {
                 this.deselectAll();
             }
-            this.selectedObjects.push(object);
+            this._selectedObjects.push(object);
             const e = new cwPGSelectEvent(ev.x, ev.y, ev.button, ev.shiftDown, ev.altDown, ev.ctrlDown, ev.metaDown);
             object.triggerEx(e);
         }
     }
     public deselectObject(object: core.cwSceneObject) {
-        const index = this.selectedObjects.indexOf(object);
+        const index = this._selectedObjects.indexOf(object);
         if (index >= 0) {
             object.triggerEx(new cwPGDeselectEvent());
-            this.selectedObjects.splice(index, 1);
+            this._selectedObjects.splice(index, 1);
         }
     }
     public deselectAll() {
-        this.selectedObjects.forEach((obj: core.cwSceneObject) => {
+        this._selectedObjects.forEach((obj: core.cwSceneObject) => {
             obj.triggerEx(new cwPGDeselectEvent());
         });
-        this.selectedObjects.length = 0;
+        this._selectedObjects.length = 0;
     }
 }

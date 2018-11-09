@@ -35,7 +35,5 @@ export class cwPGTool {
     }
     public deactivateObject(object: core.cwSceneObject) {
     }
-    public executeCommand(cmd: command.IPGCommand) {
-    }
 }
 

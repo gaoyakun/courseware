@@ -1,4 +1,5 @@
 import * as core from '../../lib/core';
+import * as command from '../commands';
 import * as events from '../../lib/events';
 import * as tool from '../tools';
 
@@ -13,6 +14,15 @@ export class cwPGStopMoveEvent extends events.cwEvent {
     static readonly type: string = '@PGStopMove';
     constructor () {
         super(cwPGStopMoveEvent.type);
+    }
+}
+
+export class cwPGCommandEvent extends events.cwEvent {
+    static readonly type: string = '@PGCommand';
+    cmd: command.IPGCommand;
+    constructor (cmd: command.IPGCommand) {
+        super(cwPGCommandEvent.type);
+        this.cmd = cmd;
     }
 }
 
@@ -51,10 +61,6 @@ export class cwPGComponent extends core.cwComponent {
             if (this.mode == 'freeMove' && this.object) {
                 this.object.worldTranslation = {x:ev.x, y:ev.y};
             }
-        });
-        this.on(events.cwComponentAttachedEvent.type, (ev: events.cwComponentAttachedEvent) => {
-        });
-        this.on(events.cwComponentDetachedEvent.type, (ev: events.cwComponentDetachedEvent) => {
         });
     }
 }

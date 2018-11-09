@@ -76,6 +76,13 @@ export class cwPGLabel extends core.cwSceneObject {
         this.on(tools.cwPGDeselectEvent.type, (evt: tools.cwPGDeselectEvent) => {
             this._selected = false;
         });
+        this.on(factory.cwPGCommandEvent.type, (evt: factory.cwPGCommandEvent) => {
+            if (evt.cmd.command === 'beginEdit') {
+                // TODO:
+            } else if (evt.cmd.command == 'endEdit') {
+                // TODO:
+            }
+        });
     }
     get text () {
         return this._text;
