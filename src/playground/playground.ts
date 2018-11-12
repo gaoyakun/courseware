@@ -1,15 +1,17 @@
 import * as core from '../lib/core';
+import * as events from '../lib/events';
 import * as tool from './tools';
 import * as command from './commands';
 import * as objects from './objects';
 
-export class cwPlayground {
+export class cwPlayground extends events.cwEventObserver {
     public readonly view: core.cwSceneView = null;
     private _factories: { [name: string]: objects.cwPGFactory };
     private _tools: { [name: string]: tool.cwPGTool };
     private _currentTool: string;
     private _entities: { [name: string]: core.cwSceneObject };
     constructor(canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
+        super ();
         this.view = core.cwScene.addCanvas(canvas, doubleBuffer);
         this._factories = {};
         this._tools = {};
@@ -44,8 +46,9 @@ export class cwPlayground {
         const factory = this._factories[type];
         if (factory) {
             entity = factory.createEntity(options);
-            entity.entityName = name;
             if (entity) {
+                entity.entityName = name;
+                entity.entityType = type;
                 this.view.rootNode.addChild (entity);
                 this._entities[name] = entity;
                 if (this._currentTool !== '') {

@@ -1,6 +1,6 @@
 import { cwApp, cwScene } from './lib/core';
 import * as playground from './playground/playground';
-import { cwPGCommandParser } from './playground/commands';
+import * as tools from './playground/tools';
 import * as pgeditor from './playground/editor';
 
 cwScene.init ();
@@ -28,7 +28,14 @@ toolbox.loadTools ([
         fontSize: '24px'
     }
 ]);
+PG.on (tools.cwPGObjectSelectedEvent.type, (ev: tools.cwPGObjectSelectedEvent) => {
+    switch (ev.object.entityType) {
+    case 'Label':
+    }
+});
+PG.on (tools.cwPGObjectDeselectedEvent.type, (ev: tools.cwPGObjectDeselectedEvent) => {
 
+});
 
 cwApp.run ();
 

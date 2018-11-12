@@ -17,6 +17,23 @@ export class cwPGDeselectEvent extends events.cwEvent {
     }
 }
 
+export class cwPGObjectSelectedEvent extends events.cwEvent {
+    static readonly type: string = '@PGObjectSelected';
+    readonly object: core.cwSceneObject;
+    constructor (object: core.cwSceneObject) {
+        super (cwPGObjectSelectedEvent.type);
+        this.object = object;
+    }
+}
+
+export class cwPGObjectDeselectedEvent extends events.cwEvent {
+    static readonly type: string = '@PGObjectDeselected';
+    readonly object: core.cwSceneObject;
+    constructor (object: core.cwSceneObject) {
+        super (cwPGObjectDeselectedEvent.type);
+        this.object = object;
+    }
+}
 export class cwPGSelectComponent extends core.cwComponent {
     static readonly type = 'PGSelect';
     readonly tool: cwPGSelectTool;
@@ -65,8 +82,8 @@ export class cwPGSelectTool extends tool.cwPGTool {
                 this.deselectAll();
             }
             this.selectedObjects.push(object);
-            const e = new cwPGSelectEvent(ev.x, ev.y, ev.button, ev.shiftDown, ev.altDown, ev.ctrlDown, ev.metaDown);
-            object.triggerEx(e);
+            object.triggerEx(new cwPGSelectEvent(ev.x, ev.y, ev.button, ev.shiftDown, ev.altDown, ev.ctrlDown, ev.metaDown));
+            core.cwApp.triggerEvent (null, new cwPGObjectSelectedEvent (object));
         }
     }
     public deselectObject(object: core.cwSceneObject) {
@@ -74,12 +91,12 @@ export class cwPGSelectTool extends tool.cwPGTool {
         if (index >= 0) {
             object.triggerEx(new cwPGDeselectEvent());
             this.selectedObjects.splice(index, 1);
+            core.cwApp.triggerEvent (null, new cwPGObjectDeselectedEvent (object));
         }
     }
     public deselectAll() {
-        this.selectedObjects.forEach((obj: core.cwSceneObject) => {
-            obj.triggerEx(new cwPGDeselectEvent());
-        });
-        this.selectedObjects.length = 0;
+        while (this.selectedObjects.length > 0) {
+            this.deselectObject (this.selectedObjects[this.selectedObjects.length - 1]);
+        }
     }
 }
