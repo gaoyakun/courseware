@@ -50,18 +50,21 @@ export class cwPGSelectComponent extends core.cwComponent {
 
 export class cwPGSelectTool extends tool.cwPGTool {
     public static readonly toolname: string = 'PGTool_Select';
-    private selectedObjects: Array<core.cwSceneObject>;
+    private _selectedObjects: core.cwSceneObject[];
     public constructor() {
         super(cwPGSelectTool.toolname);
-        this.selectedObjects = [];
+        this._selectedObjects = [];
+    }
+    get selectedObjects () {
+        return this._selectedObjects;
     }
     public activate() {
         super.activate ();
-        this.selectedObjects.length = 0;
+        this._selectedObjects.length = 0;
     }
     public deactivate() {
         super.deactivate ();
-        this.selectedObjects.length = 0;
+        this._selectedObjects.length = 0;
     }
     public activateObject(object: core.cwSceneObject) {
         this.deactivateObject (object);
@@ -74,10 +77,8 @@ export class cwPGSelectTool extends tool.cwPGTool {
             object.removeComponentsByType(cwPGSelectComponent.type);
         }
     }
-    public executeCommand(cmd: command.IPGCommand): void {
-    }
     public selectObject(object: core.cwSceneObject, ev: events.cwMouseEvent) {
-        if (this.selectedObjects.indexOf(object) < 0) {
+        if (this._selectedObjects.indexOf(object) < 0) {
             if (!ev.ctrlDown) {
                 this.deselectAll();
             }
@@ -87,7 +88,7 @@ export class cwPGSelectTool extends tool.cwPGTool {
         }
     }
     public deselectObject(object: core.cwSceneObject) {
-        const index = this.selectedObjects.indexOf(object);
+        const index = this._selectedObjects.indexOf(object);
         if (index >= 0) {
             object.triggerEx(new cwPGDeselectEvent());
             this.selectedObjects.splice(index, 1);

@@ -46,6 +46,8 @@ export class cwPlayground extends events.cwEventObserver {
         const factory = this._factories[type];
         if (factory) {
             entity = factory.createEntity(options);
+            entity.entityName = name;
+            entity.entityType = factory.name;
             if (entity) {
                 entity.entityName = name;
                 entity.entityType = type;
@@ -96,9 +98,12 @@ export class cwPlayground extends events.cwEventObserver {
             obj.triggerEx (new objects.cwPGStartMoveEvent());
         } else if (cmd.command == 'DeleteObject') {
             this.deleteEntity (cmd.name);
-        } else if (this._currentTool !== '') {
-            const tool = this._tools[this._currentTool];
-            tool.executeCommand(cmd);
+        } else if (this._currentTool === tool.cwPGSelectTool.toolname) {
+            const tool = this._tools[this._currentTool] as tool.cwPGSelectTool;
+            const selectedObjects = tool.selectedObjects;
+            if (selectedObjects.length == 1) {
+                selectedObjects[0].executeCommand (cmd);
+            }
         }
     }
 }
