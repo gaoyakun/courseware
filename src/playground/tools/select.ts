@@ -64,7 +64,6 @@ export class cwPGSelectTool extends tool.cwPGTool {
     }
     public deactivate() {
         super.deactivate ();
-        this._selectedObjects.length = 0;
     }
     public activateObject(object: core.cwSceneObject) {
         this.deactivateObject (object);
@@ -73,7 +72,7 @@ export class cwPGSelectTool extends tool.cwPGTool {
     public deactivateObject(object: core.cwSceneObject) {
         const components = object.getComponents(cwPGSelectComponent.type);
         if (components && components.length > 0) {
-            object.triggerEx (new cwPGDeselectEvent());
+            this.deselectObject (object);
             object.removeComponentsByType(cwPGSelectComponent.type);
         }
     }

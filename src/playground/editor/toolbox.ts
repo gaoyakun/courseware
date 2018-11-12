@@ -56,6 +56,12 @@ export class cwPGEditorToolbox {
             });
         });
     }
+    unloadTools () {
+        while (this._container.hasChildNodes()) {
+            this._container.removeChild(this._container.firstChild);
+        }
+        this._tools = [];
+    }
     private applyToolStyles (toolIcon: HTMLElement) {
         const index = Number(toolIcon.getAttribute ('toggleState'));
         const toolIndex = Number(toolIcon.getAttribute ('toolIndex'));

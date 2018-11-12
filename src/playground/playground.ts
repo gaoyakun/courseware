@@ -102,7 +102,7 @@ export class cwPlayground extends events.cwEventObserver {
             const tool = this._tools[this._currentTool] as tool.cwPGSelectTool;
             const selectedObjects = tool.selectedObjects;
             if (selectedObjects.length == 1) {
-                selectedObjects[0].executeCommand (cmd);
+                selectedObjects[0].triggerEx (new objects.cwPGCommandEvent(cmd));
             }
         }
     }
