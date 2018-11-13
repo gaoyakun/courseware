@@ -61,8 +61,26 @@ export class cwPGSelectTool extends tool.cwPGTool {
     public activate() {
         super.activate ();
         this._selectedObjects.length = 0;
+        this.on (events.cwKeyDownEvent.type, (ev: events.cwKeyDownEvent) => {
+            if (this._selectedObjects.length == 1) {
+                this._selectedObjects[0].triggerEx (ev);
+            }
+        });
+        this.on (events.cwKeyUpEvent.type, (ev: events.cwKeyUpEvent) => {
+            if (this._selectedObjects.length == 1) {
+                this._selectedObjects[0].triggerEx (ev);
+            }
+        });
+        this.on (events.cwKeyPressEvent.type, (ev: events.cwKeyPressEvent) => {
+            if (this._selectedObjects.length == 1) {
+                this._selectedObjects[0].triggerEx (ev);
+            }
+        });
     }
     public deactivate() {
+        this.off (events.cwKeyDownEvent.type);
+        this.off (events.cwKeyUpEvent.type);
+        this.off (events.cwKeyPressEvent.type);
         super.deactivate ();
     }
     public activateObject(object: core.cwSceneObject) {

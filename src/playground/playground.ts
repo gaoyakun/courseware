@@ -20,6 +20,25 @@ export class cwPlayground extends events.cwEventObserver {
         this._entities = {};
         this.addFactory (new objects.cwPGLabelFactory('Label'));
         this.addTool (new tool.cwPGSelectTool());
+        this.addTool (new tool.cwPGSwapTool());
+        this.view.on (events.cwKeyDownEvent.type, (ev: events.cwKeyDownEvent) => {
+            if (this._currentTool !== '') {
+                const tool = this._tools[this._currentTool];
+                tool.trigger (ev);
+            }
+        });
+        this.view.on (events.cwKeyUpEvent.type, (ev: events.cwKeyUpEvent) => {
+            if (this._currentTool !== '') {
+                const tool = this._tools[this._currentTool];
+                tool.trigger (ev);
+            }
+        });
+        this.view.on (events.cwKeyPressEvent.type, (ev: events.cwKeyPressEvent) => {
+            if (this._currentTool !== '') {
+                const tool = this._tools[this._currentTool];
+                tool.trigger (ev);
+            }
+        });
     }
     public addTool (tool: tool.cwPGTool): void {
         this._tools[tool.name] = tool;

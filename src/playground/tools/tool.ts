@@ -20,9 +20,10 @@ export class cwPGToolDeactivateEvent extends events.cwEvent {
     }
 }
 
-export class cwPGTool {
+export class cwPGTool extends events.cwEventObserver {
     public readonly name: string;
     constructor (name: string) {
+        super ();
         this.name = name;
     }
     public activate() {

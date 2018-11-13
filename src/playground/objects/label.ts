@@ -17,6 +17,7 @@ export class cwPGLabel extends core.cwSceneObject {
     private _background: string|null;
     private _textcolor: string;
     private _selected: boolean;
+    private _editing: boolean;
 
     constructor(options:any = null) {
         super();
@@ -30,10 +31,13 @@ export class cwPGLabel extends core.cwSceneObject {
         this._fontFamily = opt.fontFamily || '微软雅黑';
         this._font = '';
         this._text = opt.text || '';
+        this._savedText = '';
         this._measure = null;
+        this._minwidth = 10;
         this._background = opt.background || null;
         this._textcolor = opt.textcolor || '#000';
         this._selected = false;
+        this._editing = false;
         this.on(events.cwHitTestEvent.type, (evt: events.cwHitTestEvent) => {
             let width = this._width;
             let height = this._height || this._fontSize;
@@ -42,6 +46,9 @@ export class cwPGLabel extends core.cwSceneObject {
                     this._measure = this.view.canvas.context.measureText (this._text);
                 }
                 width = this._measure.width;
+                if (width < this._minwidth) {
+                    width = this._minwidth;
+                }
             }
             evt.result = evt.x >= -width / 2 && evt.x < width / 2 && evt.y >= -height / 2 && evt.y < height / 2;
         });
@@ -62,6 +69,9 @@ export class cwPGLabel extends core.cwSceneObject {
                     this._measure = evt.canvas.context.measureText (this._text);
                 }
                 width = this._measure.width;
+                if (width < this._minwidth) {
+                    width = this._minwidth;
+                }
             }
             evt.canvas.context.fillText(this._text, 0, height/2, width);
             if (this._selected) {
@@ -75,12 +85,57 @@ export class cwPGLabel extends core.cwSceneObject {
         });
         this.on(tools.cwPGDeselectEvent.type, (evt: tools.cwPGDeselectEvent) => {
             this._selected = false;
+            if (this._editing) {
+                this.triggerEx (new factory.cwPGCommandEvent({ command: 'cancelEdit' }));
+            }
         });
         this.on(factory.cwPGCommandEvent.type, (evt: factory.cwPGCommandEvent) => {
             if (evt.cmd.command === 'beginEdit') {
-                // TODO:
+                if (!this._editing) {
+                    this._editing = true;
+                    this._savedText = this._text;
+                    this.text += '|';
+                }
             } else if (evt.cmd.command == 'endEdit') {
-                // TODO:
+                if (this._editing) {
+                    this._editing = false;
+                    this.text = this._text.substr (0, this.text.length - 1);
+                }
+            } else if (evt.cmd.command == 'cancelEdit') {
+                if (this._editing) {
+                    this._editing = false;
+                    this.text = this._savedText;
+                }
+            } else if (evt.cmd.command == 'fontScaleUp') {
+                this.fontSize = this.fontSize + Number(evt.cmd.step);
+            } else if (evt.cmd.command == 'fontScaleDown') {
+                let fontSize = this.fontSize - Number(evt.cmd.step);
+                if (fontSize < 8) {
+                    fontSize = 8;
+                }
+                this.fontSize = fontSize;
+            }
+        });
+        this.on(events.cwKeyPressEvent.type, (ev: events.cwKeyPressEvent) => {
+            if (this._editing) {
+                let text = this._text.substr (0, this.text.length - 1);
+                text += ev.key;
+                this.text = text + '|';
+            }
+        });
+        this.on(events.cwKeyDownEvent.type, (ev: events.cwKeyDownEvent) => {
+            if (this._editing) {
+                if (ev.keyCode == 13) {
+                    this.triggerEx (new factory.cwPGCommandEvent({ command: 'endEdit' }));
+                } else if (ev.keyCode == 8) {
+                    let text = this._text.substr (0, this.text.length - 1);
+                    if (text.length > 0) {
+                        text = text.substr (0, text.length - 1);
+                    }
+                    this.text = text + '|';
+                } else if (ev.keyCode == 27) {
+                    this.triggerEx (new factory.cwPGCommandEvent({ command: 'cancelEdit' }));
+                }
             }
         });
     }
@@ -90,6 +145,16 @@ export class cwPGLabel extends core.cwSceneObject {
     set text (value: string) {
         if (value !== this._text) {
             this._text = value;
+            this._measure = null;
+        }
+    }
+    get fontSize () {
+        return this._fontSize;
+    }
+    set fontSize (value: number) {
+        if (value !== this._fontSize) {
+            this._fontSize = value;
+            this._font = '';
             this._measure = null;
         }
     }

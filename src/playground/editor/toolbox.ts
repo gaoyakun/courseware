@@ -14,29 +14,32 @@ export class cwPGEditorToolbox {
     private _container: HTMLDivElement;
     private _pg: playground.cwPlayground;
     private _tools: Array<IToolDef>;
-    constructor (container: HTMLDivElement, pg: playground.cwPlayground) {
+    private _direction: string;
+    constructor (container: HTMLDivElement, pg: playground.cwPlayground, direction: string) {
         this._container = container;
         this._pg = pg;
         this._tools = [];
+        this._direction = direction;
         this.create (this._container);
     }
     create (container: HTMLDivElement) {
         this._container = container;
-        // container.style.display = 'flex';
-        // container.style.flexDirection = 'row';
-        // container.style.flexWrap = 'wrap';
-        // container.style.justifyContent = 'flex-start';
-        // container.style.alignItems = 'flex-start';
-        // container.style.alignContent = 'flex-start';
+        container.style.display = 'flex';
+        container.style.flexDirection = this._direction;
+        container.style.flexWrap = 'wrap';
+        container.style.justifyContent = 'flex-start';
+        container.style.alignItems = 'flex-start';
+        container.style.alignContent = 'flex-start';
     }
     loadTools (tools: Array<IToolDef>) {
         tools.forEach ((tool: IToolDef) => {
             this._tools.push (tool);
             const toolIcon: HTMLElement = document.createElement ('i');
-            toolIcon.classList.add ()
-
             toolIcon.style.fontSize = tool.fontSize || '60px';
             toolIcon.style.lineHeight = tool.fontSize || '60px';
+            if (this._direction === 'column') {
+                toolIcon.style.marginBottom = '10px';
+            }
             toolIcon.setAttribute ('toolIndex', String(this._tools.length-1));
             toolIcon.setAttribute ('togglable', tool.states.length > 1 ? 'true' : 'false');
             toolIcon.setAttribute ('toggleState', '0');

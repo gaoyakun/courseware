@@ -49,9 +49,6 @@ export class cwcKeyframeAnimation extends cwComponent {
         this.on(cwComponentBeforeAttachEvent.type, (ev: cwComponentBeforeAttachEvent) => {
             if (this._exclusive) {
                 ev.object.removeComponentsByType(this.type);
-                if (ev.object.getComponents(this.type).length > 0) {
-                    ev.allow = false;
-                }
             }
         });
         this.on(cwUpdateEvent.type, (e: cwUpdateEvent) => {
