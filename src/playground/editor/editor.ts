@@ -2,19 +2,23 @@ import * as playground from '../playground';
 import * as commands from '../commands';
 
 interface ITool {
-    command: commands.IPGCommand;
-    iconClass: string;
+    command: {
+        command: string|Function;
+        [prop: string]: any;
+    }
+    iconClass: string|Function;
     elementId?: string;
 }
 
 interface IObjectPaletteEntry {
-    iconClass: string;
+    iconClass: string|Function;
     createArgs?: {
         [arg: string]: any
     };
     commands?: {
         [cmd: string]: {
-            iconClass: string;
+            iconClass: string|Function;
+            command?: string|Function;
             args?: {
                 [arg: string]: any;
             }
@@ -28,7 +32,8 @@ interface IObjectPalette {
 
 interface IToolPalette {
     [name: string]: {
-        iconClass: string;
+        iconClass: string|Function;
+        command?: string|Function;
         args?: {
             [name: string]: any;
         }
@@ -53,16 +58,17 @@ export class cwPGToolPalette {
         this._tools = [];
         this._curTool = null;
     }
-    private getCreateObjectTool (tool: IObjectPaletteEntry): ITool {
+    private getCreateObjectTool (tool: IObjectPalette, type: string): ITool {
         const tooldef: ITool = {
             command: {
-                command: 'CreateObject'
+                command: 'CreateObject',
+                type: type
             },
-            iconClass: tool.iconClass
+            iconClass: tool[type].iconClass
         }
-        if (tool.createArgs) {
-            for (const name in tool.createArgs) {
-                tooldef.command[name] = tool.createArgs[name];
+        if (tool[type].createArgs) {
+            for (const name in tool[type].createArgs) {
+                tooldef.command[name] = tool[type].createArgs[name];
             }
         }
         return tooldef;
@@ -73,6 +79,9 @@ export class cwPGToolPalette {
                 command: cmd
             },
             iconClass: tool.commands[cmd].iconClass
+        }
+        if (tool.commands[cmd].command) {
+            tooldef.command.command = tool.commands[cmd].command;
         }
         if (tool.commands[cmd].args) {
             for (const name in tool.commands[cmd].args) {
@@ -103,6 +112,9 @@ export class cwPGToolPalette {
             },
             iconClass: tool[name].iconClass
         }
+        if (tool[name].command) {
+            tooldef.command.command = tool[name].command;
+        }
         if (tool[name].args) {
             for (const argname in tool[name].args) {
                 tooldef.command[argname] = tool[name].args[argname];
@@ -112,22 +124,28 @@ export class cwPGToolPalette {
     }
     private createToolButton (tooldef: ITool): HTMLElement {
         this._tools.push (tooldef);
-        const buttonSize = this._editor.toolFontSize + 10; 
-        const toolButton: HTMLElement = document.createElement ('div');
-        toolButton.classList.add ('flex-h', 'flex-align-x-center', 'flex-align-y-center');
+        const buttonSize = this._editor.toolFontSize + 6; 
+        let toolButton: HTMLElement = null;
+        if (typeof tooldef.iconClass === 'function') {
+            toolButton = (tooldef.iconClass as Function)(this._editor);
+            toolButton.classList.add ('toolbutton');
+        } else {
+            toolButton = document.createElement ('div');
+            toolButton.classList.add ('flex-h', 'flex-align-x-center', 'flex-align-y-center');
+            toolButton.classList.add ('toolbutton');
+            const toolIcon: HTMLElement = document.createElement ('i');
+            toolIcon.style.fontSize = `${this._editor.toolFontSize}px`;
+            toolIcon.style.color = '#fff';
+            tooldef.iconClass.split (' ').forEach ((cls: string) => {
+                toolIcon.classList.add (cls);
+            });
+            toolButton.appendChild (toolIcon);
+        }
         tooldef.elementId = `toolbutton-${cwPGToolPalette.uniqueId++}`;
-        toolButton.classList.add ('toolbutton');
-        toolButton.id = tooldef.elementId;
+        toolButton.setAttribute ('id', tooldef.elementId);
         toolButton.style.width = `${buttonSize}px`;
         toolButton.style.height = `${buttonSize}px`;
         toolButton.setAttribute ('toolIndex', String(this._tools.length-1));
-        const toolIcon: HTMLElement = document.createElement ('i');
-        toolIcon.style.fontSize = `${this._editor.toolFontSize}px`;
-        toolIcon.style.color = '#fff';
-        tooldef.iconClass.split (' ').forEach ((cls: string) => {
-            toolIcon.classList.add (cls);
-        });
-        toolButton.appendChild (toolIcon);
         this._container.appendChild (toolButton);
         return toolButton;
     }
@@ -136,7 +154,6 @@ export class cwPGToolPalette {
             this._container.removeChild(this._container.firstChild);
         }
         this._tools = [];
-        this._editor.objectToolPalette.unload ();
     }
     loadObjectTools (objectTools: IObjectPaletteEntry) {
         if (objectTools.commands) {
@@ -153,8 +170,7 @@ export class cwPGToolPalette {
     }
     loadObjectPalette (objectPalette: IObjectPalette) {
         for (const objectType in objectPalette) {
-            const tool = objectPalette[objectType];
-            const tooldef = this.getCreateObjectTool (tool);
+            const tooldef = this.getCreateObjectTool (objectPalette, objectType);
             const toolButton = this.createToolButton (tooldef);
             toolButton.addEventListener ('click', () => {
                 const toolIndex = Number(toolButton.getAttribute ('toolIndex'));
@@ -170,8 +186,20 @@ export class cwPGToolPalette {
             toolButton.addEventListener ('click', () => {
                 const toolIndex = Number(toolButton.getAttribute ('toolIndex'));
                 const tool = this._tools[toolIndex];
-                this._editor.executeCommand (tool.command);
-                // TODO: 切换边框高亮显示
+                if (tool !== this._curTool) {
+                    if (this._curTool) {
+                        const curToolButton = document.querySelector(`#${this._curTool.elementId}`);
+                        curToolButton.classList.remove ('active');
+                        this._editor.executeCommand ({ command: 'UseTool' });
+                        this._curTool = null;
+                    }
+                }
+                if (tool) {
+                    const button = document.querySelector(`#${tool.elementId}`);
+                    button.classList.add ('active');
+                    this._editor.executeCommand (tool.command);
+                    this._curTool = tool;
+                }
             });
         }
     }
@@ -195,28 +223,32 @@ export class cwPGEditor {
     private _pg: playground.cwPlayground;
     private _toolset: IToolSet;
     private _objectPalette: cwPGToolPalette;
-    private _objectToolPalette: cwPGToolPalette;
     private _toolPalette: cwPGToolPalette;
     private _opPalette: cwPGToolPalette;
-    constructor (pg: playground.cwPlayground, toolset: IToolSet, objectPaletteElement:HTMLElement, objectToolPaletteElement:HTMLElement, toolPaletteElement:HTMLElement, opPaletteElement:HTMLElement) {
+    constructor (pg: playground.cwPlayground, toolset: IToolSet, objectPaletteElement:HTMLElement, toolPaletteElement:HTMLElement, opPaletteElement:HTMLElement) {
         this._strokeColor = '#000000';
         this._fillColor = '#ffffff';
-        this._toolFontSize = 16;
+        this._toolFontSize = 14;
         this._pg = pg;
         this._toolset = toolset;
         this._objectPalette = new cwPGToolPalette (this, objectPaletteElement);
         this._objectPalette.loadObjectPalette (toolset.objects);
-        this._objectToolPalette = new cwPGToolPalette (this, objectToolPaletteElement);
         this._toolPalette = new cwPGToolPalette (this, toolPaletteElement);
         this._toolPalette.loadToolPalette (toolset.tools);
         this._opPalette = new cwPGToolPalette (this, opPaletteElement);
         this._opPalette.loadOpPalette (toolset.operations);
     }
+    get toolSet () {
+        return this._toolset;
+    }
     get objectPalette () {
         return this._objectPalette;
     }
-    get objectToolPalette () {
-        return this._objectToolPalette;
+    get opPalette () {
+        return this._opPalette;
+    }
+    get toolPalette () {
+        return this._toolPalette;
     }
     get playground () {
         return this._pg;
@@ -239,12 +271,19 @@ export class cwPGEditor {
     set toolFontSize (value: number) {
         this._toolFontSize = value;
     }
-    executeCommand (cmd: commands.IPGCommand) {
-        const realCommand: any = {};
-        for (const name in cmd) {
-            const value = cmd[name];
-            realCommand[name] = (typeof value === 'function') ? (value as Function) (this) : value;
+    executeCommand (cmd: {
+        command: string|Function,
+        [prop: string]: any
+    }) {
+        if (typeof cmd.command === 'function') {
+            (cmd.command as Function) (this);
+        } else if (cmd.command.length > 0 && cmd.command.charAt(0) !== '$') {
+            const realCommand: any = {};
+            for (const name in cmd) {
+                const value = cmd[name];
+                realCommand[name] = (typeof value === 'function') ? (value as Function) (this) : value;
+            }
+            this._pg.executeCommand (realCommand);
         }
-        this._pg.executeCommand (realCommand);
     }
 }

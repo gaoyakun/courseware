@@ -17,10 +17,10 @@ export const cwPGDefaultToolSet = {
             iconClass: 'fas fa-clone fa-fw'
         },
         AlignTop: {
-            iconClass: 'fas fa-align-right fa-rotate-left fa-fw'
+            iconClass: 'fas fa-align-right fa-rotate-270 fa-fw'
         },
         AlignBottom: {
-            iconClass: 'fas fa-align-right fa-rotate-right fa-fw'
+            iconClass: 'fas fa-align-right fa-rotate-90 fa-fw'
         },
         AlignLeft: {
             iconClass: 'fas fa-align-left fa-fw'
@@ -33,12 +33,37 @@ export const cwPGDefaultToolSet = {
         },
         ArrangeV: {
             iconClass: 'fas fa-arrows-alt-v fa-fw'
+        },
+        $StrokeColor: {
+            iconClass: function (editor: editor.cwPGEditor) {
+                const inputBox: HTMLInputElement = document.createElement ('input');
+                inputBox.type = 'color';
+                inputBox.value = editor.strokeColor;
+                inputBox.style.padding = '0px';
+                inputBox.onchange = () => {
+                    editor.strokeColor = inputBox.value;
+                }
+                return inputBox;
+            }
+        },
+        $FillColor: {
+            iconClass: function (editor: editor.cwPGEditor) {
+                const inputBox: HTMLInputElement = document.createElement ('input');
+                inputBox.type = 'color';
+                inputBox.value = editor.fillColor;
+                inputBox.style.padding = '0px';
+                inputBox.onchange = () => {
+                    editor.fillColor = inputBox.value;
+                }
+                return inputBox;
+            }
         }
     },
     objects: {
         Label: {
             iconClass: 'fas fa-font fa-fw',
             createArgs: {
+                text: '标签',
                 textColor: (editor:editor.cwPGEditor) => {
                     return editor.strokeColor;
                 }

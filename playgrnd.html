@@ -13,19 +13,37 @@
                 border:2px solid #888;
                 margin:2px;
             }
+            .toolbar-h {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: 'flex-start';
+                align-items: 'flex-center';
+                align-content: 'flex-center';
+                padding: 1px;
+            }
+            .toolbar-v {
+                display: flex;
+                flex-direction: column;
+                flex-wrap: wrap;
+                justify-content: 'flex-start';
+                align-items: 'flex-start';
+                align-content: 'flex-start';
+                padding: 1px;
+            }
             .active {
                 border:2px solid #fff !important;
             }
         </style>
     </head>
     <body class="flex-v flex-align-x-start flex-align-y-expand" style="width:100%;height:100%;margin:0;background-color: #666;">
-        <div id="object-toolbox" style="padding:10px;"></div>
-        <div class="flex-h flex-align-x-start flex-align-y-expand" style="flex:1; margin:0;">
-            <div id="toolbox" style="padding:10px;"></div>
-            <div style="position:relative; flex:1;">
-                <canvas id="playground-canvas" style="position:absolute; left:0px; right:0px; top:0px; bottom:0px; background-color:#fff; border:5px solid #f00;"></canvas>
+        <div class="toolbar-h" id="object-toolbox"></div>
+        <div class="toolbar-h" id="tool-toolbox"></div>
+        <div class="toolbar-h" id="op-toolbox"></div>
+        <div class="flex-h flex-align-x-start flex-align-y-expand" style="flex:1; padding:5px;">
+            <div style="position:relative; flex:1; border:5px solid #f00;">
+                <canvas id="playground-canvas" style="position:absolute; left:0px; right:0px; top:0px; bottom:0px; background-color:#fff;"></canvas>
             </div>
-            <div id="common-toolbox" style="padding:10px;"></div>
         </div>
         <div class="flex-h flex-align-x-center flex-align-y-center" style="width:100%;height:24px; margin-top:20px; color:#000; font-size: 14px; background-color:#fff;">
             <span>couseware playground v0.0.1 by GaoYakun. 2018-11-13</span>

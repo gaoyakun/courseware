@@ -7,7 +7,11 @@ cwScene.init ();
 
 const toolFontSize = '18px';
 const PG = new playground.cwPlayground (document.querySelector('#playground-canvas'), true);
-const toolboxDiv: HTMLDivElement = document.querySelector('#toolbox');
+const toolToolboxDiv: HTMLDivElement = document.querySelector('#tool-toolbox');
+const objectToolboxDiv: HTMLDivElement = document.querySelector('#object-toolbox');
+const opToolboxDiv: HTMLDivElement = document.querySelector('#op-toolbox');
+const g_editor = new pgeditor.cwPGEditor (PG, pgeditor.cwPGDefaultToolSet, objectToolboxDiv, toolToolboxDiv, opToolboxDiv);
+/*
 const toolbox = new pgeditor.cwPGEditorToolbox (toolboxDiv, PG, 'column');
 const defaultTools = [
     {
@@ -23,35 +27,17 @@ const defaultTools = [
     }
 ];
 toolbox.loadTools (defaultTools);
-
+*/
 PG.on (tools.cwPGObjectSelectedEvent.type, (ev: tools.cwPGObjectSelectedEvent) => {
-    switch (ev.object.entityType) {
-    case 'Label':
-        toolbox.unloadTools ();
-        toolbox.loadTools (defaultTools);
-        toolbox.loadTools ([{
-            activeCommand: 'beginEdit',
-            deactiveCommand: 'endEdit',
-            iconClass: 'fas fa-edit fa-fw',
-            fontSize: toolFontSize
-        },{
-            activeCommand: 'fontScaleUp step=2',
-            iconClass: 'fas fa-plus fa-fw',
-            fontSize: toolFontSize
-        },{
-            activeCommand: 'fontScaleDown step=2',
-            iconClass: 'fas fa-minus fa-fw',
-            fontSize: toolFontSize
-        }]);
-        break;
-    }
+    g_editor.opPalette.unload ();
+    g_editor.opPalette.loadOpPalette (g_editor.toolSet.operations);
+    g_editor.opPalette.loadObjectTools (g_editor.toolSet.objects[ev.object.entityType]);
 });
 PG.on (tools.cwPGObjectDeselectedEvent.type, (ev: tools.cwPGObjectDeselectedEvent) => {
-    toolbox.unloadTools ();
-    toolbox.loadTools (defaultTools);
+    g_editor.opPalette.unload ();
+    g_editor.opPalette.loadOpPalette (g_editor.toolSet.operations);
 });
-
-const objectToolboxDiv: HTMLDivElement = document.querySelector('#object-toolbox');
+/*
 const objectToolbox = new pgeditor.cwPGEditorToolbox (objectToolboxDiv, PG, 'row');
 objectToolbox.loadTools ([{
     activeCommand: 'CreateObject type=Label text=标签',
@@ -70,6 +56,8 @@ commonToolbox.loadTools ([{
     iconClass: '',
     fontSize: toolFontSize
 }]);
+*/
+
 cwApp.run ();
 
 
