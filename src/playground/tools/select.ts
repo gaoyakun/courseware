@@ -49,7 +49,7 @@ export class cwPGSelectComponent extends core.cwComponent {
 }
 
 export class cwPGSelectTool extends tool.cwPGTool {
-    public static readonly toolname: string = 'PGTool_Select';
+    public static readonly toolname: string = 'Select';
     private _selectedObjects: core.cwSceneObject[];
     public constructor() {
         super(cwPGSelectTool.toolname);

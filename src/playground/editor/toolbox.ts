@@ -1,16 +1,17 @@
 import * as playground from '../playground';
 import * as commands from '../commands';
+import * as editor from './editor';
 
 export interface IToolDef {
-    states: Array<{
-        command: string;
-        iconClass?: string;
-        color?: string;
-    }>;
+    activeCommand: string;
+    deactiveCommand?: string;
+    iconClass?: string;
     fontSize: string;
+    elementId?: string;
 }
 
 export class cwPGEditorToolbox {
+    private static uniqueId: number = 1;
     private _container: HTMLDivElement;
     private _pg: playground.cwPlayground;
     private _tools: Array<IToolDef>;
@@ -41,7 +42,7 @@ export class cwPGEditorToolbox {
         tools.forEach ((tool: IToolDef) => {
             this._tools.push (tool);
             const buttonSize = parseInt(tool.fontSize || '60') + 10; 
-            if (tool.states[0].command === '$StrokeColor') {
+            if (tool.activeCommand === '$StrokeColor') {
                 const inputBox: HTMLInputElement = document.createElement ('input');
                 inputBox.type = 'color';
                 inputBox.value = this._strokeColor;
@@ -52,7 +53,7 @@ export class cwPGEditorToolbox {
                     this._strokeColor = inputBox.value;
                 }
                 this._container.appendChild (inputBox);
-            } else if (tool.states[0].command === '$FillColor') {
+            } else if (tool.activeCommand === '$FillColor') {
                 const inputBox: HTMLInputElement = document.createElement ('input');
                 inputBox.type = 'color';
                 inputBox.value = this._fillColor;
@@ -66,32 +67,42 @@ export class cwPGEditorToolbox {
             } else {
                 const toolButton: HTMLElement = document.createElement ('div');
                 toolButton.classList.add ('flex-h', 'flex-align-x-center', 'flex-align-y-center');
-                toolButton.style.backgroundColor = '#444';
+                tool.elementId = `toolbutton-${cwPGEditorToolbox.uniqueId++}`;
+                toolButton.classList.add ('toolbutton');
+                toolButton.id = tool.elementId;
                 toolButton.style.width = `${buttonSize}px`;
                 toolButton.style.height = `${buttonSize}px`;
-                toolButton.style.borderRadius = '3px';
-                toolButton.style.border = '2px solid #fff';
-                toolButton.style.margin = '2px';
+                toolButton.setAttribute ('toolIndex', String(this._tools.length-1));
                 const toolIcon: HTMLElement = document.createElement ('i');
                 toolIcon.style.fontSize = tool.fontSize || '60px';
+                toolIcon.style.color = '#fff';
                 toolIcon.style.lineHeight = tool.fontSize || '60px';
-                toolIcon.setAttribute ('toolIndex', String(this._tools.length-1));
-                toolIcon.setAttribute ('togglable', tool.states.length > 1 ? 'true' : 'false');
-                toolIcon.setAttribute ('toggleState', '0');
-                this.applyToolStyles (toolIcon);
+                tool.iconClass.split (' ').forEach ((cls: string) => {
+                    toolIcon.classList.add (cls);
+                });
 
                 toolButton.appendChild (toolIcon);
                 this._container.appendChild (toolButton);
+
                 toolButton.addEventListener ('click', () => {
-                    const togglable = toolIcon.getAttribute ('togglable');
-                    let toggleState = Number(toolIcon.getAttribute ('toggleState'));
-                    if (togglable == 'true') {
-                        toggleState = 1 - Number(toolIcon.getAttribute ('toggleState'));
+                    const toolIndex = Number(toolButton.getAttribute ('toolIndex'));
+                    const tool = this._tools[toolIndex];
+                    if (tool !== this._curTool) {
+                        if (this._curTool) {
+                            const curToolButton = document.querySelector(`#${this._curTool.elementId}`);
+                            curToolButton.classList.remove ('active');
+                            if (this._curTool.deactiveCommand) {
+                                this._pg.executeCommand (commands.cwPGCommandParser.parse(this._curTool.deactiveCommand));
+                            }
+                            this._curTool = null;
+                        }
                     }
-                    const toolIndex = Number(toolIcon.getAttribute ('toolIndex'));
-                    toolIcon.setAttribute ('toggleState', String(toggleState));
-                    this.applyToolStyles (toolIcon);
-                    this._pg.executeCommand (commands.cwPGCommandParser.parse(this._tools[toolIndex].states[toggleState].command));
+                    if (tool) {
+                        const button = document.querySelector(`#${tool.elementId}`);
+                        button.classList.add ('active');
+                        this._pg.executeCommand (commands.cwPGCommandParser.parse(tool.activeCommand));
+                        this._curTool = tool;
+                    }
                 });
             }
         });
@@ -101,15 +112,5 @@ export class cwPGEditorToolbox {
             this._container.removeChild(this._container.firstChild);
         }
         this._tools = [];
-    }
-    private applyToolStyles (toolIcon: HTMLElement) {
-        const index = Number(toolIcon.getAttribute ('toggleState'));
-        const toolIndex = Number(toolIcon.getAttribute ('toolIndex'));
-        if (this._tools[toolIndex].states[index].iconClass) {
-            this._tools[toolIndex].states[index].iconClass.split (' ').forEach ((token: string) => {
-                toolIcon.classList.add (token);
-            });
-        }
-        toolIcon.style.color = this._tools[toolIndex].states[index].color || '#888';
     }
 }

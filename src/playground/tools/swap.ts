@@ -20,7 +20,7 @@ export class cwPGSwapComponent extends core.cwComponent {
 }
 
 export class cwPGSwapTool extends tool.cwPGTool {
-    public static readonly toolname: string = 'PGTool_Swap';
+    public static readonly toolname: string = 'Swap';
     private _curObject: core.cwSceneObject;
     public constructor() {
         super(cwPGSwapTool.toolname);
