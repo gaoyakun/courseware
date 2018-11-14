@@ -96,6 +96,20 @@ export class cwPGToolPalette {
         }
         return tooldef;
     }
+    private getOpTool (tool: IToolPalette, name: string): ITool {
+        const tooldef: ITool = {
+            command: {
+                command: name
+            },
+            iconClass: tool[name].iconClass
+        }
+        if (tool[name].args) {
+            for (const argname in tool[name].args) {
+                tooldef.command[argname] = tool[name].args[argname];
+            }
+        }
+        return tooldef;
+    }
     private createToolButton (tooldef: ITool): HTMLElement {
         this._tools.push (tooldef);
         const buttonSize = this._editor.toolFontSize + 10; 
@@ -157,6 +171,18 @@ export class cwPGToolPalette {
                 const toolIndex = Number(toolButton.getAttribute ('toolIndex'));
                 const tool = this._tools[toolIndex];
                 this._editor.executeCommand (tool.command);
+                // TODO: 切换边框高亮显示
+            });
+        }
+    }
+    loadOpPalette (opPalette: IToolPalette) {
+        for (const op in opPalette) {
+            const tooldef = this.getOpTool (opPalette, op);
+            const toolButton = this.createToolButton (tooldef);
+            toolButton.addEventListener ('click', () => {
+                const toolIndex = Number(toolButton.getAttribute ('toolIndex'));
+                const tool = this._tools[toolIndex];
+                this._editor.executeCommand (tool.command);
             });
         }
     }
@@ -182,7 +208,9 @@ export class cwPGEditor {
         this._objectPalette.loadObjectPalette (toolset.objects);
         this._objectToolPalette = new cwPGToolPalette (this, objectToolPaletteElement);
         this._toolPalette = new cwPGToolPalette (this, toolPaletteElement);
+        this._toolPalette.loadToolPalette (toolset.tools);
         this._opPalette = new cwPGToolPalette (this, opPaletteElement);
+        this._opPalette.loadOpPalette (toolset.operations);
     }
     get objectPalette () {
         return this._objectPalette;
