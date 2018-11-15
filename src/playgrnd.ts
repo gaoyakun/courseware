@@ -1,12 +1,15 @@
 import { cwApp, cwScene } from './lib/core';
 import * as playground from './playground/playground';
 import * as tools from './playground/tools';
+import * as objects from './playground/objects';
 import * as pgeditor from './playground/editor';
 
 cwScene.init ();
 
-const toolFontSize = '18px';
 const PG = new playground.cwPlayground (document.querySelector('#playground-canvas'), true);
+tools.installTools (PG);
+objects.installFactories (PG);
+
 const toolToolboxDiv: HTMLDivElement = document.querySelector('#tool-toolbox');
 const objectToolboxDiv: HTMLDivElement = document.querySelector('#object-toolbox');
 const opToolboxDiv: HTMLDivElement = document.querySelector('#op-toolbox');

@@ -699,6 +699,7 @@ export class cwSceneView extends cwObject {
             }
         }
         this._hitObjects = hitTestResult;
+        this._hitObjects.push (this._rootNode);
     }
     private isValidObject(object: cwSceneObject) {
         return object && object.view === this;

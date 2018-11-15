@@ -1,7 +1,7 @@
-import * as tool from './tool';
 import * as core from '../../lib/core';
 import * as events from '../../lib/events';
-import * as command from '../commands';
+import * as commands from '../commands';
+import * as playground from '../playground';
 
 export class cwPGSelectEvent extends events.cwMouseEvent {
     static readonly type: string = '@PGSelect';
@@ -40,26 +40,21 @@ export class cwPGSelectComponent extends core.cwComponent {
     constructor(tool: cwPGSelectTool) {
         super(cwPGSelectComponent.type);
         this.tool = tool;
-        this.on(events.cwMouseDownEvent.type, (ev: events.cwMouseDownEvent) => {
-            if (this.object) {
-                this.tool.selectObject(this.object as core.cwSceneObject, ev);
-            }
-        });
     }
 }
 
-export class cwPGSelectTool extends tool.cwPGTool {
+export class cwPGSelectTool extends playground.cwPGTool {
     public static readonly toolname: string = 'Select';
     private _selectedObjects: core.cwSceneObject[];
-    public constructor() {
-        super(cwPGSelectTool.toolname);
+    public constructor(pg: playground.cwPlayground) {
+        super(cwPGSelectTool.toolname, pg);
         this._selectedObjects = [];
     }
     get selectedObjects () {
         return this._selectedObjects;
     }
-    public activate() {
-        super.activate ();
+    public activate(options: object) {
+        super.activate (options);
         this._selectedObjects.length = 0;
         this.on (events.cwKeyDownEvent.type, (ev: events.cwKeyDownEvent) => {
             if (this._selectedObjects.length == 1) {
@@ -76,11 +71,29 @@ export class cwPGSelectTool extends tool.cwPGTool {
                 this._selectedObjects[0].triggerEx (ev);
             }
         });
+        this.on (events.cwMouseDownEvent.type, (ev: events.cwMouseDownEvent) => {
+            const hitObjects = this._pg.view.hitObjects;
+            if (hitObjects.length > 0) {
+                this.selectObject (hitObjects[0], ev);
+            } else {
+                this.deselectAll ();
+            }
+        });
+        this.on (events.cwDragBeginEvent.type, (ev: events.cwDragBeginEvent) => {
+            console.log ('drag begin');
+        });
+        this.on (events.cwDragOverEvent.type, (ev: events.cwDragOverEvent) => {
+            console.log ('drag over');
+        });
+        this.on (events.cwDragDropEvent.type, (ev: events.cwDragDropEvent) => {
+            console.log ('drag drop');
+        });
     }
     public deactivate() {
         this.off (events.cwKeyDownEvent.type);
         this.off (events.cwKeyUpEvent.type);
         this.off (events.cwKeyPressEvent.type);
+        this.off (events.cwMouseDownEvent.type);
         super.deactivate ();
     }
     public activateObject(object: core.cwSceneObject) {
@@ -92,6 +105,11 @@ export class cwPGSelectTool extends tool.cwPGTool {
         if (components && components.length > 0) {
             this.deselectObject (object);
             object.removeComponentsByType(cwPGSelectComponent.type);
+        }
+    }
+    public executeCommand(cmd: commands.IPGCommand) {
+        if (this._selectedObjects.length == 1) {
+            this._selectedObjects[0].triggerEx (new playground.cwPGCommandEvent(cmd));
         }
     }
     public selectObject(object: core.cwSceneObject, ev: events.cwMouseEvent) {

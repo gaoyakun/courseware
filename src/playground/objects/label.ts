@@ -1,7 +1,7 @@
 import * as core from '../../lib/core';
 import * as events from '../../lib/events';
 import * as tools from '../tools';
-import * as factory from './factory';
+import * as playground from '../playground';
 
 export class cwPGLabel extends core.cwSceneObject {
     private _width: number;
@@ -86,10 +86,10 @@ export class cwPGLabel extends core.cwSceneObject {
         this.on(tools.cwPGDeselectEvent.type, (evt: tools.cwPGDeselectEvent) => {
             this._selected = false;
             if (this._editing) {
-                this.triggerEx (new factory.cwPGCommandEvent({ command: 'cancelEdit' }));
+                this.triggerEx (new playground.cwPGCommandEvent({ command: 'cancelEdit' }));
             }
         });
-        this.on(factory.cwPGCommandEvent.type, (evt: factory.cwPGCommandEvent) => {
+        this.on(playground.cwPGCommandEvent.type, (evt: playground.cwPGCommandEvent) => {
             if (evt.cmd.command === 'beginEdit') {
                 if (!this._editing) {
                     this._editing = true;
@@ -126,7 +126,7 @@ export class cwPGLabel extends core.cwSceneObject {
         this.on(events.cwKeyDownEvent.type, (ev: events.cwKeyDownEvent) => {
             if (this._editing) {
                 if (ev.keyCode == 13) {
-                    this.triggerEx (new factory.cwPGCommandEvent({ command: 'endEdit' }));
+                    this.triggerEx (new playground.cwPGCommandEvent({ command: 'endEdit' }));
                 } else if (ev.keyCode == 8) {
                     let text = this._text.substr (0, this.text.length - 1);
                     if (text.length > 0) {
@@ -134,7 +134,7 @@ export class cwPGLabel extends core.cwSceneObject {
                     }
                     this.text = text + '|';
                 } else if (ev.keyCode == 27) {
-                    this.triggerEx (new factory.cwPGCommandEvent({ command: 'cancelEdit' }));
+                    this.triggerEx (new playground.cwPGCommandEvent({ command: 'cancelEdit' }));
                 }
             }
         });
@@ -160,7 +160,7 @@ export class cwPGLabel extends core.cwSceneObject {
     }
 }
 
-export class cwPGLabelFactory extends factory.cwPGFactory {
+export class cwPGLabelFactory extends playground.cwPGFactory {
     protected _createEntity (options?:any): core.cwSceneObject {
         return new cwPGLabel (options);
     }

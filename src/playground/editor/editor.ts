@@ -61,14 +61,15 @@ export class cwPGToolPalette {
     private getCreateObjectTool (tool: IObjectPalette, type: string): ITool {
         const tooldef: ITool = {
             command: {
-                command: 'CreateObject',
-                type: type
+                command: 'UseTool',
+                name: 'Create',
+                args: { createType: type },
             },
             iconClass: tool[type].iconClass
         }
         if (tool[type].createArgs) {
             for (const name in tool[type].createArgs) {
-                tooldef.command[name] = tool[type].createArgs[name];
+                tooldef.command.args[name] = tool[type].createArgs[name];
             }
         }
         return tooldef;
@@ -94,13 +95,14 @@ export class cwPGToolPalette {
         const tooldef: ITool = {
             command: {
                 command: 'UseTool',
-                name: name
+                name: name,
+                args: {}
             },
             iconClass: tool[name].iconClass
         }
         if (tool[name].args) {
             for (const argname in tool[name].args) {
-                tooldef.command[argname] = tool[name].args[argname];
+                tooldef.command.args[argname] = tool[name].args[argname];
             }
         }
         return tooldef;
@@ -156,7 +158,7 @@ export class cwPGToolPalette {
         this._tools = [];
     }
     loadObjectTools (objectTools: IObjectPaletteEntry) {
-        if (objectTools.commands) {
+        if (objectTools && objectTools.commands) {
             for (const cmd in objectTools.commands) {
                 const tooldef = this.getObjectCommandTool (objectTools, cmd);
                 const toolButton = this.createToolButton (tooldef);

@@ -1,9 +1,9 @@
-import * as tool from './tool';
 import * as core from '../../lib/core';
 import * as events from '../../lib/events';
 import * as select from './select';
 import * as components from '../../lib/components';
 import * as curve from '../../lib/curve';
+import * as playground from '../playground';
 
 export class cwPGSwapComponent extends core.cwComponent {
     static readonly type = 'PGSelect';
@@ -19,15 +19,15 @@ export class cwPGSwapComponent extends core.cwComponent {
     }
 }
 
-export class cwPGSwapTool extends tool.cwPGTool {
+export class cwPGSwapTool extends playground.cwPGTool {
     public static readonly toolname: string = 'Swap';
     private _curObject: core.cwSceneObject;
-    public constructor() {
-        super(cwPGSwapTool.toolname);
+    public constructor(pg: playground.cwPlayground) {
+        super(cwPGSwapTool.toolname, pg);
         this._curObject = null;
     }
-    public activate() {
-        super.activate ();
+    public activate(options: object) {
+        super.activate (options);
         this._curObject = null;
     }
     public deactivate() {

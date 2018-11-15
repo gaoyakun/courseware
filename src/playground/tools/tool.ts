@@ -1,40 +1,10 @@
-import * as core from '../../lib/core';
-import * as events from '../../lib/events';
-import * as command from '../commands';
+import * as playground from '../playground';
+import * as select from './select';
+import * as swap from './swap';
+import * as create from './create';
 
-export class cwPGToolActivateEvent extends events.cwEvent {
-    static readonly type: string = '@PGToolActivate';
-    tool: cwPGTool;
-    constructor(tool: cwPGTool) {
-        super(cwPGToolActivateEvent.type);
-        this.tool = tool;
-    }
+export function installTools (pg: playground.cwPlayground) {
+    pg.addTool (new select.cwPGSelectTool(pg));
+    pg.addTool (new swap.cwPGSwapTool(pg));
+    pg.addTool (new create.cwPGCreateTool(pg));
 }
-
-export class cwPGToolDeactivateEvent extends events.cwEvent {
-    static readonly type: string = '@PGToolDeactivate';
-    tool: cwPGTool;
-    constructor(tool: cwPGTool) {
-        super(cwPGToolDeactivateEvent.type);
-        this.tool = tool;
-    }
-}
-
-export class cwPGTool extends events.cwEventObserver {
-    public readonly name: string;
-    constructor (name: string) {
-        super ();
-        this.name = name;
-    }
-    public activate() {
-        core.cwApp.triggerEvent(null, new cwPGToolActivateEvent(this));
-    }
-    public deactivate() {
-        core.cwApp.triggerEvent(null, new cwPGToolDeactivateEvent(this));
-    }
-    public activateObject(object: core.cwSceneObject) {
-    }
-    public deactivateObject(object: core.cwSceneObject) {
-    }
-}
-
