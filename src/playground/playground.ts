@@ -96,19 +96,19 @@ export class cwPlayground extends events.cwEventObserver {
 
         this._currentTool = '';
         this._entities = {};
-        this.view.rootNode.on (events.cwKeyDownEvent.type, (ev: events.cwKeyDownEvent) => {
+        this.view.on (events.cwKeyDownEvent.type, (ev: events.cwKeyDownEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (events.cwKeyUpEvent.type, (ev: events.cwKeyUpEvent) => {
+        this.view.on (events.cwKeyUpEvent.type, (ev: events.cwKeyUpEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (events.cwKeyPressEvent.type, (ev: events.cwKeyPressEvent) => {
+        this.view.on (events.cwKeyPressEvent.type, (ev: events.cwKeyPressEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);

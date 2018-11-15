@@ -73,7 +73,7 @@ export class cwPGSelectTool extends playground.cwPGTool {
         });
         this.on (events.cwMouseDownEvent.type, (ev: events.cwMouseDownEvent) => {
             const hitObjects = this._pg.view.hitObjects;
-            if (hitObjects.length > 0) {
+            if (hitObjects.length > 1) {
                 this.selectObject (hitObjects[0], ev);
             } else {
                 this.deselectAll ();

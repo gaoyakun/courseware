@@ -41,10 +41,7 @@ export class cwPGLabel extends core.cwSceneObject {
         this.on(events.cwHitTestEvent.type, (evt: events.cwHitTestEvent) => {
             let width = this._width;
             let height = this._height || this._fontSize;
-            if (width == 0) {
-                if (this._measure === null) {
-                    this._measure = this.view.canvas.context.measureText (this._text);
-                }
+            if (width == 0 && this._measure !== null) {
                 width = this._measure.width;
                 if (width < this._minwidth) {
                     width = this._minwidth;
