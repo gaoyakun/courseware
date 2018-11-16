@@ -64,9 +64,7 @@ export const cwPGDefaultToolSet = {
             iconClass: 'fas fa-font fa-fw',
             createArgs: {
                 text: '标签',
-                textColor: (editor:editor.cwPGEditor) => {
-                    return editor.strokeColor;
-                }
+                textColor: '#000000'
             },
             commands: {
                 beginEdit: {

@@ -1,5 +1,6 @@
 import * as events from '../../lib/events';
 import * as playground from '../playground';
+import * as commands from '../commands';
 
 export class cwPGCreateTool extends playground.cwPGTool {
     public static readonly toolname: string = 'Create';
@@ -12,9 +13,19 @@ export class cwPGCreateTool extends playground.cwPGTool {
         super.activate (options);
         this.options = options;
         this.on (events.cwMouseDownEvent.type, (ev: events.cwMouseDownEvent) => {
-            const object = this._pg.createEntity (this.options.createType, this.options.name||null, !!this.options.failOnExists, this.options);
-            object.worldTranslation = { x: ev.x, y: ev.y };
-            object.collapseTransform ();
+            const cmd: commands.IPGCommand  = {
+                command: 'CreateObject',
+                type: this.options.createType,
+                name: null,
+            };
+            for (const arg in this.options) {
+                if (arg !== 'command' && arg !== 'createType' && arg !== 'type') {
+                    cmd[arg] = this.options[arg];
+                }
+            }
+            cmd.x = ev.x;
+            cmd.y = ev.y;
+            this._pg.executeCommand (cmd);
         });
     }
     public deactivate() {

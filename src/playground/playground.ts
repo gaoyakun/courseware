@@ -110,6 +110,9 @@ export abstract class cwPGFactory {
             return null;
         }
         entity.addComponent(new cwPGComponent());
+        if (options && options.x !== undefined && options.y !== undefined) {
+            entity.translation = { x:options.x, y:options.y };
+        }
         return entity;
     }
     protected abstract _createEntity(options?:any): core.cwSceneObject;
@@ -334,7 +337,17 @@ export class cwPlayground extends events.cwEventObserver {
     public findEntity(name: string): core.cwSceneObject {
         return this._entities[name] || null;
     }
+    public encodeCommand(cmd: command.IPGCommand) {
+        let str = cmd.command;
+        for (const name in cmd) {
+            if (name !== 'command') {
+                str += ` ${name}=${cmd[name]}`;
+            }
+        }
+        return str;
+    }
     public executeCommand(cmd: command.IPGCommand) {
+        console.log (`CMD: ${this.encodeCommand(cmd)}`);
         if (cmd.command == 'UseTool') {
             if (this._currentTool !== cmd.name) {
                 if (this._currentTool !== '') {
@@ -358,6 +371,19 @@ export class cwPlayground extends events.cwEventObserver {
             cmd.objectCreated = obj;
         } else if (cmd.command == 'DeleteObject') {
             this.deleteEntity (cmd.name);
+        } else if (cmd.command == 'SetObjectProperty') {
+            const obj = this.findEntity (cmd.objectName);
+            if (obj) {
+                const ev = new cwPGSetObjectPropertyEvent (cmd.propName, cmd.propValue);
+                obj.triggerEx (ev);
+            }
+        } else if (cmd.command == 'GetObjectProperty') {
+            const obj = this.findEntity (cmd.objectName);
+            if (obj) {
+                const ev = new cwPGGetObjectPropertyEvent (cmd.propName);
+                obj.triggerEx (ev);
+                cmd.propValue = ev.value;
+            }
         } else if (this._currentTool) {
             this._tools[this._currentTool].executeCommand (cmd);
         }

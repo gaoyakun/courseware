@@ -80,13 +80,10 @@ export class cwPGSelectTool extends playground.cwPGTool {
             }
         });
         this.on (events.cwDragBeginEvent.type, (ev: events.cwDragBeginEvent) => {
-            console.log ('drag begin');
         });
         this.on (events.cwDragOverEvent.type, (ev: events.cwDragOverEvent) => {
-            console.log ('drag over');
         });
         this.on (events.cwDragDropEvent.type, (ev: events.cwDragDropEvent) => {
-            console.log ('drag drop');
         });
     }
     public deactivate() {
