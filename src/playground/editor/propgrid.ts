@@ -57,7 +57,7 @@ export class cwPGPropertyGrid {
         tr.style.fontWeight = 'bold';
         this.createGroupCell (tr, name);
     }
-    addTextAttribute (name: string, value: string, readonly: boolean, changeCallback: (value: string) => void) {
+    addTextAttribute (name: string, value: string, readonly: boolean, changeCallback: (value: string) => any) {
         const tr = this.createRow ();
         this.createPropCell (tr).innerText = name;
         const input: HTMLInputElement = document.createElement ('input');
@@ -74,7 +74,7 @@ export class cwPGPropertyGrid {
         }
         this.createPropCell (tr).appendChild (input);
     }
-    addToggleAttribute (name: string, value: boolean, readonly: boolean, changeCallback: (value: boolean) => void) {
+    addToggleAttribute (name: string, value: boolean, readonly: boolean, changeCallback: (value: boolean) => any) {
         const tr = this.createRow ();
         this.createPropCell (tr).innerText = name;
         const input: HTMLInputElement = document.createElement ('input');
@@ -89,7 +89,7 @@ export class cwPGPropertyGrid {
         }
         this.createPropCell (tr).appendChild (input);
     }
-    addNumberAttribute (name: string, value: number, readonly: boolean, changeCallback: (value: number) => void) {
+    addNumberAttribute (name: string, value: number, readonly: boolean, changeCallback: (value: number) => any) {
         const tr = this.createRow ();
         this.createPropCell (tr).innerText = name;
         const input: HTMLInputElement = document.createElement ('input');
@@ -106,11 +106,10 @@ export class cwPGPropertyGrid {
         }
         this.createPropCell (tr).appendChild (input);
     }
-    addChoiceAttribute (name: string, values: any[], value: string, readonly: boolean, changeCallback: (value: string) => void) {
+    addChoiceAttribute (name: string, values: any[], value: string, readonly: boolean, changeCallback: (value: string) => any) {
         const tr = this.createRow ();
         this.createPropCell (tr).innerText = name;
         const input: HTMLSelectElement = document.createElement ('select');
-        input.value = String(value);
         values.forEach (name => {
             const option = document.createElement ('option');
             option.value = String(name);
@@ -122,7 +121,26 @@ export class cwPGPropertyGrid {
         input.style.width = '100%';
         input.style.boxSizing = 'border-box';
         if (changeCallback) {
-            input.value = String(changeCallback (input.value));
+            input.onchange = () => {
+                input.value = String(changeCallback (input.value));
+            }
+        }
+        this.createPropCell (tr).appendChild (input);
+    }
+    addColorAttribute (name: string, value: string, readonly: boolean, changeCallback: (value: string) => any) {
+        const tr = this.createRow ();
+        this.createPropCell (tr).innerText = name;
+        const input: HTMLInputElement = document.createElement ('input');
+        input.type = 'color';
+        input.value = value;
+        input.readOnly = readonly;
+        input.disabled = readonly;
+        input.style.width = '100%';
+        input.style.boxSizing = 'border-box';
+        if (changeCallback) {
+            input.onchange = () => {
+                input.value = String(changeCallback (input.value));
+            }
         }
         this.createPropCell (tr).appendChild (input);
     }
@@ -153,6 +171,8 @@ export class cwPGPropertyGrid {
                     return this.setObjectProperty (propName, Number(value));
                 case 'boolean':
                     return this.setObjectProperty (propName, Boolean(value));
+                case 'color':
+                    return this.setObjectProperty (propName, value);
                 }
             });
         } else {
@@ -171,6 +191,12 @@ export class cwPGPropertyGrid {
                 this.addToggleAttribute (prop.desc, this.getObjectProperty(propName), propReadonly, (value:boolean) => {
                     return this.setObjectProperty (propName, value);
                 });
+                break;
+            case 'color':
+                this.addColorAttribute (prop.desc, this.getObjectProperty(propName), propReadonly, (value:string) => {
+                    return this.setObjectProperty (propName, value);
+                });
+                break;
             }
         }
     }

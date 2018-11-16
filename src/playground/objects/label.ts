@@ -152,7 +152,6 @@ export class cwPGLabel extends core.cwSceneObject {
             }
         });
         this.on(playground.cwPGSetObjectPropertyEvent.type, (ev: playground.cwPGSetObjectPropertyEvent) => {
-            const object = this.object as core.cwSceneObject;
             switch (ev.name) {
                 case 'text': {
                     this.text = ev.value;
@@ -182,7 +181,7 @@ export class cwPGLabel extends core.cwSceneObject {
                 name: 'textColor',
                 desc: '文字颜色',
                 readonly: false,
-                type: 'string',
+                type: 'color',
                 value: this._textcolor
             });
             ev.properties[this.entityType].properties.push ({
