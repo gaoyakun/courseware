@@ -14,7 +14,6 @@ export class cwPGLabel extends core.cwSceneObject {
     private _fontWeight: string;
     private _fontFamily: string;
     private _measure: TextMetrics;
-    private _background: string|null;
     private _textcolor: string;
     private _selected: boolean;
     private _editing: boolean;
@@ -57,7 +56,7 @@ export class cwPGLabel extends core.cwSceneObject {
             evt.canvas.applyTransform(evt.transform);
             evt.canvas.context.textAlign = 'center';
             evt.canvas.context.textBaseline = 'bottom';
-            evt.canvas.context.fillStyle = '#000';
+            evt.canvas.context.fillStyle = this._textcolor;
             evt.canvas.context.font = this._font;
             let width = this._width;
             let height = this._height || this._fontSize;
@@ -134,6 +133,65 @@ export class cwPGLabel extends core.cwSceneObject {
                     this.triggerEx (new playground.cwPGCommandEvent({ command: 'cancelEdit' }));
                 }
             }
+        });
+        this.on(playground.cwPGGetObjectPropertyEvent.type, (ev: playground.cwPGGetObjectPropertyEvent) => {
+            const object = this.object as core.cwSceneObject;
+            switch (ev.name) {
+                case 'text': {
+                    ev.value = this.text;
+                    break;
+                }
+                case 'textColor': {
+                    ev.value = this._textcolor;
+                    break;
+                }
+                case 'fontSize': {
+                    ev.value = this.fontSize;
+                    break;
+                }
+            }
+        });
+        this.on(playground.cwPGSetObjectPropertyEvent.type, (ev: playground.cwPGSetObjectPropertyEvent) => {
+            const object = this.object as core.cwSceneObject;
+            switch (ev.name) {
+                case 'text': {
+                    this.text = ev.value;
+                    break;
+                }
+                case 'textColor': {
+                    this._textcolor = ev.value;
+                    break;
+                }
+                case 'fontSize': {
+                    this.fontSize = Number(ev.value);
+                    break;
+                }
+            }
+        });
+        this.on(playground.cwPGGetObjectPropertyListEvent.type, (ev: playground.cwPGGetObjectPropertyListEvent) => {
+            ev.properties = ev.properties || {};
+            ev.properties[this.entityType] = ev.properties[this.entityType] || { desc: this.entityType, properties: [] };
+            ev.properties[this.entityType].properties.push ({
+                name: 'text',
+                desc: '文字内容',
+                readonly: false,
+                type: 'string',
+                value: this.text
+            });
+            ev.properties[this.entityType].properties.push ({
+                name: 'textColor',
+                desc: '文字颜色',
+                readonly: false,
+                type: 'string',
+                value: this._textcolor
+            });
+            ev.properties[this.entityType].properties.push ({
+                name: 'fontSize',
+                desc: '文字大小',
+                readonly: false,
+                type: 'number',
+                value: this.fontSize
+            });
         });
     }
     get text () {

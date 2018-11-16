@@ -13,7 +13,9 @@ objects.installFactories (PG);
 const toolToolboxDiv: HTMLDivElement = document.querySelector('#tool-toolbox');
 const objectToolboxDiv: HTMLDivElement = document.querySelector('#object-toolbox');
 const opToolboxDiv: HTMLDivElement = document.querySelector('#op-toolbox');
-const g_editor = new pgeditor.cwPGEditor (PG, pgeditor.cwPGDefaultToolSet, objectToolboxDiv, toolToolboxDiv, opToolboxDiv);
+const propGridDiv: HTMLDivElement = document.querySelector('#object-propgrid');
+const g_editor = new pgeditor.cwPGEditor (PG, pgeditor.cwPGDefaultToolSet, objectToolboxDiv, toolToolboxDiv, opToolboxDiv, propGridDiv);
+
 /*
 const toolbox = new pgeditor.cwPGEditorToolbox (toolboxDiv, PG, 'column');
 const defaultTools = [
@@ -35,10 +37,12 @@ PG.on (tools.cwPGObjectSelectedEvent.type, (ev: tools.cwPGObjectSelectedEvent) =
     g_editor.opPalette.unload ();
     g_editor.opPalette.loadOpPalette (g_editor.toolSet.operations);
     g_editor.opPalette.loadObjectTools (g_editor.toolSet.objects[ev.object.entityType]);
+    g_editor.objectPropertyGrid.loadObjectProperties (ev.object);
 });
 PG.on (tools.cwPGObjectDeselectedEvent.type, (ev: tools.cwPGObjectDeselectedEvent) => {
     g_editor.opPalette.unload ();
     g_editor.opPalette.loadOpPalette (g_editor.toolSet.operations);
+    g_editor.objectPropertyGrid.clear ();
 });
 /*
 const objectToolbox = new pgeditor.cwPGEditorToolbox (objectToolboxDiv, PG, 'row');

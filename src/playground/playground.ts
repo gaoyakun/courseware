@@ -21,7 +21,81 @@ export class cwPGComponent extends core.cwComponent {
         });
         this.on(cwPGToolDeactivateEvent.type, (ev: cwPGToolDeactivateEvent) => {
             ev.tool.deactivateObject(this.object as core.cwSceneObject);
-        })
+        });
+        this.on(cwPGSetObjectPropertyEvent.type, (ev: cwPGSetObjectPropertyEvent) => {
+            const object = this.object as core.cwSceneObject;
+            switch (ev.name) {
+                case 'localx': {
+                    const t = object.translation;
+                    t.x = Number(ev.value);
+                    object.translation = t;
+                    break;
+                }
+                case 'localy': {
+                    const t = object.translation;
+                    t.y = Number(ev.value);
+                    object.translation = t;
+                    break;
+                }
+                case 'entityName': {
+                    object.entityName = ev.value;
+                    break;
+                }
+            }
+        });
+        this.on(cwPGGetObjectPropertyEvent.type, (ev: cwPGGetObjectPropertyEvent) => {
+            const object = this.object as core.cwSceneObject;
+            switch (ev.name) {
+                case 'localx': {
+                    ev.value = object.translation.x;
+                    break;
+                }
+                case 'localy': {
+                    ev.value = object.translation.y;
+                    break;
+                }
+                case 'entityName': {
+                    ev.value = object.entityName;
+                    break;
+                }
+                case 'entityType': {
+                    ev.value = object.entityType;
+                    break;
+                }
+            }
+        });
+        this.on(cwPGGetObjectPropertyListEvent.type, (ev: cwPGGetObjectPropertyListEvent) => {
+            ev.properties = ev.properties || {};
+            ev.properties.general = ev.properties.general || { desc: '通用', properties: [] };
+            ev.properties.general.properties.push ({
+                name: 'entityType',
+                desc: '类型',
+                readonly: true,
+                type: 'string',
+                value: this.object.entityType
+            });
+            ev.properties.general.properties.push ({
+                name: 'entityName',
+                desc: '名称',
+                readonly: false,
+                type: 'string',
+                value: this.object.entityName
+            });
+            ev.properties.general.properties.push ({
+                name: 'localx',
+                desc: 'X',
+                readonly: false,
+                type: 'number',
+                value: (this.object as core.cwSceneObject).translation.x
+            });
+            ev.properties.general.properties.push ({
+                name: 'localy',
+                desc: 'Y',
+                readonly: false,
+                type: 'number',
+                value: (this.object as core.cwSceneObject).translation.y
+            });
+        });
     }
 }
 
@@ -56,6 +130,51 @@ export class cwPGToolDeactivateEvent extends events.cwEvent {
     constructor(tool: cwPGTool) {
         super(cwPGToolDeactivateEvent.type);
         this.tool = tool;
+    }
+}
+
+export interface IObjectProperty {
+    name: string;
+    desc: string;
+    type: string;
+    value: any;
+    enum?: any[];
+    readonly: boolean;
+}
+
+export interface IObjectPropertyList {
+    [group: string]: {  
+        desc: string;
+        properties: IObjectProperty[] 
+    }
+}
+
+export class cwPGGetObjectPropertyListEvent extends events.cwEvent {
+    static readonly type: string = '@PGGetObjectPropertyList';
+    properties?: IObjectPropertyList;
+    constructor () {
+        super (cwPGGetObjectPropertyListEvent.type);
+    }
+}
+
+export class cwPGSetObjectPropertyEvent extends events.cwEvent {
+    static readonly type: string = '@PGSetObjectPropertyEvent';
+    name: string;
+    value: any;
+    constructor (name: string, value: any) {
+        super (cwPGSetObjectPropertyEvent.type);
+        this.name = name;
+        this.value = value;
+    }
+}
+
+export class cwPGGetObjectPropertyEvent extends events.cwEvent {
+    static readonly type: string = '@PGGetObjectPropertyEvent';
+    name: string;
+    value?: any;
+    constructor (name: string) {
+        super (cwPGGetObjectPropertyEvent.type);
+        this.name = name;
     }
 }
 

@@ -1,5 +1,5 @@
 import * as playground from '../playground';
-import * as commands from '../commands';
+import * as propgrid from './propgrid';
 
 interface ITool {
     command: {
@@ -227,7 +227,8 @@ export class cwPGEditor {
     private _objectPalette: cwPGToolPalette;
     private _toolPalette: cwPGToolPalette;
     private _opPalette: cwPGToolPalette;
-    constructor (pg: playground.cwPlayground, toolset: IToolSet, objectPaletteElement:HTMLElement, toolPaletteElement:HTMLElement, opPaletteElement:HTMLElement) {
+    private _propGrid: propgrid.cwPGPropertyGrid;
+    constructor (pg: playground.cwPlayground, toolset: IToolSet, objectPaletteElement:HTMLElement, toolPaletteElement:HTMLElement, opPaletteElement:HTMLElement, propGridElement:HTMLElement) {
         this._strokeColor = '#000000';
         this._fillColor = '#ffffff';
         this._toolFontSize = 14;
@@ -239,6 +240,7 @@ export class cwPGEditor {
         this._toolPalette.loadToolPalette (toolset.tools);
         this._opPalette = new cwPGToolPalette (this, opPaletteElement);
         this._opPalette.loadOpPalette (toolset.operations);
+        this._propGrid = new propgrid.cwPGPropertyGrid (propGridElement, 'propgrid');
     }
     get toolSet () {
         return this._toolset;
@@ -251,6 +253,9 @@ export class cwPGEditor {
     }
     get toolPalette () {
         return this._toolPalette;
+    }
+    get objectPropertyGrid () {
+        return this._propGrid;
     }
     get playground () {
         return this._pg;
