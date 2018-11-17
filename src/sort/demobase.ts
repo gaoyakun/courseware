@@ -1,5 +1,4 @@
-import { cwSceneObject, cwSceneView, cwScene } from "../lib/core";
-import { cwDragOverEvent, cwDragDropEvent, cwDrawEvent, cwDragBeginEvent, cwHitTestEvent } from "../lib/events";
+import { cwSceneObject, cwSceneView, cwScene, cwDragOverEvent, cwDragDropEvent, cwDrawEvent, cwDragBeginEvent } from "../lib/core";
 import { cwcImage, cwcDraggable, cwcKeyframeAnimation } from "../lib/components";
 import { cwSplineType } from "../lib/curve";
 

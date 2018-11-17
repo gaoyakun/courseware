@@ -1,5 +1,4 @@
 import * as core from '../../lib/core';
-import * as events from '../../lib/events';
 import * as select from './select';
 import * as components from '../../lib/components';
 import * as curve from '../../lib/curve';
@@ -11,7 +10,7 @@ export class cwPGSwapComponent extends core.cwComponent {
     constructor(tool: cwPGSwapTool) {
         super(cwPGSwapComponent.type);
         this.tool = tool;
-        this.on(events.cwMouseDownEvent.type, (ev: events.cwMouseDownEvent) => {
+        this.on(core.cwMouseDownEvent.type, (ev: core.cwMouseDownEvent) => {
             if (this.object) {
                 this.tool.selectObject(this.object as core.cwSceneObject, ev);
             }
@@ -44,7 +43,7 @@ export class cwPGSwapTool extends playground.cwPGTool {
     public deactivateObject(object: core.cwSceneObject) {
         object.removeComponentsByType(cwPGSwapComponent.type);
     }
-    public selectObject(object: core.cwSceneObject, ev: events.cwMouseEvent) {
+    public selectObject(object: core.cwSceneObject, ev: core.cwMouseEvent) {
         if (this._curObject == null) {
             this._curObject = object;
             object.triggerEx(new select.cwPGSelectEvent(ev.x, ev.y, ev.button, ev.shiftDown, ev.altDown, ev.ctrlDown, ev.metaDown));

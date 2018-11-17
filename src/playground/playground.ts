@@ -1,9 +1,8 @@
 import * as core from '../lib/core';
 import * as components from '../lib/components';
-import * as events from '../lib/events';
 import * as command from './commands';
 
-export class cwPGCommandEvent extends events.cwEvent {
+export class cwPGCommandEvent extends core.cwEvent {
     static readonly type: string = '@PGCommand';
     cmd: command.IPGCommand;
     constructor (cmd: command.IPGCommand) {
@@ -118,7 +117,7 @@ export abstract class cwPGFactory {
     protected abstract _createEntity(options?:any): core.cwSceneObject;
 }
 
-export class cwPGToolActivateEvent extends events.cwEvent {
+export class cwPGToolActivateEvent extends core.cwEvent {
     static readonly type: string = '@PGToolActivate';
     tool: cwPGTool;
     constructor(tool: cwPGTool) {
@@ -127,7 +126,7 @@ export class cwPGToolActivateEvent extends events.cwEvent {
     }
 }
 
-export class cwPGToolDeactivateEvent extends events.cwEvent {
+export class cwPGToolDeactivateEvent extends core.cwEvent {
     static readonly type: string = '@PGToolDeactivate';
     tool: cwPGTool;
     constructor(tool: cwPGTool) {
@@ -152,7 +151,7 @@ export interface IObjectPropertyList {
     }
 }
 
-export class cwPGGetObjectPropertyListEvent extends events.cwEvent {
+export class cwPGGetObjectPropertyListEvent extends core.cwEvent {
     static readonly type: string = '@PGGetObjectPropertyList';
     properties?: IObjectPropertyList;
     constructor () {
@@ -160,7 +159,7 @@ export class cwPGGetObjectPropertyListEvent extends events.cwEvent {
     }
 }
 
-export class cwPGSetObjectPropertyEvent extends events.cwEvent {
+export class cwPGSetObjectPropertyEvent extends core.cwEvent {
     static readonly type: string = '@PGSetObjectPropertyEvent';
     name: string;
     value: any;
@@ -171,7 +170,7 @@ export class cwPGSetObjectPropertyEvent extends events.cwEvent {
     }
 }
 
-export class cwPGGetObjectPropertyEvent extends events.cwEvent {
+export class cwPGGetObjectPropertyEvent extends core.cwEvent {
     static readonly type: string = '@PGGetObjectPropertyEvent';
     name: string;
     value?: any;
@@ -181,7 +180,7 @@ export class cwPGGetObjectPropertyEvent extends events.cwEvent {
     }
 }
 
-export class cwPGTool extends events.cwEventObserver {
+export class cwPGTool extends core.cwEventObserver {
     public readonly name: string;
     protected readonly _pg: cwPlayground;
     constructor (name: string, pg: cwPlayground) {
@@ -203,7 +202,7 @@ export class cwPGTool extends events.cwEventObserver {
     }
 }
 
-export class cwPlayground extends events.cwEventObserver {
+export class cwPlayground extends core.cwEventObserver {
     public readonly view: core.cwSceneView = null;
     private _factories: { [name: string]: cwPGFactory };
     private _tools: { [name: string]: cwPGTool };
@@ -218,67 +217,67 @@ export class cwPlayground extends events.cwEventObserver {
 
         this._currentTool = '';
         this._entities = {};
-        this.view.on (events.cwKeyDownEvent.type, (ev: events.cwKeyDownEvent) => {
+        this.view.on (core.cwKeyDownEvent.type, (ev: core.cwKeyDownEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.on (events.cwKeyUpEvent.type, (ev: events.cwKeyUpEvent) => {
+        this.view.on (core.cwKeyUpEvent.type, (ev: core.cwKeyUpEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.on (events.cwKeyPressEvent.type, (ev: events.cwKeyPressEvent) => {
+        this.view.on (core.cwKeyPressEvent.type, (ev: core.cwKeyPressEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (events.cwMouseDownEvent.type, (ev: events.cwMouseDownEvent) => {
+        this.view.rootNode.on (core.cwMouseDownEvent.type, (ev: core.cwMouseDownEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (events.cwMouseUpEvent.type, (ev: events.cwMouseUpEvent) => {
+        this.view.rootNode.on (core.cwMouseUpEvent.type, (ev: core.cwMouseUpEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (events.cwMouseMoveEvent.type, (ev: events.cwMouseMoveEvent) => {
+        this.view.rootNode.on (core.cwMouseMoveEvent.type, (ev: core.cwMouseMoveEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (events.cwClickEvent.type, (ev: events.cwClickEvent) => {
+        this.view.rootNode.on (core.cwClickEvent.type, (ev: core.cwClickEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (events.cwDblClickEvent.type, (ev: events.cwDblClickEvent) => {
+        this.view.rootNode.on (core.cwDblClickEvent.type, (ev: core.cwDblClickEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (events.cwDragBeginEvent.type, (ev: events.cwDragBeginEvent) => {
+        this.view.rootNode.on (core.cwDragBeginEvent.type, (ev: core.cwDragBeginEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (events.cwDragOverEvent.type, (ev: events.cwDragOverEvent) => {
+        this.view.rootNode.on (core.cwDragOverEvent.type, (ev: core.cwDragOverEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (events.cwDragDropEvent.type, (ev: events.cwDragDropEvent) => {
+        this.view.rootNode.on (core.cwDragDropEvent.type, (ev: core.cwDragDropEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);

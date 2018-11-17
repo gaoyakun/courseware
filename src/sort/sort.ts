@@ -3,7 +3,6 @@ import { CousewareFramework } from '../lib/presentation';
 import { Graph } from '../lib/graph';
 import { DemoBase } from './demobase';
 import { cwScene, cwApp } from '../lib/core';
-import { cwClickEvent } from '../lib/events';
 
 export class CourseSort extends CousewareFramework {
     private graphRandUnsort: Graph;

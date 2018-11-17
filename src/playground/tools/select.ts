@@ -1,23 +1,22 @@
 import * as core from '../../lib/core';
-import * as events from '../../lib/events';
 import * as commands from '../commands';
 import * as playground from '../playground';
 
-export class cwPGSelectEvent extends events.cwMouseEvent {
+export class cwPGSelectEvent extends core.cwMouseEvent {
     static readonly type: string = '@PGSelect';
     constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean) {
         super(cwPGSelectEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
     }
 }
 
-export class cwPGDeselectEvent extends events.cwEvent {
+export class cwPGDeselectEvent extends core.cwEvent {
     static readonly type: string = '@PGDeselect';
     constructor() {
         super(cwPGDeselectEvent.type);
     }
 }
 
-export class cwPGObjectSelectedEvent extends events.cwEvent {
+export class cwPGObjectSelectedEvent extends core.cwEvent {
     static readonly type: string = '@PGObjectSelected';
     readonly object: core.cwSceneObject;
     constructor (object: core.cwSceneObject) {
@@ -26,7 +25,7 @@ export class cwPGObjectSelectedEvent extends events.cwEvent {
     }
 }
 
-export class cwPGObjectDeselectedEvent extends events.cwEvent {
+export class cwPGObjectDeselectedEvent extends core.cwEvent {
     static readonly type: string = '@PGObjectDeselected';
     readonly object: core.cwSceneObject;
     constructor (object: core.cwSceneObject) {
@@ -56,22 +55,22 @@ export class cwPGSelectTool extends playground.cwPGTool {
     public activate(options: object) {
         super.activate (options);
         this._selectedObjects.length = 0;
-        this.on (events.cwKeyDownEvent.type, (ev: events.cwKeyDownEvent) => {
+        this.on (core.cwKeyDownEvent.type, (ev: core.cwKeyDownEvent) => {
             if (this._selectedObjects.length == 1) {
                 this._selectedObjects[0].triggerEx (ev);
             }
         });
-        this.on (events.cwKeyUpEvent.type, (ev: events.cwKeyUpEvent) => {
+        this.on (core.cwKeyUpEvent.type, (ev: core.cwKeyUpEvent) => {
             if (this._selectedObjects.length == 1) {
                 this._selectedObjects[0].triggerEx (ev);
             }
         });
-        this.on (events.cwKeyPressEvent.type, (ev: events.cwKeyPressEvent) => {
+        this.on (core.cwKeyPressEvent.type, (ev: core.cwKeyPressEvent) => {
             if (this._selectedObjects.length == 1) {
                 this._selectedObjects[0].triggerEx (ev);
             }
         });
-        this.on (events.cwMouseDownEvent.type, (ev: events.cwMouseDownEvent) => {
+        this.on (core.cwMouseDownEvent.type, (ev: core.cwMouseDownEvent) => {
             const hitObjects = this._pg.view.hitObjects;
             if (hitObjects.length > 1) {
                 this.selectObject (hitObjects[0], ev);
@@ -79,18 +78,18 @@ export class cwPGSelectTool extends playground.cwPGTool {
                 this.deselectAll ();
             }
         });
-        this.on (events.cwDragBeginEvent.type, (ev: events.cwDragBeginEvent) => {
+        this.on (core.cwDragBeginEvent.type, (ev: core.cwDragBeginEvent) => {
         });
-        this.on (events.cwDragOverEvent.type, (ev: events.cwDragOverEvent) => {
+        this.on (core.cwDragOverEvent.type, (ev: core.cwDragOverEvent) => {
         });
-        this.on (events.cwDragDropEvent.type, (ev: events.cwDragDropEvent) => {
+        this.on (core.cwDragDropEvent.type, (ev: core.cwDragDropEvent) => {
         });
     }
     public deactivate() {
-        this.off (events.cwKeyDownEvent.type);
-        this.off (events.cwKeyUpEvent.type);
-        this.off (events.cwKeyPressEvent.type);
-        this.off (events.cwMouseDownEvent.type);
+        this.off (core.cwKeyDownEvent.type);
+        this.off (core.cwKeyUpEvent.type);
+        this.off (core.cwKeyPressEvent.type);
+        this.off (core.cwMouseDownEvent.type);
         super.deactivate ();
     }
     public activateObject(object: core.cwSceneObject) {
@@ -109,7 +108,7 @@ export class cwPGSelectTool extends playground.cwPGTool {
             this._selectedObjects[0].triggerEx (new playground.cwPGCommandEvent(cmd));
         }
     }
-    public selectObject(object: core.cwSceneObject, ev: events.cwMouseEvent) {
+    public selectObject(object: core.cwSceneObject, ev: core.cwMouseEvent) {
         if (this._selectedObjects.indexOf(object) < 0) {
             if (!ev.ctrlDown) {
                 this.deselectAll();

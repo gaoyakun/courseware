@@ -1,5 +1,4 @@
 import * as core from '../../lib/core';
-import * as events from '../../lib/events';
 import * as tools from '../tools';
 import * as playground from '../playground';
 
@@ -37,7 +36,7 @@ export class cwPGLabel extends core.cwSceneObject {
         this._textcolor = opt.textcolor || '#000';
         this._selected = false;
         this._editing = false;
-        this.on(events.cwHitTestEvent.type, (evt: events.cwHitTestEvent) => {
+        this.on(core.cwGetBoundingboxEvent.type, (evt: core.cwGetBoundingboxEvent) => {
             let width = this._width;
             let height = this._height || this._fontSize;
             if (width == 0 && this._measure !== null) {
@@ -46,9 +45,9 @@ export class cwPGLabel extends core.cwSceneObject {
                     width = this._minwidth;
                 }
             }
-            evt.result = evt.x >= -width / 2 && evt.x < width / 2 && evt.y >= -height / 2 && evt.y < height / 2;
+            evt.rect = { x:-width/2, y:-height/2, w:width, h:height };
         });
-        this.on(events.cwDrawEvent.type, (evt: events.cwDrawEvent) => {
+        this.on(core.cwDrawEvent.type, (evt: core.cwDrawEvent) => {
             if (this._font === '') {
                 this._font = `${this._fontStyle} ${this._fontVariant} ${this._fontWeight} ${this._fontSize}px ${this._fontFamily}`;
             }
@@ -112,14 +111,14 @@ export class cwPGLabel extends core.cwSceneObject {
                 this.fontSize = fontSize;
             }
         });
-        this.on(events.cwKeyPressEvent.type, (ev: events.cwKeyPressEvent) => {
+        this.on(core.cwKeyPressEvent.type, (ev: core.cwKeyPressEvent) => {
             if (this._editing) {
                 let text = this._text.substr (0, this.text.length - 1);
                 text += ev.key;
                 this.text = text + '|';
             }
         });
-        this.on(events.cwKeyDownEvent.type, (ev: events.cwKeyDownEvent) => {
+        this.on(core.cwKeyDownEvent.type, (ev: core.cwKeyDownEvent) => {
             if (this._editing) {
                 if (ev.keyCode == 13) {
                     this.triggerEx (new playground.cwPGCommandEvent({ command: 'endEdit' }));

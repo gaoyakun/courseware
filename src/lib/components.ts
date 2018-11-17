@@ -1,5 +1,4 @@
-import { cwComponent, cwSceneObject, cwScene, cwApp } from './core';
-import { cwEvent, cwCullEvent, cwHitTestEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent, cwMouseMoveEvent, cwMouseDownEvent, cwMouseUpEvent, cwDragBeginEvent, cwDragDropEvent, cwDragOverEvent, cwComponentAttachedEvent, cwComponentBeforeAttachEvent } from './events';
+import { cwComponent, cwSceneObject, cwApp, cwCullEvent, cwHitTestEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent, cwMouseMoveEvent, cwMouseDownEvent, cwMouseUpEvent, cwDragBeginEvent, cwDragDropEvent, cwDragOverEvent, cwComponentAttachedEvent, cwComponentBeforeAttachEvent, cwGetBoundingboxEvent } from './core';
 import { cwSpline, cwSplineType } from './curve';
 
 export class cwcKeyframeAnimation extends cwComponent {
@@ -234,9 +233,9 @@ export class cwcImage extends cwComponent {
                 evt.addObject(this, node.z, node.worldTransform);
             }
         });
-        this.on(cwHitTestEvent.type, (evt: cwHitTestEvent) => {
+        this.on(cwGetBoundingboxEvent.type, (evt: cwGetBoundingboxEvent) => {
             if (this._loaded) {
-                evt.result = evt.x >= -this._width / 2 && evt.x < this._width / 2 && evt.y >= -this._height / 2 && evt.y < this._height / 2;
+                evt.rect = { x:-this._width/2, y:this._height/2, w:this._width, h:this._height};
             }
         });
         this.on(cwDrawEvent.type, (evt: cwDrawEvent) => {
