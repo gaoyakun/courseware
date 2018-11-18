@@ -36,13 +36,16 @@ toolbox.loadTools (defaultTools);
 PG.on (tools.cwPGObjectSelectedEvent.type, (ev: tools.cwPGObjectSelectedEvent) => {
     g_editor.opPalette.unload ();
     g_editor.opPalette.loadOpPalette (g_editor.toolSet.operations);
-    g_editor.opPalette.loadObjectTools (g_editor.toolSet.objects[ev.object.entityType]);
-    g_editor.objectPropertyGrid.loadObjectProperties (ev.object);
+    g_editor.opPalette.loadObjectTools (g_editor.toolSet.objects[ev.objects[ev.objects.length-1].entityType]);
+    g_editor.objectPropertyGrid.loadObjectProperties (ev.objects[ev.objects.length-1]);
 });
 PG.on (tools.cwPGObjectDeselectedEvent.type, (ev: tools.cwPGObjectDeselectedEvent) => {
     g_editor.opPalette.unload ();
     g_editor.opPalette.loadOpPalette (g_editor.toolSet.operations);
     g_editor.objectPropertyGrid.clear ();
+});
+PG.on (tools.cwPGObjectMovedEvent.type, (ev: tools.cwPGObjectMovedEvent) => {
+    g_editor.objectPropertyGrid.reloadObjectProperties ();
 });
 /*
 const objectToolbox = new pgeditor.cwPGEditorToolbox (objectToolboxDiv, PG, 'row');

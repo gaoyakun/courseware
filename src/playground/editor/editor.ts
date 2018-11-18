@@ -453,6 +453,11 @@ export class cwPGPropertyGrid {
         }
         this._object = null;
     }
+    reloadObjectProperties () {
+        const obj = this._object;
+        this.clear ();
+        this.loadObjectProperties (obj);
+    }
     loadObjectProperties (object: core.cwSceneObject) {
         if (this._object !== object) {
             this.clear ();
