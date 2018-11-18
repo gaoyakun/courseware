@@ -131,7 +131,7 @@ export class cwPGSelectTool extends playground.cwPGTool {
     }
     public selectObject(object: core.cwSceneObject, ev: core.cwMouseEvent) {
         if (this._selectedObjects.indexOf(object) < 0) {
-            if (!ev.ctrlDown) {
+            if (!ev.metaDown) {
                 this.deselectAll();
             }
             this.selectedObjects.push(object);
