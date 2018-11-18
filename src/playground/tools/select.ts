@@ -36,9 +36,30 @@ export class cwPGObjectDeselectedEvent extends core.cwEvent {
 export class cwPGSelectComponent extends core.cwComponent {
     static readonly type = 'PGSelect';
     readonly tool: cwPGSelectTool;
+    private _selected: boolean;
     constructor(tool: cwPGSelectTool) {
         super(cwPGSelectComponent.type);
         this.tool = tool;
+        this._selected = false;
+        this.on(core.cwDrawEvent.type, (evt: core.cwDrawEvent) => {
+            if (this._selected) {
+                const bbox = (this.object as core.cwSceneObject).boundingbox;
+                if (bbox) {
+                    evt.canvas.context.save();
+                    evt.canvas.applyTransform(evt.transform);
+                    evt.canvas.context.strokeStyle = '#000';
+                    evt.canvas.context.lineWidth = 1;
+                    evt.canvas.context.strokeRect (bbox.x, bbox.y, bbox.w, bbox.h);
+                    evt.canvas.context.restore();
+                }
+            }
+        });
+        this.on(cwPGSelectEvent.type, (evt: cwPGSelectEvent) => {
+            this._selected = true;
+        });
+        this.on(cwPGDeselectEvent.type, (evt: cwPGDeselectEvent) => {
+            this._selected = false;
+        });
     }
 }
 

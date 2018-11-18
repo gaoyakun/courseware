@@ -16,17 +16,11 @@ export const cwPGDefaultToolSet = {
         Clone: {
             iconClass: 'fas fa-clone fa-fw'
         },
-        AlignTop: {
-            iconClass: 'fas fa-align-right fa-rotate-270 fa-fw'
-        },
-        AlignBottom: {
+        AlignH: {
             iconClass: 'fas fa-align-right fa-rotate-90 fa-fw'
         },
-        AlignLeft: {
+        AlignV: {
             iconClass: 'fas fa-align-left fa-fw'
-        },
-        AlignRight: {
-            iconClass: 'fas fa-align-right fa-fw'
         },
         ArrangeH: {
             iconClass: 'fas fa-arrows-alt-h fa-fw'
@@ -65,19 +59,6 @@ export const cwPGDefaultToolSet = {
             createArgs: {
                 text: '标签',
                 textColor: '#000000'
-            },
-            commands: {
-                beginEdit: {
-                    iconClass: 'fas fa-edit fa-fw'
-                },
-                fontScaleUp: {
-                    iconClass: 'fas fa-plus fa-fw',
-                    args: { step: 2 }
-                },
-                fontScaleDown: {
-                    iconClass: 'fas fa-minus fa-fw',
-                    args: { step: 2 }
-                }
             }
         }
     }

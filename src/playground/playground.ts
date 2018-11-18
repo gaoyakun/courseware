@@ -36,6 +36,18 @@ export class cwPGComponent extends core.cwComponent {
                     object.translation = t;
                     break;
                 }
+                case 'anchorx': {
+                    const t = object.anchorPoint;
+                    t.x = Number(ev.value);
+                    object.anchorPoint = t;
+                    break;
+                }
+                case 'anchory': {
+                    const t = object.anchorPoint;
+                    t.y = Number(ev.value);
+                    object.anchorPoint = t;
+                    break;
+                }
                 case 'entityName': {
                     object.entityName = ev.value;
                     break;
@@ -51,6 +63,14 @@ export class cwPGComponent extends core.cwComponent {
                 }
                 case 'localy': {
                     ev.value = object.translation.y;
+                    break;
+                }
+                case 'anchorx': {
+                    ev.value = object.anchorPoint.x;
+                    break;
+                }
+                case 'anchory': {
+                    ev.value = object.anchorPoint.y;
                     break;
                 }
                 case 'entityName': {
@@ -82,18 +102,32 @@ export class cwPGComponent extends core.cwComponent {
             });
             ev.properties.general.properties.push ({
                 name: 'localx',
-                desc: 'X',
+                desc: '位置X',
                 readonly: false,
                 type: 'number',
                 value: (this.object as core.cwSceneObject).translation.x
             });
             ev.properties.general.properties.push ({
                 name: 'localy',
-                desc: 'Y',
+                desc: '位置Y',
                 readonly: false,
                 type: 'number',
                 value: (this.object as core.cwSceneObject).translation.y
             });
+            ev.properties.general.properties.push ({
+                name: 'anchorx',
+                desc: '锚点X',
+                readonly: false,
+                type: 'number',
+                value: (this.object as core.cwSceneObject).anchorPoint.x
+            });
+            ev.properties.general.properties.push ({
+                name: 'anchory',
+                desc: '锚点Y',
+                readonly: false,
+                type: 'number',
+                value: (this.object as core.cwSceneObject).anchorPoint.y
+            })
         });
     }
 }

@@ -7,12 +7,30 @@ import * as playground from '../playground';
 export class cwPGSwapComponent extends core.cwComponent {
     static readonly type = 'PGSelect';
     readonly tool: cwPGSwapTool;
+    public selected: boolean;
     constructor(tool: cwPGSwapTool) {
         super(cwPGSwapComponent.type);
         this.tool = tool;
+        this.selected = false;
         this.on(core.cwMouseDownEvent.type, (ev: core.cwMouseDownEvent) => {
-            if (this.object) {
-                this.tool.selectObject(this.object as core.cwSceneObject, ev);
+            if (this.tool.currentObject) {
+                (this.tool.currentObject.getComponent (cwPGSwapComponent.type, 0) as cwPGSwapComponent).selected = false;
+            } else {
+                this.selected = true;
+            }
+            this.tool.selectObject(this.object as core.cwSceneObject, ev);
+        });
+        this.on(core.cwDrawEvent.type, (evt: core.cwDrawEvent) => {
+            if (this.selected) {
+                const bbox = (this.object as core.cwSceneObject).boundingbox;
+                if (bbox) {
+                    evt.canvas.context.save();
+                    evt.canvas.applyTransform(evt.transform);
+                    evt.canvas.context.strokeStyle = '#000';
+                    evt.canvas.context.lineWidth = 1;
+                    evt.canvas.context.strokeRect (bbox.x, bbox.y, bbox.w, bbox.h);
+                    evt.canvas.context.restore();
+                }
             }
         });
     }
@@ -24,6 +42,9 @@ export class cwPGSwapTool extends playground.cwPGTool {
     public constructor(pg: playground.cwPlayground) {
         super(cwPGSwapTool.toolname, pg);
         this._curObject = null;
+    }
+    get currentObject () {
+        return this._curObject;
     }
     public activate(options: object) {
         super.activate (options);
@@ -46,9 +67,7 @@ export class cwPGSwapTool extends playground.cwPGTool {
     public selectObject(object: core.cwSceneObject, ev: core.cwMouseEvent) {
         if (this._curObject == null) {
             this._curObject = object;
-            object.triggerEx(new select.cwPGSelectEvent(ev.x, ev.y, ev.button, ev.shiftDown, ev.altDown, ev.ctrlDown, ev.metaDown));
         } else if (this._curObject !== object) {
-            this._curObject.triggerEx(new select.cwPGDeselectEvent());
             this.swapObject (this._curObject, object, 200);
             this._curObject = null;
         }

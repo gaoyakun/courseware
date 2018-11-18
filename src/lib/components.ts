@@ -235,14 +235,14 @@ export class cwcImage extends cwComponent {
         });
         this.on(cwGetBoundingboxEvent.type, (evt: cwGetBoundingboxEvent) => {
             if (this._loaded) {
-                evt.rect = { x:-this._width/2, y:this._height/2, w:this._width, h:this._height};
+                evt.rect = { x:-this._width * this.object.anchorPoint.x, y:-this._height * this.object.anchorPoint.y, w:this._width, h:this._height};
             }
         });
         this.on(cwDrawEvent.type, (evt: cwDrawEvent) => {
             if (this._loaded) {
                 evt.canvas.context.save();
                 evt.canvas.applyTransform(evt.transform);
-                evt.canvas.context.drawImage(this._image, -this._width / 2, -this._height / 2, this._width, this._height);
+                evt.canvas.context.drawImage(this._image, -this._width * this.object.anchorPoint.x, -this._height * this.object.anchorPoint.y, this._width, this._height);
                 evt.canvas.context.restore();
             }
         });

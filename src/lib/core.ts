@@ -330,8 +330,11 @@ export class cwEventObserver {
     off<T extends cwEvent>(type: string, handler?: cwEventHandler<T>): void {
         cwApp.removeEventListener(type, this, handler);
     }
-    trigger<T extends cwEvent>(evt: T): void {
+    trigger(evt: cwEvent): void {
         cwApp.triggerEvent(this, evt);
+    }
+    triggerEx(evt: cwEvent): void {
+        this.trigger (evt);
     }
     post<T extends cwEvent>(evt: T): void {
         cwApp.postEvent(this, evt);
@@ -583,6 +586,7 @@ export class cwSceneObject extends cwObject {
     private _worldTranslation: { x: number, y: number } | null;
     private _worldRotation: number | null;
     private _worldScale: { x: number, y: number } | null;
+    private _anchorPoint: { x: number, y: number };
     constructor(parent: cwSceneObject = null) {
         super();
         this._view = null;
@@ -594,6 +598,7 @@ export class cwSceneObject extends cwObject {
         this._worldTranslation = null;
         this._worldRotation = null;
         this._worldScale = null;
+        this._anchorPoint = { x:0, y:0 };
         if (parent) {
             parent.addChild(this);
         }
@@ -632,6 +637,10 @@ export class cwSceneObject extends cwObject {
                     ev.propValue = this.rotation;
                     ev.eat();
                     break;
+                case 'anchorPoint':
+                    ev.propValue = this.anchorPoint;
+                    ev.eat();
+                    break;
                 default:
                     break;
             }
@@ -660,6 +669,9 @@ export class cwSceneObject extends cwObject {
                     break;
                 case 'rotation':
                     this.rotation = ev.propValue as number;
+                    break;
+                case 'anchorPoint':
+                    this.anchorPoint = ev.propValue;
                     break;
                 default:
                     break;
@@ -775,6 +787,12 @@ export class cwSceneObject extends cwObject {
     }
     set worldScale(value: { x: number, y: number } | null) {
         this._worldScale = value;
+    }
+    get anchorPoint() {
+        return this._anchorPoint;
+    }
+    set anchorPoint (pt) {
+        this._anchorPoint = pt;
     }
     get numChildren(): number {
         return this._children.length;
@@ -1200,7 +1218,7 @@ export class cwSceneView extends cwObject {
             for (let i in cullEvent.result) {
                 let group = cullEvent.result[i];
                 for (let j = 0; j < group.length; j++) {
-                    group[j].object.trigger(new cwDrawEvent(this.canvas, group[j].z, group[j].transform));
+                    group[j].object.triggerEx(new cwDrawEvent(this.canvas, group[j].z, group[j].transform));
                 }
             }
         }
