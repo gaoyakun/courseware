@@ -2,11 +2,11 @@ import * as core from '../../lib/core';
 import * as commands from '../commands';
 import * as playground from '../playground';
 
-export class cwPGSelectEvent extends core.cwMouseEvent {
+export class cwPGSelectEvent extends core.cwEvent {
     static readonly type: string = '@PGSelect';
     public readonly selectIndex: number;
-    constructor(selectIndex: number, x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean) {
-        super(cwPGSelectEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+    constructor(selectIndex: number) {
+        super(cwPGSelectEvent.type);
         this.selectIndex = selectIndex;
     }
 }
@@ -143,6 +143,7 @@ export class cwPGSelectTool extends playground.cwPGTool {
                 });
                 core.cwApp.triggerEvent (null, new cwPGObjectMovedEvent (this._selectedObjects));
             } else if (this._rangeSelecting) {
+                this.rangeSelectR (this._pg.view.rootNode, this._mouseStartPosX, this._mouseStartPosY, ev.x-this._mouseStartPosX, ev.y-this._mouseStartPosY);
                 this._mouseCurrentPosX = ev.x;
                 this._mouseCurrentPosY = ev.y;
             }
@@ -170,6 +171,59 @@ export class cwPGSelectTool extends playground.cwPGTool {
             }
         });
     }
+    private rangeSelectR (root:core.cwSceneObject, x:number, y:number, w:number, h:number) {
+        const rectRange = [{x:x,y:y},{x:x+w,y:y},{x:x+w,y:y+h},{x:x,y:y+h}];
+        root.forEachChild (child => {
+            const bbox = child.boundingbox;
+            if (bbox) {
+                const t = child.worldTransform;
+                const rectObject = [
+                    t.transformPoint({x:bbox.x,y:bbox.y}),
+                    t.transformPoint({x:bbox.x+bbox.w,y:bbox.y}),
+                    t.transformPoint({x:bbox.x+bbox.w,y:bbox.y+bbox.h}),
+                    t.transformPoint({x:bbox.x,y:bbox.y+bbox.h})
+                ];
+                if (this.sat (rectRange, rectObject)) {
+                    this.selectObject (child, null);
+                } else {
+                    this.deselectObject (child);
+                }
+            }
+            this.rangeSelectR (child, x, y, w, h);
+        });
+    }
+    private sat (polygon1:{x:number,y:number}[], polygon2:{x:number,y:number}[]) {
+        const polygons = [ polygon1, polygon2 ];
+        for (let n = 0; n < 2; n++) {
+            const polygon = polygons[n];
+            for (let edge = 0; edge < polygon.length; edge++) {
+                const edgeX = polygon[(edge+1)%polygon.length].x - polygon[edge].x;
+                const edgeY = polygon[(edge+1)%polygon.length].y - polygon[edge].y;
+                const mag = Math.sqrt(edgeX*edgeX + edgeY*edgeY);
+                if (mag < 1) {
+                    continue;
+                }
+                const nx = -edgeY/mag;
+                const ny = edgeX/mag;
+                const minmax = [{min:99999999,max:-99999999}, {min:99999999,max:-99999999}];
+                for (let i = 0; i < 2; i++) {
+                    polygons[i].forEach (point => {
+                        const proj = point.x * nx + point.y * ny;
+                        if (proj < minmax[i].min) {
+                            minmax[i].min = proj;
+                        }
+                        if (proj > minmax[i].max) {
+                            minmax[i].max = proj;
+                        }
+                    });
+                }
+                if (minmax[0].min > minmax[1].max || minmax[0].max < minmax[1].min) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
     public deactivate() {
         this.off (core.cwKeyDownEvent.type);
         this.off (core.cwKeyUpEvent.type);
@@ -189,18 +243,18 @@ export class cwPGSelectTool extends playground.cwPGTool {
         }
     }
     public executeCommand(cmd: commands.IPGCommand) {
-        if (this._selectedObjects.length == 1) {
-            this._selectedObjects[0].triggerEx (new playground.cwPGCommandEvent(cmd));
+        if (cmd.command === 'GetSelected') {
+            cmd.selectedObjects = this._selectedObjects;
         }
     }
     public selectObject(object: core.cwSceneObject, ev: core.cwMouseEvent) {
         if (this._selectedObjects.indexOf(object) < 0) {
-            const metaDown = core.cwSysInfo.isMac() ? ev.metaDown : ev.ctrlDown;
+            const metaDown = ev ? core.cwSysInfo.isMac() ? ev.metaDown : ev.ctrlDown : true;
             if (!metaDown) {
                 this.deselectAll();
             }
             this.selectedObjects.push(object);
-            object.triggerEx(new cwPGSelectEvent(this.selectedObjects.length, ev.x, ev.y, ev.button, ev.shiftDown, ev.altDown, ev.ctrlDown, ev.metaDown));
+            object.triggerEx(new cwPGSelectEvent(this.selectedObjects.length));
             core.cwApp.triggerEvent (null, new cwPGObjectSelectedEvent (this._selectedObjects));
         }
     }

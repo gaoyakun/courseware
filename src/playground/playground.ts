@@ -2,15 +2,6 @@ import * as core from '../lib/core';
 import * as components from '../lib/components';
 import * as command from './commands';
 
-export class cwPGCommandEvent extends core.cwEvent {
-    static readonly type: string = '@PGCommand';
-    cmd: command.IPGCommand;
-    constructor (cmd: command.IPGCommand) {
-        super(cwPGCommandEvent.type);
-        this.cmd = cmd;
-    }
-}
-
 export class cwPGComponent extends core.cwComponent {
     static readonly type = 'PGComponent';
     constructor() {
@@ -410,6 +401,86 @@ export class cwPlayground extends core.cwEventObserver {
             cmd.objectCreated = obj;
         } else if (cmd.command == 'DeleteObject') {
             this.deleteEntity (cmd.name);
+        } else if (cmd.command == 'DeleteObjects') {
+            if (cmd.objects) {
+                cmd.objects.forEach ((name:string) => {
+                    this.deleteEntity (name);
+                });
+            }
+        } else if (cmd.command == 'AlignObjectsLeft') {
+            if (cmd.objects && cmd.objects.length > 1) {
+                const objects: core.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                let minx = objects[0].worldTransform.e;
+                for (let i = 1; i < objects.length; i++) {
+                    const x = objects[i].worldTransform.e;
+                    if (x < minx) {
+                        minx = x;
+                    }
+                }
+                objects.forEach (obj => {
+                    obj.worldTranslation = { x:minx, y:obj.worldTransform.f };
+                    obj.collapseTransform ();
+                });
+            }
+        } else if (cmd.command == 'AlignObjectsRight') {
+            if (cmd.objects && cmd.objects.length > 1) {
+                const objects: core.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                let maxx = objects[0].worldTransform.e;
+                for (let i = 1; i < objects.length; i++) {
+                    const x = objects[i].worldTransform.e;
+                    if (x > maxx) {
+                        maxx = x;
+                    }
+                }
+                objects.forEach (obj => {
+                    obj.worldTranslation = { x:maxx, y:obj.worldTransform.f };
+                    obj.collapseTransform ();
+                });
+            }
+        } else if (cmd.command == 'AlignObjectsTop') {
+            if (cmd.objects && cmd.objects.length > 1) {
+                const objects: core.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                let miny = objects[0].worldTransform.f;
+                for (let i = 1; i < objects.length; i++) {
+                    const y = objects[i].worldTransform.f;
+                    if (y < miny) {
+                        miny = y;
+                    }
+                }
+                objects.forEach (obj => {
+                    obj.worldTranslation = { x:obj.worldTransform.e, y:miny };
+                    obj.collapseTransform ();
+                });
+            }
+        } else if (cmd.command == 'AlignObjectsBottom') {
+            if (cmd.objects && cmd.objects.length > 1) {
+                const objects: core.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                let maxy = objects[0].worldTransform.f;
+                for (let i = 1; i < objects.length; i++) {
+                    const y = objects[i].worldTransform.f;
+                    if (y > maxy) {
+                        maxy = y;
+                    }
+                }
+                objects.forEach (obj => {
+                    obj.worldTranslation = { x:obj.worldTransform.e, y:maxy };
+                    obj.collapseTransform ();
+                });
+            }
+        } else if (cmd.command == 'AlignObjectsHorizontal') {
+            if (cmd.objects && cmd.objects.length > 1) {
+                const firstObject = this.findEntity (cmd.objects[0]);
+                if (firstObject) {
+                    const y = firstObject.worldTransform.f;
+                    for (let i = 1; i < cmd.objects.length; i++) {
+                        const obj = this.findEntity (cmd.objects[i]);
+                        if (obj) {
+                            obj.worldTranslation = { x:obj.worldTransform.e, y:y };
+                            obj.collapseTransform ();
+                        }
+                    }
+                }
+            }
         } else if (cmd.command == 'SetObjectProperty') {
             const obj = this.findEntity (cmd.objectName);
             if (obj) {
