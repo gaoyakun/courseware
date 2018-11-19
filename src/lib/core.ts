@@ -1,4 +1,5 @@
 import { cwTransform2d } from './transform';
+
 export type cwCullResult = { [z: number]: Array<{ object: cwEventObserver, z: number, transform: cwTransform2d }> };
 export type cwEventHandler<T extends cwEvent> = (evt: T) => void;
 export interface IRect {
@@ -320,6 +321,29 @@ export class cwSetPropEvent extends cwEvent {
         super(cwSetPropEvent.type);
         this.propName = propName;
         this.propValue = propValue;
+    }
+}
+
+export class cwSysInfo {
+    private static _isWindows = (navigator.platform == 'Win32' || navigator.platform == 'Windows');
+    private static _isMac = (navigator.platform == 'Mac68K' || navigator.platform == 'MacPPC' || navigator.platform == 'Macintosh' || navigator.platform == 'MacIntel');
+    private static _isX11 = (navigator.platform == 'X11');
+    private static _isLinux = String(navigator.platform).indexOf('Linux') >= 0;
+    private static _isAndroid = (navigator.userAgent.toLowerCase().match(/android/i) || []).indexOf ('android') >= 0;
+    static isWindows () {
+        return this._isWindows;
+    }
+    static isMac () {
+        return this._isMac;
+    }
+    static isUnix () {
+        return this._isX11 && !this._isWindows && !this._isMac;
+    }
+    static isLinux () {
+        return this._isLinux;
+    }
+    static isAndroid () {
+        return this._isLinux && this._isAndroid;
     }
 }
 
@@ -1081,10 +1105,24 @@ export class cwSceneView extends cwObject {
             if (this.rootNode) {
                 this.rootNode.triggerRecursiveEx(updateEvent);
             }
-            this.draw();
+            this.canvas.clear();
+            this.triggerEx(new cwDrawEvent(this.canvas, 0, new cwTransform2d()));
+            this.canvas.flip();
         });
         this.on(cwResizeEvent.type, () => {
             this.canvas.resize();
+        });
+        this.on(cwDrawEvent.type, (ev: cwDrawEvent) => {
+            if (this.rootNode) {
+                let cullEvent = new cwCullEvent(ev.canvas.width, ev.canvas.height);
+                this.rootNode.triggerRecursiveEx(cullEvent);
+                for (let i in cullEvent.result) {
+                    let group = cullEvent.result[i];
+                    for (let j = 0; j < group.length; j++) {
+                        group[j].object.triggerEx(new cwDrawEvent(ev.canvas, group[j].z, group[j].transform));
+                    }
+                }
+            }
         });
     }
     get rootNode(): cwSceneObject {
@@ -1208,21 +1246,6 @@ export class cwSceneView extends cwObject {
     }
     setFocus(): void {
         cwScene.setFocusView(this);
-    }
-    draw(): void {
-        this.canvas.clear();
-        this.triggerEx(new cwDrawEvent(this.canvas, 0, new cwTransform2d()));
-        if (this.rootNode) {
-            let cullEvent = new cwCullEvent(this.canvas.width, this.canvas.height);
-            this.rootNode.triggerRecursiveEx(cullEvent);
-            for (let i in cullEvent.result) {
-                let group = cullEvent.result[i];
-                for (let j = 0; j < group.length; j++) {
-                    group[j].object.triggerEx(new cwDrawEvent(this.canvas, group[j].z, group[j].transform));
-                }
-            }
-        }
-        this.canvas.flip();
     }
     hitTest(x: number, y: number): cwHitTestResult {
         function hitTest_r(object: cwSceneObject, result: cwHitTestResult) {

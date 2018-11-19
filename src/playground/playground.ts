@@ -317,6 +317,12 @@ export class cwPlayground extends core.cwEventObserver {
                 tool.trigger (ev);
             }
         });
+        this.view.on (core.cwDrawEvent.type, (ev: core.cwDrawEvent) => {
+            if (this._currentTool !== '') {
+                const tool = this._tools[this._currentTool];
+                tool.trigger (ev);
+            }
+        }, core.cwEventListenerOrder.LAST);
     }
     public addTool (tool: cwPGTool): void {
         this._tools[tool.name] = tool;

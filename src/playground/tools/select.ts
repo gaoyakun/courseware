@@ -58,6 +58,7 @@ export class cwPGSelectComponent extends core.cwComponent {
                 if (bbox) {
                     evt.canvas.context.save();
                     evt.canvas.applyTransform(evt.transform);
+                    evt.canvas.context.translate (0.5, 0.5);
                     evt.canvas.context.strokeStyle = '#000';
                     evt.canvas.context.lineWidth = 1;
                     evt.canvas.context.strokeRect (bbox.x, bbox.y, bbox.w, bbox.h);
@@ -78,14 +79,20 @@ export class cwPGSelectTool extends playground.cwPGTool {
     public static readonly toolname: string = 'Select';
     private _selectedObjects: core.cwSceneObject[];
     private _moving: boolean;
-    private _moveStartPosX: number;
-    private _moveStartPosY: number;
+    private _rangeSelecting: boolean;
+    private _mouseStartPosX: number;
+    private _mouseStartPosY: number;
+    private _mouseCurrentPosX: number;
+    private _mouseCurrentPosY: number;
     public constructor(pg: playground.cwPlayground) {
         super(cwPGSelectTool.toolname, pg);
         this._selectedObjects = [];
         this._moving = false;
-        this._moveStartPosX = 0;
-        this._moveStartPosY = 0;
+        this._rangeSelecting = false;
+        this._mouseStartPosX = 0;
+        this._mouseStartPosY = 0;
+        this._mouseCurrentPosX = 0;
+        this._mouseCurrentPosY = 0;
     }
     get selectedObjects () {
         return this._selectedObjects;
@@ -109,31 +116,58 @@ export class cwPGSelectTool extends playground.cwPGTool {
             }
         });
         this.on (core.cwMouseDownEvent.type, (ev: core.cwMouseDownEvent) => {
+            this._mouseStartPosX = ev.x;
+            this._mouseStartPosY = ev.y;
             const hitObjects = this._pg.view.hitObjects;
             if (hitObjects.length > 1) {
                 this.selectObject (hitObjects[0], ev);
                 this._moving = true;
-                this._moveStartPosX = ev.x;
-                this._moveStartPosY = ev.y;
+                this._rangeSelecting = false;
             } else {
                 this.deselectAll ();
+                this._rangeSelecting = true;
+                this._moving = false;
+                this._mouseCurrentPosX = ev.x;
+                this._mouseCurrentPosY = ev.y;
             }
         });
         this.on (core.cwMouseMoveEvent.type, (ev: core.cwMouseMoveEvent) => {
             if (this._moving) {
-                const dx = ev.x - this._moveStartPosX;
-                const dy = ev.y - this._moveStartPosY;
-                this._moveStartPosX = ev.x;
-                this._moveStartPosY = ev.y;
+                const dx = ev.x - this._mouseStartPosX;
+                const dy = ev.y - this._mouseStartPosY;
+                this._mouseStartPosX = ev.x;
+                this._mouseStartPosY = ev.y;
                 this._selectedObjects.forEach ((obj: core.cwSceneObject) => {
                     const t = obj.translation;
                     obj.translation = { x: t.x + dx, y: t.y + dy };
                 });
                 core.cwApp.triggerEvent (null, new cwPGObjectMovedEvent (this._selectedObjects));
+            } else if (this._rangeSelecting) {
+                this._mouseCurrentPosX = ev.x;
+                this._mouseCurrentPosY = ev.y;
             }
         });
         this.on (core.cwMouseUpEvent.type, (ev: core.cwMouseUpEvent) => {
             this._moving = false;
+            this._rangeSelecting = false;
+        });
+        this.on (core.cwDrawEvent.type, (ev: core.cwDrawEvent) => {
+            if (this._rangeSelecting) {
+                ev.canvas.context.save ();
+                ev.canvas.context.setTransform(1, 0, 0, 1, 0.5, 0.5);
+                ev.canvas.context.strokeStyle = '#000';
+                ev.canvas.context.lineWidth = 1;
+                ev.canvas.context.setLineDash ([6,3]);
+                ev.canvas.context.beginPath ();
+                ev.canvas.context.moveTo (this._mouseStartPosX, this._mouseStartPosY);
+                ev.canvas.context.lineTo (this._mouseCurrentPosX, this._mouseStartPosY);
+                ev.canvas.context.lineTo (this._mouseCurrentPosX, this._mouseCurrentPosY);
+                ev.canvas.context.moveTo (this._mouseStartPosX, this._mouseStartPosY);
+                ev.canvas.context.lineTo (this._mouseStartPosX, this._mouseCurrentPosY);
+                ev.canvas.context.lineTo (this._mouseCurrentPosX, this._mouseCurrentPosY);
+                ev.canvas.context.stroke ();
+                ev.canvas.context.restore ();
+            }
         });
     }
     public deactivate() {
@@ -161,7 +195,8 @@ export class cwPGSelectTool extends playground.cwPGTool {
     }
     public selectObject(object: core.cwSceneObject, ev: core.cwMouseEvent) {
         if (this._selectedObjects.indexOf(object) < 0) {
-            if (!ev.metaDown) {
+            const metaDown = core.cwSysInfo.isMac() ? ev.metaDown : ev.ctrlDown;
+            if (!metaDown) {
                 this.deselectAll();
             }
             this.selectedObjects.push(object);
