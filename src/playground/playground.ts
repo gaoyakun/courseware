@@ -481,11 +481,45 @@ export class cwPlayground extends core.cwEventObserver {
                     }
                 }
             }
+        } else if (cmd.command == 'ArrangeObjectsHorizontal') {
+            if (cmd.objects && cmd.objects.length > 2) {
+                const objects: core.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                objects.sort ((a, b) => {
+                    return a.worldTransform.e - b.worldTransform.e;
+                });
+                const posStart = objects[0].worldTransform.e;
+                const gap = (objects[objects.length-1].worldTransform.e - posStart) / (objects.length - 1);
+                for (let i = 1; i < objects.length - 1; i++) {
+                    objects[i].worldTranslation = { x:posStart + i * gap, y:objects[i].worldTransform.f };
+                    objects[i].collapseTransform ();
+                }
+            }
+        } else if (cmd.command == 'ArrangeObjectsVertical') {
+            if (cmd.objects && cmd.objects.length > 2) {
+                const objects: core.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                objects.sort ((a, b) => {
+                    return a.worldTransform.f - b.worldTransform.f;
+                });
+                const posStart = objects[0].worldTransform.f;
+                const gap = (objects[objects.length-1].worldTransform.f - posStart) / (objects.length - 1);
+                for (let i = 1; i < objects.length - 1; i++) {
+                    objects[i].worldTranslation = { x:objects[i].worldTransform.e, y:posStart + i * gap };
+                    objects[i].collapseTransform ();
+                }
+            }
         } else if (cmd.command == 'SetObjectProperty') {
             const obj = this.findEntity (cmd.objectName);
             if (obj) {
                 const ev = new cwPGSetObjectPropertyEvent (cmd.propName, cmd.propValue);
                 obj.triggerEx (ev);
+                if (obj.entityName != cmd.objectName) {
+                    if (this.findEntity(obj.entityName)) {
+                        obj.entityName = cmd.objectName;
+                    } else {
+                        delete this._entities[cmd.objectName];
+                        this._entities[obj.entityName] = obj;
+                    }
+                }
             }
         } else if (cmd.command == 'GetObjectProperty') {
             const obj = this.findEntity (cmd.objectName);

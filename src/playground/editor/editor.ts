@@ -11,26 +11,6 @@ interface ITool {
     elementId?: string;
 }
 
-interface IObjectPaletteEntry {
-    iconClass: string|Function;
-    createArgs?: {
-        [arg: string]: any
-    };
-    commands?: {
-        [cmd: string]: {
-            iconClass: string|Function;
-            command?: string|Function;
-            args?: {
-                [arg: string]: any;
-            }
-        }
-    }
-}
-
-interface IObjectPalette {
-    [type: string]: IObjectPaletteEntry;
-}
-
 interface IToolPalette {
     [name: string]: {
         iconClass: string|Function;
@@ -44,7 +24,6 @@ interface IToolPalette {
 interface IToolSet {
     tools: IToolPalette;
     operations: IToolPalette;
-    objects: IObjectPalette;
 }
 
 export class cwPGToolPalette {
@@ -58,55 +37,6 @@ export class cwPGToolPalette {
         this._container = container;
         this._tools = [];
         this._curTool = null;
-    }
-    private getCreateObjectTool (tool: IObjectPalette, type: string): ITool {
-        const tooldef: ITool = {
-            command: {
-                command: 'UseTool',
-                name: 'Create',
-                args: { createType: type },
-            },
-            iconClass: tool[type].iconClass
-        }
-        if (tool[type].createArgs) {
-            for (const name in tool[type].createArgs) {
-                tooldef.command.args[name] = tool[type].createArgs[name];
-            }
-        }
-        return tooldef;
-    }
-    private getObjectCommandTool (tool: IObjectPaletteEntry, cmd: string): ITool {
-        const tooldef: ITool = {
-            command: {
-                command: cmd
-            },
-            iconClass: tool.commands[cmd].iconClass
-        }
-        if (tool.commands[cmd].command) {
-            tooldef.command.command = tool.commands[cmd].command;
-        }
-        if (tool.commands[cmd].args) {
-            for (const name in tool.commands[cmd].args) {
-                tooldef.command[name] = tool.commands[cmd].args[name];
-            }
-        }
-        return tooldef;
-    }
-    private getCommandTool (tool: IToolPalette, name: string): ITool {
-        const tooldef: ITool = {
-            command: {
-                command: 'UseTool',
-                name: name,
-                args: {}
-            },
-            iconClass: tool[name].iconClass
-        }
-        if (tool[name].args) {
-            for (const argname in tool[name].args) {
-                tooldef.command.args[argname] = tool[name].args[argname];
-            }
-        }
-        return tooldef;
     }
     private getOpTool (tool: IToolPalette, name: string): ITool {
         const tooldef: ITool = {
@@ -158,33 +88,9 @@ export class cwPGToolPalette {
         }
         this._tools = [];
     }
-    loadObjectTools (objectTools: IObjectPaletteEntry) {
-        if (objectTools && objectTools.commands) {
-            for (const cmd in objectTools.commands) {
-                const tooldef = this.getObjectCommandTool (objectTools, cmd);
-                const toolButton = this.createToolButton (tooldef);
-                toolButton.addEventListener ('click', () => {
-                    const toolIndex = Number(toolButton.getAttribute ('toolIndex'));
-                    const tool = this._tools[toolIndex];
-                    this._editor.executeCommand (tool.command);
-                });
-            }        
-        }
-    }
-    loadObjectPalette (objectPalette: IObjectPalette) {
-        for (const objectType in objectPalette) {
-            const tooldef = this.getCreateObjectTool (objectPalette, objectType);
-            const toolButton = this.createToolButton (tooldef);
-            toolButton.addEventListener ('click', () => {
-                const toolIndex = Number(toolButton.getAttribute ('toolIndex'));
-                const tool = this._tools[toolIndex];
-                this._editor.executeCommand (tool.command);
-            });
-        };
-    }
     loadToolPalette (toolPalette: IToolPalette) {
         for (const toolname in toolPalette) {
-            const tooldef = this.getCommandTool (toolPalette, toolname);
+            const tooldef = this.getOpTool (toolPalette, toolname);
             const toolButton = this.createToolButton (tooldef);
             toolButton.addEventListener ('click', () => {
                 const toolIndex = Number(toolButton.getAttribute ('toolIndex'));
@@ -485,18 +391,15 @@ export class cwPGEditor {
     private _toolFontSize: number;
     private _pg: playground.cwPlayground;
     private _toolset: IToolSet;
-    private _objectPalette: cwPGToolPalette;
     private _toolPalette: cwPGToolPalette;
     private _opPalette: cwPGToolPalette;
     private _propGrid: cwPGPropertyGrid;
-    constructor (pg: playground.cwPlayground, toolset: IToolSet, objectPaletteElement:HTMLElement, toolPaletteElement:HTMLElement, opPaletteElement:HTMLElement, propGridElement:HTMLElement) {
+    constructor (pg: playground.cwPlayground, toolset: IToolSet, toolPaletteElement:HTMLElement, opPaletteElement:HTMLElement, propGridElement:HTMLElement) {
         this._strokeColor = '#000000';
         this._fillColor = '#ffffff';
         this._toolFontSize = 14;
         this._pg = pg;
         this._toolset = toolset;
-        this._objectPalette = new cwPGToolPalette (this, objectPaletteElement);
-        this._objectPalette.loadObjectPalette (toolset.objects);
         this._toolPalette = new cwPGToolPalette (this, toolPaletteElement);
         this._toolPalette.loadToolPalette (toolset.tools);
         this._opPalette = new cwPGToolPalette (this, opPaletteElement);
@@ -505,9 +408,6 @@ export class cwPGEditor {
     }
     get toolSet () {
         return this._toolset;
-    }
-    get objectPalette () {
-        return this._objectPalette;
     }
     get opPalette () {
         return this._opPalette;

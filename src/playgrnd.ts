@@ -11,10 +11,9 @@ tools.installTools (PG);
 objects.installFactories (PG);
 
 const toolToolboxDiv: HTMLDivElement = document.querySelector('#tool-toolbox');
-const objectToolboxDiv: HTMLDivElement = document.querySelector('#object-toolbox');
 const opToolboxDiv: HTMLDivElement = document.querySelector('#op-toolbox');
 const propGridDiv: HTMLDivElement = document.querySelector('#object-propgrid');
-const g_editor = new pgeditor.cwPGEditor (PG, pgeditor.cwPGDefaultToolSet, objectToolboxDiv, toolToolboxDiv, opToolboxDiv, propGridDiv);
+const g_editor = new pgeditor.cwPGEditor (PG, pgeditor.cwPGDefaultToolSet, toolToolboxDiv, opToolboxDiv, propGridDiv);
 
 /*
 const toolbox = new pgeditor.cwPGEditorToolbox (toolboxDiv, PG, 'column');
@@ -34,9 +33,11 @@ const defaultTools = [
 toolbox.loadTools (defaultTools);
 */
 PG.on (tools.cwPGObjectSelectedEvent.type, (ev: tools.cwPGObjectSelectedEvent) => {
+    /*
     g_editor.opPalette.unload ();
     g_editor.opPalette.loadOpPalette (g_editor.toolSet.operations);
     g_editor.opPalette.loadObjectTools (g_editor.toolSet.objects[ev.objects[ev.objects.length-1].entityType]);
+    */
     if (ev.objects.length == 1) {
         g_editor.objectPropertyGrid.loadObjectProperties (ev.objects[0]);
     } else {
@@ -44,8 +45,10 @@ PG.on (tools.cwPGObjectSelectedEvent.type, (ev: tools.cwPGObjectSelectedEvent) =
     }
 });
 PG.on (tools.cwPGObjectDeselectedEvent.type, (ev: tools.cwPGObjectDeselectedEvent) => {
+    /*
     g_editor.opPalette.unload ();
     g_editor.opPalette.loadOpPalette (g_editor.toolSet.operations);
+    */
     g_editor.objectPropertyGrid.clear ();
 });
 PG.on (tools.cwPGObjectMovedEvent.type, (ev: tools.cwPGObjectMovedEvent) => {

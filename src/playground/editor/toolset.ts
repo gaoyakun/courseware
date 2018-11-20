@@ -1,15 +1,34 @@
 import * as core from '../../lib/core';
 import * as editor from './editor';
 import * as commands from '../commands';
-import { CousewareFramework } from '../../lib/presentation';
 
 export const cwPGDefaultToolSet = {
     tools: {
+        CreateLabel: {
+            iconClass: 'fas fa-font fa-fw',
+            command: 'UseTool',
+            args: {
+                name: 'Create',
+                args: {
+                    createType: 'Label',
+                    text: '标签',
+                    textColor: '#000000'
+                }
+            }
+        },
         Select: {
-            iconClass: 'fas fa-mouse-pointer fa-fw'
+            iconClass: 'fas fa-mouse-pointer fa-fw',
+            command: 'UseTool',
+            args: {
+                name: 'Select'
+            }
         },
         Swap: {
-            iconClass: 'fas fa-exchange-alt fa-fw'
+            iconClass: 'fas fa-exchange-alt fa-fw',
+            command: 'UseTool',
+            args: {
+                name: 'Swap'
+            }
         }
     },
     operations: {
@@ -60,7 +79,7 @@ export const cwPGDefaultToolSet = {
             command: function(editor: editor.cwPGEditor) {
                 const cmd: commands.IPGCommand = { command: 'GetSelected' };
                 editor.playground.executeCommand (cmd);
-                if (cmd.selectedObjects && cmd.selectedObjects.length > 0) {
+                if (cmd.selectedObjects && cmd.selectedObjects.length > 1) {
                     editor.playground.executeCommand ({
                         command: 'AlignObjectsTop',
                         objects: cmd.selectedObjects.map((obj:core.cwSceneObject) => obj.entityName)
@@ -73,7 +92,7 @@ export const cwPGDefaultToolSet = {
             command: function(editor: editor.cwPGEditor) {
                 const cmd: commands.IPGCommand = { command: 'GetSelected' };
                 editor.playground.executeCommand (cmd);
-                if (cmd.selectedObjects && cmd.selectedObjects.length > 0) {
+                if (cmd.selectedObjects && cmd.selectedObjects.length > 1) {
                     editor.playground.executeCommand ({
                         command: 'AlignObjectsBottom',
                         objects: cmd.selectedObjects.map((obj:core.cwSceneObject) => obj.entityName)
@@ -82,10 +101,30 @@ export const cwPGDefaultToolSet = {
             }
         },
         ArrangeH: {
-            iconClass: 'fas fa-arrows-alt-h fa-fw'
+            iconClass: 'fas fa-arrows-alt-h fa-fw',
+            command: function(editor: editor.cwPGEditor) {
+                const cmd: commands.IPGCommand = { command: 'GetSelected' };
+                editor.playground.executeCommand (cmd);
+                if (cmd.selectedObjects && cmd.selectedObjects.length > 2) {
+                    editor.playground.executeCommand ({
+                        command: 'ArrangeObjectsHorizontal',
+                        objects: cmd.selectedObjects.map((obj:core.cwSceneObject) => obj.entityName)
+                    });
+                }
+            }
         },
         ArrangeV: {
-            iconClass: 'fas fa-arrows-alt-v fa-fw'
+            iconClass: 'fas fa-arrows-alt-v fa-fw',
+            command: function(editor: editor.cwPGEditor) {
+                const cmd: commands.IPGCommand = { command: 'GetSelected' };
+                editor.playground.executeCommand (cmd);
+                if (cmd.selectedObjects && cmd.selectedObjects.length > 2) {
+                    editor.playground.executeCommand ({
+                        command: 'ArrangeObjectsVertical',
+                        objects: cmd.selectedObjects.map((obj:core.cwSceneObject) => obj.entityName)
+                    });
+                }
+            }
         },
         $StrokeColor: {
             iconClass: function (editor: editor.cwPGEditor) {
@@ -109,15 +148,6 @@ export const cwPGDefaultToolSet = {
                     editor.fillColor = inputBox.value;
                 }
                 return inputBox;
-            }
-        }
-    },
-    objects: {
-        Label: {
-            iconClass: 'fas fa-font fa-fw',
-            createArgs: {
-                text: '标签',
-                textColor: '#000000'
             }
         }
     }
