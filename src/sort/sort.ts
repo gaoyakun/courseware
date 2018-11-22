@@ -1,12 +1,10 @@
 import $ from 'jquery';
-import { CousewareFramework } from '../lib/presentation';
-import { Graph } from '../lib/graph';
+import * as lib from '../lib';
 import { DemoBase } from './demobase';
-import { cwScene, cwApp } from '../lib/core';
 
-export class CourseSort extends CousewareFramework {
-    private graphRandUnsort: Graph;
-    private graphRandSorted: Graph;
+export class CourseSort extends lib.CousewareFramework {
+    private graphRandUnsort: lib.Graph;
+    private graphRandSorted: lib.Graph;
     private bubbleDemo: DemoBase;
 
     constructor () {
@@ -17,7 +15,7 @@ export class CourseSort extends CousewareFramework {
         for (var i = 0; i < 60; i++) {
             values.push (Math.round(Math.random()*100));
         }
-        this.graphRandUnsort = new Graph($('#fig-rand-unsort'));
+        this.graphRandUnsort = new lib.Graph($('#fig-rand-unsort'));
         this.graphRandUnsort.histogram ({
             values:values,
             paddingH:5
@@ -25,7 +23,7 @@ export class CourseSort extends CousewareFramework {
         values.sort(function(a,b){
             return a - b;
         });
-        this.graphRandSorted = new Graph($('#fig-rand-sorted'));
+        this.graphRandSorted = new lib.Graph($('#fig-rand-sorted'));
         this.graphRandSorted.histogram ({
             values:values,
             paddingH:5
@@ -34,8 +32,8 @@ export class CourseSort extends CousewareFramework {
         this.bubbleDemo = new DemoBase(document.querySelector('#demo-bubble-sort'));
         window.addEventListener ('pageIn', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
-                cwScene.init ();
-                cwApp.run ();
+                lib.cwScene.init ();
+                lib.cwApp.run ();
                 let numbers = [];
                 for (let i = 0; i < 12; i++) {
                     numbers.push (Math.floor(Math.random()*10));
@@ -72,8 +70,8 @@ export class CourseSort extends CousewareFramework {
         window.addEventListener ('pageOut', (evt:any)=>{
             if (evt.id == 'page-bubble-sort') {
                 this.bubbleDemo.end ();
-                cwScene.done ();
-                cwApp.stop ();
+                lib.cwScene.done ();
+                lib.cwApp.stop ();
                 const pagefoot:HTMLDivElement = document.querySelector ('.page-foot');
                 pagefoot.removeChild (pagefoot.firstChild);
                 pagefoot.removeChild (pagefoot.firstChild);

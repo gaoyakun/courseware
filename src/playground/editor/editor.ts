@@ -1,4 +1,4 @@
-import * as core from '../../lib/core';
+import * as lib from '../../lib';
 import * as playground from '../playground';
 import * as commands from '../commands';
 
@@ -128,7 +128,7 @@ export class cwPGToolPalette {
 export class cwPGPropertyGrid {
     private _container: HTMLElement;
     private _tableId: string;
-    private _object: core.cwSceneObject;
+    private _object: lib.cwSceneObject;
     private _editor: cwPGEditor;
     constructor (editor: cwPGEditor, container: HTMLElement, id: string) {
         this._editor = editor;
@@ -364,7 +364,7 @@ export class cwPGPropertyGrid {
         this.clear ();
         this.loadObjectProperties (obj);
     }
-    loadObjectProperties (object: core.cwSceneObject) {
+    loadObjectProperties (object: lib.cwSceneObject) {
         if (this._object !== object) {
             this.clear ();
             this._object = object;

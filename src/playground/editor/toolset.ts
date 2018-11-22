@@ -1,4 +1,4 @@
-import * as core from '../../lib/core';
+import * as lib from '../../lib';
 import * as editor from './editor';
 import * as commands from '../commands';
 
@@ -40,7 +40,7 @@ export const cwPGDefaultToolSet = {
                 if (cmd.selectedObjects && cmd.selectedObjects.length > 0) {
                     editor.playground.executeCommand ({
                         command: 'DeleteObjects',
-                        objects: cmd.selectedObjects.map((obj:core.cwSceneObject) => obj.entityName)
+                        objects: cmd.selectedObjects.map((obj:lib.cwSceneObject) => obj.entityName)
                     });
                 }
             }
@@ -56,7 +56,7 @@ export const cwPGDefaultToolSet = {
                 if (cmd.selectedObjects && cmd.selectedObjects.length > 0) {
                     editor.playground.executeCommand ({
                         command: 'AlignObjectsLeft',
-                        objects: cmd.selectedObjects.map((obj:core.cwSceneObject) => obj.entityName)
+                        objects: cmd.selectedObjects.map((obj:lib.cwSceneObject) => obj.entityName)
                     });
                 }
             }
@@ -69,7 +69,7 @@ export const cwPGDefaultToolSet = {
                 if (cmd.selectedObjects && cmd.selectedObjects.length > 0) {
                     editor.playground.executeCommand ({
                         command: 'AlignObjectsRight',
-                        objects: cmd.selectedObjects.map((obj:core.cwSceneObject) => obj.entityName)
+                        objects: cmd.selectedObjects.map((obj:lib.cwSceneObject) => obj.entityName)
                     });
                 }
             }
@@ -82,7 +82,7 @@ export const cwPGDefaultToolSet = {
                 if (cmd.selectedObjects && cmd.selectedObjects.length > 1) {
                     editor.playground.executeCommand ({
                         command: 'AlignObjectsTop',
-                        objects: cmd.selectedObjects.map((obj:core.cwSceneObject) => obj.entityName)
+                        objects: cmd.selectedObjects.map((obj:lib.cwSceneObject) => obj.entityName)
                     });
                 }
             }
@@ -95,7 +95,7 @@ export const cwPGDefaultToolSet = {
                 if (cmd.selectedObjects && cmd.selectedObjects.length > 1) {
                     editor.playground.executeCommand ({
                         command: 'AlignObjectsBottom',
-                        objects: cmd.selectedObjects.map((obj:core.cwSceneObject) => obj.entityName)
+                        objects: cmd.selectedObjects.map((obj:lib.cwSceneObject) => obj.entityName)
                     });
                 }
             }
@@ -108,7 +108,7 @@ export const cwPGDefaultToolSet = {
                 if (cmd.selectedObjects && cmd.selectedObjects.length > 2) {
                     editor.playground.executeCommand ({
                         command: 'ArrangeObjectsHorizontal',
-                        objects: cmd.selectedObjects.map((obj:core.cwSceneObject) => obj.entityName)
+                        objects: cmd.selectedObjects.map((obj:lib.cwSceneObject) => obj.entityName)
                     });
                 }
             }
@@ -121,7 +121,7 @@ export const cwPGDefaultToolSet = {
                 if (cmd.selectedObjects && cmd.selectedObjects.length > 2) {
                     editor.playground.executeCommand ({
                         command: 'ArrangeObjectsVertical',
-                        objects: cmd.selectedObjects.map((obj:core.cwSceneObject) => obj.entityName)
+                        objects: cmd.selectedObjects.map((obj:lib.cwSceneObject) => obj.entityName)
                     });
                 }
             }

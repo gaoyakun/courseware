@@ -1,10 +1,10 @@
-import * as core from '../../lib/core';
-import * as tools from '../tools';
+import * as lib from '../../lib';
 import * as playground from '../playground';
 
-export class cwPGLabel extends core.cwSceneObject {
+export class cwPGLabel extends lib.cwSceneObject {
     private _width: number;
     private _height: number;
+    private _minwidth: number;
     private _text: string;
     private _font: string;
     private _fontSize: number;
@@ -27,12 +27,10 @@ export class cwPGLabel extends core.cwSceneObject {
         this._fontFamily = opt.fontFamily || '微软雅黑';
         this._font = '';
         this._text = opt.text || '';
-        this._savedText = '';
         this._measure = null;
         this._minwidth = 10;
-        this._background = opt.background || null;
         this._textcolor = opt.textcolor || '#000';
-        this.on(core.cwGetBoundingboxEvent.type, (evt: core.cwGetBoundingboxEvent) => {
+        this.on(lib.cwGetBoundingboxEvent.type, (evt: lib.cwGetBoundingboxEvent) => {
             let width = this._width;
             let height = this._height || this._fontSize;
             if (width == 0 && this._measure !== null) {
@@ -43,7 +41,7 @@ export class cwPGLabel extends core.cwSceneObject {
             }
             evt.rect = { x:-width * this.anchorPoint.x, y:-height * this.anchorPoint.y, w:width, h:height };
         });
-        this.on(core.cwDrawEvent.type, (evt: core.cwDrawEvent) => {
+        this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
             if (this._font === '') {
                 this._font = `${this._fontStyle} ${this._fontVariant} ${this._fontWeight} ${this._fontSize}px ${this._fontFamily}`;
             }
@@ -147,7 +145,7 @@ export class cwPGLabel extends core.cwSceneObject {
 }
 
 export class cwPGLabelFactory extends playground.cwPGFactory {
-    protected _createEntity (options?:any): core.cwSceneObject {
+    protected _createEntity (options?:any): lib.cwSceneObject {
         return new cwPGLabel (options);
     }
 }

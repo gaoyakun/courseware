@@ -1,15 +1,13 @@
-import { cwSceneObject, cwSceneView, cwScene, cwDragOverEvent, cwDragDropEvent, cwDrawEvent, cwDragBeginEvent } from "../lib/core";
-import { cwcImage, cwcDraggable, cwcKeyframeAnimation } from "../lib/components";
-import { cwSplineType } from "../lib/curve";
+import * as lib from '../lib';
 
 export class DemoBase {
-    private rects: {x:number,y:number,w:number,h:number,node:cwSceneObject,selected:boolean}[];
-    private _view: cwSceneView;
+    private rects: {x:number,y:number,w:number,h:number,node:lib.cwSceneObject,selected:boolean}[];
+    private _view: lib.cwSceneView;
     constructor (canvas:HTMLCanvasElement) {
         this.rects = [];
-        this._view = cwScene.addCanvas (canvas);
+        this._view = lib.cwScene.addCanvas (canvas);
     }
-    get view (): cwSceneView {
+    get view (): lib.cwSceneView {
         return this._view;
     }
     rectTest (x:number, y:number): number {
@@ -21,7 +19,7 @@ export class DemoBase {
         }
         return -1;
     }
-    findNode (node:cwSceneObject): number {
+    findNode (node:lib.cwSceneObject): number {
         for (let i = 0; i < this.rects.length; i++) {
             if (this.rects[i].node === node) {
                 return i;
@@ -29,21 +27,21 @@ export class DemoBase {
         }
         return -1;
     }
-    setNodePosition (node:cwSceneObject, pos:number, noAnimation?:boolean): void {
+    setNodePosition (node:lib.cwSceneObject, pos:number, noAnimation?:boolean): void {
         this.rects[pos].node = node;
         if (node) {
             if (noAnimation===undefined) {
                 noAnimation = false;
             }
-            node.removeComponentsByType (cwcKeyframeAnimation.type);
+            node.removeComponentsByType (lib.cwcKeyframeAnimation.type);
             if (noAnimation ) {
                 node.translation = {x:this.rects[pos].x + this.rects[pos].w/2,y:this.rects[pos].y + this.rects[pos].h/2};
             } else {
                 const worldTransform = node.worldTransform;
-                node.addComponent (new cwcKeyframeAnimation({
+                node.addComponent (new lib.cwcKeyframeAnimation({
                     repeat: 1,
                     tracks: {
-                        translation: { type:cwSplineType.LINEAR, cp:[{x:0,y:[worldTransform.e, worldTransform.f]}, {x:100,y:[this.rects[pos].x+this.rects[pos].w/2, this.rects[pos].y+this.rects[pos].h/2]}]}
+                        translation: { type:lib.cwSplineType.LINEAR, cp:[{x:0,y:[worldTransform.e, worldTransform.f]}, {x:100,y:[this.rects[pos].x+this.rects[pos].w/2, this.rects[pos].y+this.rects[pos].h/2]}]}
                     }
                 }));
             }
@@ -62,7 +60,7 @@ export class DemoBase {
         });
         console.log (str)
     }
-    addNode (node:cwSceneObject): number {
+    addNode (node:lib.cwSceneObject): number {
         let slot = -1;
         for (let i = 0; i < this.rects.length; i++) {
             if (this.rects[i].node == node) {
@@ -79,7 +77,7 @@ export class DemoBase {
         this.dump ('addNode');
         return slot;
     }
-    insertNode (pos:number, node:cwSceneObject): boolean {
+    insertNode (pos:number, node:lib.cwSceneObject): boolean {
         let slot;
         for (slot = this.rects.length-1; slot >= 0; slot--) {
             if (this.rects[slot].node != null) {
@@ -108,7 +106,7 @@ export class DemoBase {
         }
         this.dump ('packNodes');
     }
-    removeNode (node:cwSceneObject): number {
+    removeNode (node:lib.cwSceneObject): number {
         let slot = this.findNode(node);
         if (slot >= 0) {
             this.rects[slot].node = null;
@@ -173,16 +171,16 @@ export class DemoBase {
         for (let i = pos1; i != pos2+step; i += step) {
             let node = this.rects[i].node;
             let j = i == pos1 ? pos2 : i-step;
-            let a = i == pos1 ? cwSplineType.POLY : cwSplineType.LINEAR;
+            let a = i == pos1 ? lib.cwSplineType.POLY : lib.cwSplineType.LINEAR;
             const h = i == pos1 ? this.rects[0].h : 0;
             const x1 = this.rects[i].x+this.rects[i].w/2;
             const y1 = this.rects[i].y+this.rects[i].h/2;
             const x2 = this.rects[j].x+this.rects[i+step].w/2;
             const y2 = this.rects[j].y+this.rects[i+step].h/2;
-            (node.getComponents (cwcKeyframeAnimation.type)||[]).forEach (comp=>{
-                (comp as cwcKeyframeAnimation).finish ();
+            (node.getComponents (lib.cwcKeyframeAnimation.type)||[]).forEach (comp=>{
+                (comp as lib.cwcKeyframeAnimation).finish ();
             });
-            node.addComponent (new cwcKeyframeAnimation({
+            node.addComponent (new lib.cwcKeyframeAnimation({
                 delay:delay,
                 repeat:1,
                 exclusive:true,
@@ -207,30 +205,30 @@ export class DemoBase {
             const t2 = node2.translation;
             const h = this.rects[0].h;
             this.rects[pos1].node = node2;
-            (node2.getComponents (cwcKeyframeAnimation.type)||[]).forEach (comp=>{
-                (comp as cwcKeyframeAnimation).finish ();
-                node2.removeComponentsByType (cwcKeyframeAnimation.type);
+            (node2.getComponents (lib.cwcKeyframeAnimation.type)||[]).forEach (comp=>{
+                (comp as lib.cwcKeyframeAnimation).finish ();
+                node2.removeComponentsByType (lib.cwcKeyframeAnimation.type);
             });
-            node2.addComponent (new cwcKeyframeAnimation({
+            node2.addComponent (new lib.cwcKeyframeAnimation({
                 delay:delay,
                 repeat:1,
                 exclusive:true,
                 tracks: {
                     translation: {
                         cp: [{x:0,y:[t2.x,t2.y]},{x:animationDuration/2,y:[(t1.x+t2.x)/2,(t1.y+t2.y)/2-h/2]},{x:animationDuration,y:[t1.x,t1.y]}],
-                        type: cwSplineType.POLY
+                        type: lib.cwSplineType.POLY
                     }
                 }
             }));
             this.rects[pos2].node = node1;
-            node1.addComponent (new cwcKeyframeAnimation({
+            node1.addComponent (new lib.cwcKeyframeAnimation({
                 delay:delay,
                 repeat:1,
                 exclusive:true,
                 tracks: {
                     translation: {
                         cp: [{x:0,y:[t1.x,t1.y]},{x:animationDuration/2,y:[(t1.x+t2.x)/2,(t1.y+t2.y)/2+h/2]},{x:animationDuration,y:[t2.x,t2.y]}],
-                        type: cwSplineType.POLY
+                        type: lib.cwSplineType.POLY
                     }
                 }
             }));
@@ -245,7 +243,7 @@ export class DemoBase {
         this._view.empty ();
         this.rects = [];
 
-        this._view.on (cwDragOverEvent.type, (ev:cwDragOverEvent) => {
+        this._view.on (lib.cwDragOverEvent.type, (ev:lib.cwDragOverEvent) => {
             const data = ev.data;
             if (data.type == 'number') {
                 let rect = this.rectTest (ev.x, ev.y);
@@ -266,7 +264,7 @@ export class DemoBase {
                 data.node.worldTranslation = {x:ev.x, y:ev.y};
             }
         });
-        this._view.on (cwDragDropEvent.type,  (ev:cwDragDropEvent) => {
+        this._view.on (lib.cwDragDropEvent.type,  (ev:lib.cwDragDropEvent) => {
             const data = ev.data;
             if (data.type == 'number') {
                 data.node.collapseTransform ();
@@ -274,7 +272,7 @@ export class DemoBase {
                 this.scheduleNodeAnimation ();
             }
         });
-        this._view.on (cwDrawEvent.type, (ev:cwDrawEvent) => {
+        this._view.on (lib.cwDrawEvent.type, (ev:lib.cwDrawEvent) => {
             ev.canvas.context.strokeStyle = '#080';
             ev.canvas.context.lineWidth = 2;
             ev.canvas.context.fillStyle = '#0ff';
@@ -298,11 +296,11 @@ export class DemoBase {
                 this.rects.push({x:startx+i*step,y:starty,w:width,h:height,node:null,selected:false})
             }
             for (let i = 0; i < numbers.length; i++) {
-                const numNode = new cwSceneObject (this._view.rootNode);
+                const numNode = new lib.cwSceneObject (this._view.rootNode);
                 numNode.number = numbers[i];
-                numNode.addComponent (new cwcImage(`images/number-${numbers[i]}.png`, width, height));
-                numNode.addComponent (new cwcDraggable());
-                numNode.on (cwDragBeginEvent.type, function(ev:cwDragBeginEvent) {
+                numNode.addComponent (new lib.cwcImage(`images/number-${numbers[i]}.png`, width, height));
+                numNode.addComponent (new lib.cwcDraggable());
+                numNode.on (lib.cwDragBeginEvent.type, function(ev:lib.cwDragBeginEvent) {
                     ev.data = { type:'number', node:this };
                 });
                 this.addNode (numNode);

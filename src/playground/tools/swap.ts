@@ -1,10 +1,8 @@
-import * as core from '../../lib/core';
+import * as lib from '../../lib';
 import * as select from './select';
-import * as components from '../../lib/components';
-import * as curve from '../../lib/curve';
 import * as playground from '../playground';
 
-export class cwPGSwapComponent extends core.cwComponent {
+export class cwPGSwapComponent extends lib.cwComponent {
     static readonly type = 'PGSelect';
     readonly tool: cwPGSwapTool;
     public selected: boolean;
@@ -12,17 +10,17 @@ export class cwPGSwapComponent extends core.cwComponent {
         super(cwPGSwapComponent.type);
         this.tool = tool;
         this.selected = false;
-        this.on(core.cwMouseDownEvent.type, (ev: core.cwMouseDownEvent) => {
+        this.on(lib.cwMouseDownEvent.type, (ev: lib.cwMouseDownEvent) => {
             if (this.tool.currentObject) {
                 (this.tool.currentObject.getComponent (cwPGSwapComponent.type, 0) as cwPGSwapComponent).selected = false;
             } else {
                 this.selected = true;
             }
-            this.tool.selectObject(this.object as core.cwSceneObject, ev);
+            this.tool.selectObject(this.object as lib.cwSceneObject, ev);
         });
-        this.on(core.cwDrawEvent.type, (evt: core.cwDrawEvent) => {
+        this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
             if (this.selected) {
-                const bbox = (this.object as core.cwSceneObject).boundingbox;
+                const bbox = (this.object as lib.cwSceneObject).boundingbox;
                 if (bbox) {
                     evt.canvas.context.save();
                     evt.canvas.applyTransform(evt.transform);
@@ -38,7 +36,7 @@ export class cwPGSwapComponent extends core.cwComponent {
 
 export class cwPGSwapTool extends playground.cwPGTool {
     public static readonly toolname: string = 'Swap';
-    private _curObject: core.cwSceneObject;
+    private _curObject: lib.cwSceneObject;
     public constructor(pg: playground.cwPlayground) {
         super(cwPGSwapTool.toolname, pg);
         this._curObject = null;
@@ -57,14 +55,14 @@ export class cwPGSwapTool extends playground.cwPGTool {
         }
         super.deactivate ();
     }
-    public activateObject(object: core.cwSceneObject) {
+    public activateObject(object: lib.cwSceneObject) {
         this.deactivateObject (object);
         object.addComponent(new cwPGSwapComponent(this));
     }
-    public deactivateObject(object: core.cwSceneObject) {
+    public deactivateObject(object: lib.cwSceneObject) {
         object.removeComponentsByType(cwPGSwapComponent.type);
     }
-    public selectObject(object: core.cwSceneObject, ev: core.cwMouseEvent) {
+    public selectObject(object: lib.cwSceneObject, ev: lib.cwMouseEvent) {
         if (this._curObject == null) {
             this._curObject = object;
         } else if (this._curObject !== object) {
@@ -72,32 +70,32 @@ export class cwPGSwapTool extends playground.cwPGTool {
             this._curObject = null;
         }
     }
-    private swapObject (object1: core.cwSceneObject, object2: core.cwSceneObject, animationDuration:number) {
+    private swapObject (object1: lib.cwSceneObject, object2: lib.cwSceneObject, animationDuration:number) {
         const t1 = object1.translation;
         const t2 = object2.translation;
-        (object2.getComponents (components.cwcKeyframeAnimation.type)||[]).forEach (comp=>{
-            (comp as components.cwcKeyframeAnimation).finish ();
-            object2.removeComponentsByType (components.cwcKeyframeAnimation.type);
+        (object2.getComponents (lib.cwcKeyframeAnimation.type)||[]).forEach (comp=>{
+            (comp as lib.cwcKeyframeAnimation).finish ();
+            object2.removeComponentsByType (lib.cwcKeyframeAnimation.type);
         });
-        object2.addComponent (new components.cwcKeyframeAnimation({
+        object2.addComponent (new lib.cwcKeyframeAnimation({
             delay:0,
             repeat:1,
             exclusive:true,
             tracks: {
                 translation: {
                     cp: [{x:0,y:[t2.x,t2.y]}, {x:animationDuration,y:[t1.x,t1.y]}],
-                    type: curve.cwSplineType.LINEAR
+                    type: lib.cwSplineType.LINEAR
                 }
             }
         }));
-        object1.addComponent (new components.cwcKeyframeAnimation({
+        object1.addComponent (new lib.cwcKeyframeAnimation({
             delay:0,
             repeat:1,
             exclusive:true,
             tracks: {
                 translation: {
                     cp: [{x:0,y:[t1.x,t1.y]}, {x:animationDuration,y:[t2.x,t2.y]}],
-                    type: curve.cwSplineType.LINEAR
+                    type: lib.cwSplineType.LINEAR
                 }
             }
         }));

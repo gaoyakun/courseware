@@ -1,9 +1,8 @@
-import * as core from '../../lib/core';
+import * as lib from '../../lib';
 import * as commands from '../commands';
 import * as playground from '../playground';
-import * as intersect from '../../lib/intersect';
 
-export class cwPGSelectEvent extends core.cwEvent {
+export class cwPGSelectEvent extends lib.cwEvent {
     static readonly type: string = '@PGSelect';
     public readonly selectIndex: number;
     constructor(selectIndex: number) {
@@ -12,40 +11,40 @@ export class cwPGSelectEvent extends core.cwEvent {
     }
 }
 
-export class cwPGDeselectEvent extends core.cwEvent {
+export class cwPGDeselectEvent extends lib.cwEvent {
     static readonly type: string = '@PGDeselect';
     constructor() {
         super(cwPGDeselectEvent.type);
     }
 }
 
-export class cwPGObjectSelectedEvent extends core.cwEvent {
+export class cwPGObjectSelectedEvent extends lib.cwEvent {
     static readonly type: string = '@PGObjectSelected';
-    readonly objects: core.cwSceneObject[];
-    constructor (objects: core.cwSceneObject[]) {
+    readonly objects: lib.cwSceneObject[];
+    constructor (objects: lib.cwSceneObject[]) {
         super (cwPGObjectSelectedEvent.type);
         this.objects = objects;
     }
 }
 
-export class cwPGObjectMovedEvent extends core.cwEvent {
+export class cwPGObjectMovedEvent extends lib.cwEvent {
     static readonly type: string = '@PGObjectMoved';
-    readonly objects: core.cwSceneObject[];
-    constructor (objects: core.cwSceneObject[]) {
+    readonly objects: lib.cwSceneObject[];
+    constructor (objects: lib.cwSceneObject[]) {
         super (cwPGObjectMovedEvent.type);
         this.objects = objects;
     }
 }
 
-export class cwPGObjectDeselectedEvent extends core.cwEvent {
+export class cwPGObjectDeselectedEvent extends lib.cwEvent {
     static readonly type: string = '@PGObjectDeselected';
-    readonly object: core.cwSceneObject;
-    constructor (object: core.cwSceneObject) {
+    readonly object: lib.cwSceneObject;
+    constructor (object: lib.cwSceneObject) {
         super (cwPGObjectDeselectedEvent.type);
         this.object = object;
     }
 }
-export class cwPGSelectComponent extends core.cwComponent {
+export class cwPGSelectComponent extends lib.cwComponent {
     static readonly type = 'PGSelect';
     readonly tool: cwPGSelectTool;
     private _selected: boolean;
@@ -53,9 +52,9 @@ export class cwPGSelectComponent extends core.cwComponent {
         super(cwPGSelectComponent.type);
         this.tool = tool;
         this._selected = false;
-        this.on(core.cwDrawEvent.type, (evt: core.cwDrawEvent) => {
+        this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
             if (this._selected) {
-                const bbox = (this.object as core.cwSceneObject).boundingbox;
+                const bbox = (this.object as lib.cwSceneObject).boundingbox;
                 if (bbox) {
                     evt.canvas.context.save();
                     evt.canvas.applyTransform(evt.transform);
@@ -78,7 +77,7 @@ export class cwPGSelectComponent extends core.cwComponent {
 
 export class cwPGSelectTool extends playground.cwPGTool {
     public static readonly toolname: string = 'Select';
-    private _selectedObjects: core.cwSceneObject[];
+    private _selectedObjects: lib.cwSceneObject[];
     private _moving: boolean;
     private _rangeSelecting: boolean;
     private _mouseStartPosX: number;
@@ -101,22 +100,22 @@ export class cwPGSelectTool extends playground.cwPGTool {
     public activate(options: object) {
         super.activate (options);
         this._selectedObjects.length = 0;
-        this.on (core.cwKeyDownEvent.type, (ev: core.cwKeyDownEvent) => {
+        this.on (lib.cwKeyDownEvent.type, (ev: lib.cwKeyDownEvent) => {
             if (this._selectedObjects.length == 1) {
                 this._selectedObjects[0].triggerEx (ev);
             }
         });
-        this.on (core.cwKeyUpEvent.type, (ev: core.cwKeyUpEvent) => {
+        this.on (lib.cwKeyUpEvent.type, (ev: lib.cwKeyUpEvent) => {
             if (this._selectedObjects.length == 1) {
                 this._selectedObjects[0].triggerEx (ev);
             }
         });
-        this.on (core.cwKeyPressEvent.type, (ev: core.cwKeyPressEvent) => {
+        this.on (lib.cwKeyPressEvent.type, (ev: lib.cwKeyPressEvent) => {
             if (this._selectedObjects.length == 1) {
                 this._selectedObjects[0].triggerEx (ev);
             }
         });
-        this.on (core.cwMouseDownEvent.type, (ev: core.cwMouseDownEvent) => {
+        this.on (lib.cwMouseDownEvent.type, (ev: lib.cwMouseDownEvent) => {
             this._mouseStartPosX = ev.x;
             this._mouseStartPosY = ev.y;
             const hitObjects = this._pg.view.hitObjects;
@@ -132,28 +131,28 @@ export class cwPGSelectTool extends playground.cwPGTool {
                 this._mouseCurrentPosY = ev.y;
             }
         });
-        this.on (core.cwMouseMoveEvent.type, (ev: core.cwMouseMoveEvent) => {
+        this.on (lib.cwMouseMoveEvent.type, (ev: lib.cwMouseMoveEvent) => {
             if (this._moving) {
                 const dx = ev.x - this._mouseStartPosX;
                 const dy = ev.y - this._mouseStartPosY;
                 this._mouseStartPosX = ev.x;
                 this._mouseStartPosY = ev.y;
-                this._selectedObjects.forEach ((obj: core.cwSceneObject) => {
+                this._selectedObjects.forEach ((obj: lib.cwSceneObject) => {
                     const t = obj.translation;
                     obj.translation = { x: t.x + dx, y: t.y + dy };
                 });
-                core.cwApp.triggerEvent (null, new cwPGObjectMovedEvent (this._selectedObjects));
+                lib.cwApp.triggerEvent (null, new cwPGObjectMovedEvent (this._selectedObjects));
             } else if (this._rangeSelecting) {
                 this.rangeSelectR (this._pg.view.rootNode, this._mouseStartPosX, this._mouseStartPosY, ev.x-this._mouseStartPosX, ev.y-this._mouseStartPosY);
                 this._mouseCurrentPosX = ev.x;
                 this._mouseCurrentPosY = ev.y;
             }
         });
-        this.on (core.cwMouseUpEvent.type, (ev: core.cwMouseUpEvent) => {
+        this.on (lib.cwMouseUpEvent.type, (ev: lib.cwMouseUpEvent) => {
             this._moving = false;
             this._rangeSelecting = false;
         });
-        this.on (core.cwDrawEvent.type, (ev: core.cwDrawEvent) => {
+        this.on (lib.cwDrawEvent.type, (ev: lib.cwDrawEvent) => {
             if (this._rangeSelecting) {
                 ev.canvas.context.save ();
                 ev.canvas.context.setTransform(1, 0, 0, 1, 0.5, 0.5);
@@ -172,7 +171,7 @@ export class cwPGSelectTool extends playground.cwPGTool {
             }
         });
     }
-    private rangeSelectR (root:core.cwSceneObject, x:number, y:number, w:number, h:number) {
+    private rangeSelectR (root:lib.cwSceneObject, x:number, y:number, w:number, h:number) {
         const rectRange = [{x:x,y:y},{x:x+w,y:y},{x:x+w,y:y+h},{x:x,y:y+h}];
         root.forEachChild (child => {
             const bbox = child.boundingbox;
@@ -184,7 +183,7 @@ export class cwPGSelectTool extends playground.cwPGTool {
                     t.transformPoint({x:bbox.x+bbox.w,y:bbox.y+bbox.h}),
                     t.transformPoint({x:bbox.x,y:bbox.y+bbox.h})
                 ];
-                if (intersect.cwIntersectionTestHullHull (rectRange, rectObject)) {
+                if (lib.cwIntersectionTestHullHull (rectRange, rectObject)) {
                     this.selectObject (child, null);
                 } else {
                     this.deselectObject (child);
@@ -194,17 +193,17 @@ export class cwPGSelectTool extends playground.cwPGTool {
         });
     }
     public deactivate() {
-        this.off (core.cwKeyDownEvent.type);
-        this.off (core.cwKeyUpEvent.type);
-        this.off (core.cwKeyPressEvent.type);
-        this.off (core.cwMouseDownEvent.type);
+        this.off (lib.cwKeyDownEvent.type);
+        this.off (lib.cwKeyUpEvent.type);
+        this.off (lib.cwKeyPressEvent.type);
+        this.off (lib.cwMouseDownEvent.type);
         super.deactivate ();
     }
-    public activateObject(object: core.cwSceneObject) {
+    public activateObject(object: lib.cwSceneObject) {
         this.deactivateObject (object);
         object.addComponent(new cwPGSelectComponent(this));
     }
-    public deactivateObject(object: core.cwSceneObject) {
+    public deactivateObject(object: lib.cwSceneObject) {
         const components = object.getComponents(cwPGSelectComponent.type);
         if (components && components.length > 0) {
             this.deselectObject (object);
@@ -216,23 +215,23 @@ export class cwPGSelectTool extends playground.cwPGTool {
             cmd.selectedObjects = this._selectedObjects;
         }
     }
-    public selectObject(object: core.cwSceneObject, ev: core.cwMouseEvent) {
+    public selectObject(object: lib.cwSceneObject, ev: lib.cwMouseEvent) {
         if (this._selectedObjects.indexOf(object) < 0) {
-            const metaDown = ev ? core.cwSysInfo.isMac() ? ev.metaDown : ev.ctrlDown : true;
+            const metaDown = ev ? lib.cwSysInfo.isMac() ? ev.metaDown : ev.ctrlDown : true;
             if (!metaDown) {
                 this.deselectAll();
             }
             this.selectedObjects.push(object);
             object.triggerEx(new cwPGSelectEvent(this.selectedObjects.length));
-            core.cwApp.triggerEvent (null, new cwPGObjectSelectedEvent (this._selectedObjects));
+            lib.cwApp.triggerEvent (null, new cwPGObjectSelectedEvent (this._selectedObjects));
         }
     }
-    public deselectObject(object: core.cwSceneObject) {
+    public deselectObject(object: lib.cwSceneObject) {
         const index = this._selectedObjects.indexOf(object);
         if (index >= 0) {
             object.triggerEx(new cwPGDeselectEvent());
             this.selectedObjects.splice(index, 1);
-            core.cwApp.triggerEvent (null, new cwPGObjectDeselectedEvent (object));
+            lib.cwApp.triggerEvent (null, new cwPGObjectDeselectedEvent (object));
         }
     }
     public deselectAll() {
