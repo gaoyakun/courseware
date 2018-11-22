@@ -88,8 +88,7 @@ export function cwIntersectionTestBoxHull (a: point.IRect2d, b: point.IPoint2d[]
 }
 
 export function cwIntersectionTestBoxSegment (a: point.IRect2d, b: segment.ISegment2d): point.IPoint2d[] {
-    // TODO:
-    return [];
+    return cwIntersectionTestHullSegment ([point.cwGetTopLeft(a),point.cwGetBottomLeft(a),point.cwGetBottomRight(a),point.cwGetTopRight(a)], b);
 }
 
 export function cwIntersectionTestHullPoint (a: point.IPoint2d[], b: point.IPoint2d): boolean {
