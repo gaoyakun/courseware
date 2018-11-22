@@ -1,8 +1,12 @@
 import { cwApp, cwScene } from './lib/core';
+import * as convexhull from './lib/boundinghull';
 import * as playground from './playground/playground';
 import * as tools from './playground/tools';
 import * as objects from './playground/objects';
 import * as pgeditor from './playground/editor';
+
+const cv = new convexhull.cwBoundingHull ();
+console.log (cv.length);
 
 cwScene.init ();
 
