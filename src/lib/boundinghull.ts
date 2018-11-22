@@ -1,6 +1,6 @@
 import * as point from './point';
 import * as shape from './boundingshape';
-import * as segment from './segment';
+import * as intersect from './intersect';
 
 export class cwBoundingHull extends shape.cwBoundingShape {
     public static readonly type: string = 'Hull';
@@ -48,26 +48,6 @@ export class cwBoundingHull extends shape.cwBoundingShape {
     }
     getBoundingbox (): point.IRect2d {
         return this.boundingbox;
-    }
-    intersectedWithSegment (other: segment.ISegment2d): point.IPoint2d[] {
-        this._checkDirty ();
-        const result = [];
-        for (let i = 1; i < this._points.length; i++) {
-            const edge = {
-                start: this._points[i-1],
-                end: this._points[i]
-            }
-            const intersectedPoint = segment.cwSegmentIntersect (edge, other);
-            if (intersectedPoint) {
-                result.push (intersectedPoint);
-            }
-        }
-        if (result.length > 1) {
-            result.sort ((a, b) => {
-                return point.cwDistanceSq (a, other.start) - point.cwDistanceSq (b, other.start);
-            });
-        }
-        return result;
     }
     private _checkDirty () {
         if (this._dirtyFlag) {
@@ -123,7 +103,7 @@ export class cwBoundingHull extends shape.cwBoundingShape {
                     maxy = y;
                 }
             });
-            this._boundingbox = { x: minx, y: miny, w: maxx - minx, h: maxy - miny };
+            this._boundingbox = { x: minx, y: miny, w: maxx - minx + 1, h: maxy - miny + 1 };
         } else {
             this._boundingbox = null;
         }
@@ -147,6 +127,6 @@ export class cwBoundingHull extends shape.cwBoundingShape {
     }
     const seg1 = { start: {x:0,y:-3}, end:{x:2,y:-3} };
     const seg2 = { start: {x:1,y:-4}, end:{x:1, y:-6} };
-    const i = segment.cwSegmentIntersect (seg1, seg2);
+    const i = intersect.cwIntersectionTestSegmentSegment (seg1, seg2);
     console.log (i);
 }) ();

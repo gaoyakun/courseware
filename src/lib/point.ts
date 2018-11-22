@@ -15,6 +15,11 @@ export interface IRect2d {
     h: number;
 }
 
+export interface ISegment2d {
+    start: IPoint2d;
+    end: IPoint2d;
+}
+
 export function cwGetTopLeft (rect: IRect2d): IPoint2d {
     return { x: rect.x, y: rect.y };
 }

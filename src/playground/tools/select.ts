@@ -1,6 +1,7 @@
 import * as core from '../../lib/core';
 import * as commands from '../commands';
 import * as playground from '../playground';
+import * as intersect from '../../lib/intersect';
 
 export class cwPGSelectEvent extends core.cwEvent {
     static readonly type: string = '@PGSelect';
@@ -183,7 +184,7 @@ export class cwPGSelectTool extends playground.cwPGTool {
                     t.transformPoint({x:bbox.x+bbox.w,y:bbox.y+bbox.h}),
                     t.transformPoint({x:bbox.x,y:bbox.y+bbox.h})
                 ];
-                if (this.sat (rectRange, rectObject)) {
+                if (intersect.cwIntersectionTestHullHull (rectRange, rectObject)) {
                     this.selectObject (child, null);
                 } else {
                     this.deselectObject (child);
@@ -191,38 +192,6 @@ export class cwPGSelectTool extends playground.cwPGTool {
             }
             this.rangeSelectR (child, x, y, w, h);
         });
-    }
-    private sat (polygon1:{x:number,y:number}[], polygon2:{x:number,y:number}[]) {
-        const polygons = [ polygon1, polygon2 ];
-        for (let n = 0; n < 2; n++) {
-            const polygon = polygons[n];
-            for (let edge = 0; edge < polygon.length; edge++) {
-                const edgeX = polygon[(edge+1)%polygon.length].x - polygon[edge].x;
-                const edgeY = polygon[(edge+1)%polygon.length].y - polygon[edge].y;
-                const mag = Math.sqrt(edgeX*edgeX + edgeY*edgeY);
-                if (mag < 1) {
-                    continue;
-                }
-                const nx = -edgeY/mag;
-                const ny = edgeX/mag;
-                const minmax = [{min:99999999,max:-99999999}, {min:99999999,max:-99999999}];
-                for (let i = 0; i < 2; i++) {
-                    polygons[i].forEach (point => {
-                        const proj = point.x * nx + point.y * ny;
-                        if (proj < minmax[i].min) {
-                            minmax[i].min = proj;
-                        }
-                        if (proj > minmax[i].max) {
-                            minmax[i].max = proj;
-                        }
-                    });
-                }
-                if (minmax[0].min > minmax[1].max || minmax[0].max < minmax[1].min) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
     public deactivate() {
         this.off (core.cwKeyDownEvent.type);

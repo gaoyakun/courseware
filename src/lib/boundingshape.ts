@@ -1,5 +1,4 @@
 import * as point from './point';
-import * as segment from './segment';
 
 export abstract class cwBoundingShape {
     readonly type: string;
