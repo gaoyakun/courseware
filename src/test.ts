@@ -41,7 +41,7 @@ function collideTest () {
 function createSegmentNode (segment: lib.cwBoundingSegment, x:number, y:number): lib.cwSceneObject {
     const testNode = new lib.cwSceneObject(view.rootNode);
     testNode.translation = { x:x, y:y };
-    testNode.anchorPoint = { x:0, y:0 };
+    testNode.anchorPoint = { x:0.5, y:0.5 };
     testNode.addComponent (new lib.cwcDraggable());
     testNode.on(lib.cwGetBoundingShapeEvent.type, (ev: lib.cwGetBoundingShapeEvent) => {
         ev.shape = segment;
@@ -55,21 +55,16 @@ function createSegmentNode (segment: lib.cwBoundingSegment, x:number, y:number):
         ev.canvas.context.stroke ();
     });
     testNode.on (lib.cwDragBeginEvent.type, (ev: lib.cwDragBeginEvent) => {
-        console.log ('drag begin');
         testNode.dragBeginX = ev.x;
         testNode.dragBeginY = ev.y;
     });
     testNode.on (lib.cwDraggingEvent.type, (ev:lib.cwDragOverEvent) => {
-        console.log ('dragging');
         const t = testNode.worldTransform;
         testNode.worldTranslation = { x:t.e + ev.x - testNode.dragBeginX, y:t.f + ev.y - testNode.dragBeginY };
         testNode.collapseTransform ();
         testNode.dragBeginX = ev.x;
         testNode.dragBeginY = ev.y;
         collideTest ();
-    });
-    testNode.on (lib.cwDragEndEvent.type, (ev: lib.cwDragDropEvent) => {
-        console.log ('drag end');
     });
     return testNode;
 }
