@@ -1,5 +1,6 @@
 import * as point from './point';
 import * as shape from './boundingshape';
+import * as transform from './transform';
 
 export class cwBoundingSegment extends shape.cwBoundingShape {
     public static readonly type: string = 'Segment';
@@ -63,6 +64,16 @@ export class cwBoundingSegment extends shape.cwBoundingShape {
     }
     getBoundingbox (): point.IRect2d {
         return this.boundingbox;
+    }
+    getTransformedShape (transform: transform.cwTransform2d): shape.cwBoundingShape {
+        if (!transform || !this._segment) {
+            return new cwBoundingSegment(this._segment);
+        } else {
+            return new cwBoundingSegment({
+                start: transform.transformPoint(this._segment.start),
+                end: transform.transformPoint(this._segment.end)
+            });
+        }
     }
 }
 

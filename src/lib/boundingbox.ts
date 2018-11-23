@@ -1,5 +1,7 @@
 import * as point from './point';
 import * as shape from './boundingshape';
+import * as boundinghull from './boundinghull';
+import * as transform from './transform';
 
 export class cwBoundingBox extends shape.cwBoundingShape {
     public static readonly type: string = 'Box';
@@ -11,8 +13,21 @@ export class cwBoundingBox extends shape.cwBoundingShape {
     getBoundingbox (): point.IRect2d {
         return this.rect;
     }
-    containsPoint (pt: point.IPoint2d): boolean {
-        return this.rect && pt.x >= this.rect.x && pt.x <= this.rect.x + this.rect.w && pt.y >= this.rect.y && pt.y <= this.rect.y + this.rect.h;
+    getTransformedShape (transform: transform.cwTransform2d): shape.cwBoundingShape {
+        if (!transform) {
+            return new cwBoundingBox (this.rect);
+        } else {
+            const pointLeftTop = { x:this.rect.x, y:this.rect.y };
+            const pointLeftBottom = { x:this.rect.x, y:this.rect.y+this.rect.h-1 };
+            const pointRightBottom = { x:this.rect.x+this.rect.w-1, y:this.rect.y+this.rect.h-1 };
+            const pointRightTop = { x:this.rect.x+this.rect.w-1, y:this.rect.y };
+            return new boundinghull.cwBoundingHull ([
+                transform.transformPoint (pointLeftTop),
+                transform.transformPoint (pointLeftBottom),
+                transform.transformPoint (pointRightBottom),
+                transform.transformPoint (pointRightTop)
+            ]);
+        }
     }
 }
 

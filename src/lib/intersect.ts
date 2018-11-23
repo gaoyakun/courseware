@@ -3,6 +3,7 @@ import * as shape from './boundingshape';
 import * as boundinghull from './boundinghull';
 import * as boundingbox from './boundingbox';
 import * as boundingsegment from './boundingsegment';
+import * as transform from './transform';
 
 export function cwIntersectionTestShapeSegment (a: shape.cwBoundingShape, b: point.ISegment2d): point.IPoint2d[] {
     const box = a.getBoundingbox ();

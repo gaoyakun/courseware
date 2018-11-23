@@ -1,16 +1,17 @@
 import * as point from './point';
 import * as shape from './boundingshape';
+import * as transform from './transform';
 
 export class cwBoundingHull extends shape.cwBoundingShape {
     public static readonly type: string = 'Hull';
     private _points: {x:number,y:number}[];
     private _boundingbox: {x:number,y:number,w:number,h:number};
     private _dirtyFlag: boolean;
-    constructor () {
+    constructor (points?: point.IPoint2d[]) {
         super (cwBoundingHull.type);
-        this._points = [];
+        this._points = points || [];
         this._boundingbox = null;
-        this._dirtyFlag = false;
+        this._dirtyFlag = this._points.length > 0;
     }
     addPoint (point:{x:number,y:number}) {
         this._points.push (point);
@@ -47,6 +48,15 @@ export class cwBoundingHull extends shape.cwBoundingShape {
     }
     getBoundingbox (): point.IRect2d {
         return this.boundingbox;
+    }
+    getTransformedShape (transform: transform.cwTransform2d): shape.cwBoundingShape {
+        if (!transform) {
+            return new cwBoundingHull(this._points);
+        } else {
+            return new cwBoundingHull(this._points.map(point => {
+                return transform.transformPoint (point);
+            }));
+        }
     }
     private _checkDirty () {
         if (this._dirtyFlag) {

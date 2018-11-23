@@ -18,15 +18,61 @@ const segmentB = new lib.cwBoundingSegment ();
 segmentB.start = { x: 5, y: -20 };
 segmentB.end = { x: 24, y: 17 };
 
-let hullNode1: lib.cwSceneObject = null;
-let hullNode2: lib.cwSceneObject = null;
-let segmentNode1: lib.cwSceneObject = null;
-let segmentNode2: lib.cwSceneObject = null;
-
-let fillStyle = '#000';
-
-lib.cwScene.init ();
+const nodes: lib.cwSceneObject[] = [];
 let view = lib.cwScene.addCanvas (document.querySelector('#test-canvas'), true);
+
+function collideTest () {
+    const shapes = nodes.map (node => node.boundingShape.getTransformedShape(node.worldTransform));
+    const flags = nodes.map (node => 0);
+    for (let i = 0; i < shapes.length; i++) {
+        let collide = false;
+        for (let j = i+1; j < nodes.length; j++) {
+            if (lib.cwIntersectionTestShapeShape (shapes[i], shapes[j])) {
+                flags[i]++;
+                flags[j]++;
+            }
+        }
+    }
+    for (let i = 0; i < flags.length; i++) {
+        nodes[i].drawColor = flags[i] ? '#f00' : '#000';
+    }
+}
+
+function createSegmentNode (segment: lib.cwBoundingSegment, x:number, y:number): lib.cwSceneObject {
+    const testNode = new lib.cwSceneObject(view.rootNode);
+    testNode.translation = { x:x, y:y };
+    testNode.anchorPoint = { x:0, y:0 };
+    testNode.addComponent (new lib.cwcDraggable());
+    testNode.on(lib.cwGetBoundingShapeEvent.type, (ev: lib.cwGetBoundingShapeEvent) => {
+        ev.shape = segment;
+    });
+    testNode.on (lib.cwDrawEvent.type, (ev: lib.cwDrawEvent) => {
+        ev.canvas.context.beginPath ();
+        ev.canvas.context.strokeStyle = testNode.drawColor || '#000';
+        ev.canvas.context.lineWidth = 1;
+        ev.canvas.context.moveTo (segment.start.x, segment.start.y);
+        ev.canvas.context.lineTo (segment.end.x, segment.end.y);
+        ev.canvas.context.stroke ();
+    });
+    testNode.on (lib.cwDragBeginEvent.type, (ev: lib.cwDragBeginEvent) => {
+        console.log ('drag begin');
+        testNode.dragBeginX = ev.x;
+        testNode.dragBeginY = ev.y;
+    });
+    testNode.on (lib.cwDraggingEvent.type, (ev:lib.cwDragOverEvent) => {
+        console.log ('dragging');
+        const t = testNode.worldTransform;
+        testNode.worldTranslation = { x:t.e + ev.x - testNode.dragBeginX, y:t.f + ev.y - testNode.dragBeginY };
+        testNode.collapseTransform ();
+        testNode.dragBeginX = ev.x;
+        testNode.dragBeginY = ev.y;
+        collideTest ();
+    });
+    testNode.on (lib.cwDragEndEvent.type, (ev: lib.cwDragDropEvent) => {
+        console.log ('drag end');
+    });
+    return testNode;
+}
 
 function createHullNode (hull: lib.cwBoundingHull, x:number, y:number): lib.cwSceneObject {
     const testNode = new lib.cwSceneObject(view.rootNode);
@@ -38,7 +84,7 @@ function createHullNode (hull: lib.cwBoundingHull, x:number, y:number): lib.cwSc
     });
     testNode.on (lib.cwDrawEvent.type, (ev: lib.cwDrawEvent) => {
         ev.canvas.context.beginPath ();
-        ev.canvas.context.fillStyle = fillStyle;
+        ev.canvas.context.fillStyle = testNode.drawColor || '#000';
         ev.canvas.context.lineWidth = 1;
         const points = hull.points;
         ev.canvas.context.moveTo (points[0].x, points[0].y);
@@ -69,18 +115,7 @@ function createHullNode (hull: lib.cwBoundingHull, x:number, y:number): lib.cwSc
         testNode.collapseTransform ();
         testNode.dragBeginX = ev.x;
         testNode.dragBeginY = ev.y;
-
-        const worldHullA = hullA.points.map (point => {
-            return hullNode1.worldTransform.transformPoint (point);
-        });
-        const worldHullB = hullB.points.map (point => {
-            return hullNode2.worldTransform.transformPoint (point);
-        });
-        if (lib.cwIntersectionTestHullHull (worldHullA, worldHullB)) {
-            fillStyle = '#f00';
-        } else {
-            fillStyle = '#000';
-        }
+        collideTest ();
     });
     testNode.on (lib.cwDragEndEvent.type, (ev: lib.cwDragDropEvent) => {
         console.log ('drag end');
@@ -90,9 +125,12 @@ function createHullNode (hull: lib.cwBoundingHull, x:number, y:number): lib.cwSc
     return testNode;
 }
 
-hullNode1 = createHullNode (hullA, 200, 200);
-hullNode2 = createHullNode (hullB, 300, 300);
+nodes.push (createHullNode (hullA, 200, 200));
+nodes.push (createHullNode (hullB, 300, 300));
+nodes.push (createSegmentNode (segmentA, 400, 200));
+nodes.push (createSegmentNode (segmentB, 300, 100));
 
+lib.cwScene.init ();
 lib.cwApp.run ();
 
 
