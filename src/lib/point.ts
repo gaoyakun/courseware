@@ -20,6 +20,11 @@ export interface ISegment2d {
     end: IPoint2d;
 }
 
+export interface ISphere2d {
+    center: IPoint2d;
+    radius: number;
+}
+
 export function cwGetTopLeft (rect: IRect2d): IPoint2d {
     return { x: rect.x, y: rect.y };
 }
