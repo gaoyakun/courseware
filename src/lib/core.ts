@@ -1,4 +1,6 @@
 import { cwTransform2d } from './transform';
+import { cwBoundingShape} from './boundingshape';
+import { cwIntersectionTestShapePoint } from './intersect';
 
 export type cwCullResult = { [z: number]: Array<{ object: cwEventObserver, z: number, transform: cwTransform2d }> };
 export type cwEventHandler<T extends cwEvent> = (evt: T) => void;
@@ -121,11 +123,11 @@ export class cwHitTestEvent extends cwEvent {
     }
 }
 
-export class cwGetBoundingboxEvent extends cwEvent {
-    static readonly type: string = '@getboundingbox';
-    rect?: IRect;
+export class cwGetBoundingShapeEvent extends cwEvent {
+    static readonly type: string = '@getboundingshape';
+    shape?: cwBoundingShape;
     constructor () {
-        super (cwGetBoundingboxEvent.type);
+        super (cwGetBoundingShapeEvent.type);
     }
 }
 
@@ -270,6 +272,24 @@ export class cwDragBeginEvent extends cwMouseEvent {
     constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean) {
         super(cwDragBeginEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
         this.data = null;
+    }
+}
+
+export class cwDragEndEvent extends cwMouseEvent {
+    static readonly type: string = '@dragend';
+    data: any;
+    constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean, data: any) {
+        super(cwDragEndEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+        this.data = data;
+    }
+}
+
+export class cwDraggingEvent extends cwMouseEvent {
+    static readonly type: string = '@dragging';
+    data: any;
+    constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean, data: any) {
+        super(cwDraggingEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+        this.data = data;
     }
 }
 
@@ -630,8 +650,8 @@ export class cwSceneObject extends cwObject {
             evt.addObject(this, this.z, this.worldTransform);
         });
         this.on(cwHitTestEvent.type, (evt: cwHitTestEvent) => {
-            const bbox = this.boundingbox;
-            evt.result = bbox ? (evt.x >= bbox.x && evt.x < bbox.x+bbox.w && evt.y >= bbox.y && evt.y < bbox.y+bbox.h) : false;
+            const shape = this.boundingShape;
+            evt.result = shape ? cwIntersectionTestShapePoint(shape, {x:evt.x, y:evt.y}) : false;
         });
         this.on(cwGetPropEvent.type, (ev: cwGetPropEvent) => {
             switch (ev.propName) {
@@ -702,39 +722,10 @@ export class cwSceneObject extends cwObject {
             }
         });
     }
-    get boundingbox() {
-        const ev = new cwGetBoundingboxEvent ();
+    get boundingShape() {
+        const ev = new cwGetBoundingShapeEvent ();
         this.triggerEx (ev);
-        return ev.rect || null;
-    }
-    get worldBoundingbox() {
-        const box = this.boundingbox;
-        if (box) {
-            let minx = 99999999;
-            let miny = 99999999;
-            let maxx = -minx;
-            let maxy = -miny;
-            const t = this.worldTransform;
-            const points = [t.transformPoint ({x: box.x, y: box.y}), t.transformPoint ({x: box.x+box.w, y: box.y}), t.transformPoint ({x: box.x, y: box.y+box.h}), t.transformPoint ({x: box.x+box.w, y: box.y+box.h})];
-            for (let i = 0; i < points.length; i++) {
-                const pt = points[i];
-                if (pt.x < minx) {
-                    minx = pt.x;
-                }
-                if (pt.x > maxx) {
-                    maxx = pt.x;
-                }
-                if (pt.y < miny) {
-                    miny = pt.y;
-                }
-                if (pt.y > maxy) {
-                    maxy = pt.y;
-                }
-            }
-            return {x:minx, y:miny, w:maxx-minx, h:maxy-miny};
-        } else {
-            return null;
-        }
+        return ev.shape || null;
     }
     get view() {
         return this._view;
@@ -1119,7 +1110,11 @@ export class cwSceneView extends cwObject {
                 for (let i in cullEvent.result) {
                     let group = cullEvent.result[i];
                     for (let j = 0; j < group.length; j++) {
+                        ev.canvas.context.save();
+                        ev.canvas.applyTransform(group[j].transform);
+                        ev.canvas.context.translate (0.5, 0.5);
                         group[j].object.triggerEx(new cwDrawEvent(ev.canvas, group[j].z, group[j].transform));
+                        ev.canvas.context.restore();
                     }
                 }
             }

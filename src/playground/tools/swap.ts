@@ -20,14 +20,11 @@ export class cwPGSwapComponent extends lib.cwComponent {
         });
         this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
             if (this.selected) {
-                const bbox = (this.object as lib.cwSceneObject).boundingbox;
+                const bbox = (this.object as lib.cwSceneObject).boundingShape;
                 if (bbox) {
-                    evt.canvas.context.save();
-                    evt.canvas.applyTransform(evt.transform);
                     evt.canvas.context.strokeStyle = '#000';
                     evt.canvas.context.lineWidth = 1;
                     evt.canvas.context.strokeRect (bbox.x, bbox.y, bbox.w, bbox.h);
-                    evt.canvas.context.restore();
                 }
             }
         });

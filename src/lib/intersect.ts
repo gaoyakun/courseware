@@ -47,6 +47,27 @@ export function cwIntersectionTestShapeBox (a: shape.cwBoundingShape, b: point.I
     }
 }
 
+export function cwIntersectionTestShapeHull (a: shape.cwBoundingShape, b: point.IPoint2d[]): boolean {
+    const box = a.getBoundingbox ();
+    if (!box) {
+        return false;
+    }
+    switch (a.type) {
+        case boundingbox.cwBoundingBox.type: {
+            return cwIntersectionTestBoxHull ((a as boundingbox.cwBoundingBox).rect, b);
+        }
+        case boundinghull.cwBoundingHull.type: {
+            return cwIntersectionTestHullHull ((a as boundinghull.cwBoundingHull).points, b);
+        }
+        case boundingsegment.cwBoundingSegment.type: {
+            return cwIntersectionTestHullSegment (b, (a as boundingsegment.cwBoundingSegment).segment) != null;
+        }
+        default: {
+            return false;
+        }
+    }
+}
+
 export function cwIntersectionTestShapePoint (a: shape.cwBoundingShape, b: point.IPoint2d): boolean {
     const box = a.getBoundingbox ();
     if (!cwIntersectionTestBoxPoint (box, b)) {
@@ -148,9 +169,9 @@ export function cwIntersectionTestBoxSegment (a: point.IRect2d, b: point.ISegmen
 }
 
 export function cwIntersectionTestHullPoint (a: point.IPoint2d[], b: point.IPoint2d): boolean {
-    for (let i = 1; i < a.length; i++) {
+    for (let i = 0; i < a.length; i++) {
         const v1 = point.cwGetVector(b, a[i]);
-        const v2 = point.cwGetVector(b, a[i-1]);
+        const v2 = point.cwGetVector(b, a[(i+1)%a.length]);
         if (point.cwCrossProduct (v1, v2) > 0) {
             return false;
         }
@@ -191,13 +212,14 @@ export function cwIntersectionTestHullHull (a: point.IPoint2d[], b: point.IPoint
             }
             const nx = -edgeY/mag;
             const ny = edgeX/mag;
-            const minmax = [{min:polygon[0].x,max:polygon[0].y}, {min:polygon[1].x,max:polygon[1].y}];
+            const minmax = [{min:9999999,max:-9999999}, {min:9999999,max:-9999999}];
             for (let i = 0; i < 2; i++) {
                 polygons[i].forEach (point => {
                     const proj = point.x * nx + point.y * ny;
                     if (proj < minmax[i].min) {
                         minmax[i].min = proj;
-                    } else if (proj > minmax[i].max) {
+                    }
+                    if (proj > minmax[i].max) {
                         minmax[i].max = proj;
                     }
                 });

@@ -54,15 +54,12 @@ export class cwPGSelectComponent extends lib.cwComponent {
         this._selected = false;
         this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
             if (this._selected) {
-                const bbox = (this.object as lib.cwSceneObject).boundingbox;
-                if (bbox) {
-                    evt.canvas.context.save();
-                    evt.canvas.applyTransform(evt.transform);
-                    evt.canvas.context.translate (0.5, 0.5);
+                const shape = (this.object as lib.cwSceneObject).boundingShape;
+                if (shape) {
+                    const bbox = shape.getBoundingbox ();
                     evt.canvas.context.strokeStyle = '#000';
                     evt.canvas.context.lineWidth = 1;
                     evt.canvas.context.strokeRect (bbox.x, bbox.y, bbox.w, bbox.h);
-                    evt.canvas.context.restore();
                 }
             }
         });
@@ -172,18 +169,17 @@ export class cwPGSelectTool extends playground.cwPGTool {
         });
     }
     private rangeSelectR (root:lib.cwSceneObject, x:number, y:number, w:number, h:number) {
-        const rectRange = [{x:x,y:y},{x:x+w,y:y},{x:x+w,y:y+h},{x:x,y:y+h}];
         root.forEachChild (child => {
-            const bbox = child.boundingbox;
-            if (bbox) {
-                const t = child.worldTransform;
+            const shape = child.boundingShape;
+            if (shape) {
+                const t = lib.cwTransform2d.invert(child.worldTransform);
                 const rectObject = [
-                    t.transformPoint({x:bbox.x,y:bbox.y}),
-                    t.transformPoint({x:bbox.x+bbox.w,y:bbox.y}),
-                    t.transformPoint({x:bbox.x+bbox.w,y:bbox.y+bbox.h}),
-                    t.transformPoint({x:bbox.x,y:bbox.y+bbox.h})
+                    t.transformPoint({x:x, y:y}),
+                    t.transformPoint({x:x ,y:y+h}),
+                    t.transformPoint({x:x+w, y:y+h}),
+                    t.transformPoint({x:x+w, y:y})
                 ];
-                if (lib.cwIntersectionTestHullHull (rectRange, rectObject)) {
+                if (lib.cwIntersectionTestShapeHull (shape, rectObject)) {
                     this.selectObject (child, null);
                 } else {
                     this.deselectObject (child);

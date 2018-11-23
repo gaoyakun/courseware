@@ -1,6 +1,5 @@
 import * as point from './point';
 import * as shape from './boundingshape';
-import * as intersect from './intersect';
 
 export class cwBoundingHull extends shape.cwBoundingShape {
     public static readonly type: string = 'Hull';
@@ -109,24 +108,3 @@ export class cwBoundingHull extends shape.cwBoundingShape {
         }
     }
 }
-
-(function () {
-    const cv1 = new cwBoundingHull ();
-    cv1.addPoint ({x:0, y:0});
-    cv1.addPoint ({x:1, y:0});
-    cv1.addPoint ({x:0, y:1});
-    cv1.addPoint ({x:1, y:1});
-    cv1.addPoint ({x:0, y:3});
-    cv1.addPoint ({x:1, y:3});
-    cv1.addPoint ({x:0, y:2});
-    cv1.addPoint ({x:1, y:2});
-    cv1.addPoint ({x:0, y:4});
-    cv1.addPoint ({x:1, y:4});
-    for (let i = 0; i < cv1.length; i++) {
-        console.log (`x:${cv1.getPoint(i).x} y:${cv1.getPoint(i).y}`);
-    }
-    const seg1 = { start: {x:0,y:-3}, end:{x:2,y:-3} };
-    const seg2 = { start: {x:1,y:-4}, end:{x:1, y:-6} };
-    const i = intersect.cwIntersectionTestSegmentSegment (seg1, seg2);
-    console.log (i);
-}) ();

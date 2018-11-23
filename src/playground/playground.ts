@@ -289,24 +289,6 @@ export class cwPlayground extends lib.cwEventObserver {
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (lib.cwDragBeginEvent.type, (ev: lib.cwDragBeginEvent) => {
-            if (this._currentTool !== '') {
-                const tool = this._tools[this._currentTool];
-                tool.trigger (ev);
-            }
-        });
-        this.view.rootNode.on (lib.cwDragOverEvent.type, (ev: lib.cwDragOverEvent) => {
-            if (this._currentTool !== '') {
-                const tool = this._tools[this._currentTool];
-                tool.trigger (ev);
-            }
-        });
-        this.view.rootNode.on (lib.cwDragDropEvent.type, (ev: lib.cwDragDropEvent) => {
-            if (this._currentTool !== '') {
-                const tool = this._tools[this._currentTool];
-                tool.trigger (ev);
-            }
-        });
         this.view.on (lib.cwDrawEvent.type, (ev: lib.cwDrawEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];

@@ -30,7 +30,7 @@ export class cwPGLabel extends lib.cwSceneObject {
         this._measure = null;
         this._minwidth = 10;
         this._textcolor = opt.textcolor || '#000';
-        this.on(lib.cwGetBoundingboxEvent.type, (evt: lib.cwGetBoundingboxEvent) => {
+        this.on(lib.cwGetBoundingShapeEvent.type, (evt: lib.cwGetBoundingShapeEvent) => {
             let width = this._width;
             let height = this._height || this._fontSize;
             if (width == 0 && this._measure !== null) {
@@ -39,14 +39,12 @@ export class cwPGLabel extends lib.cwSceneObject {
                     width = this._minwidth;
                 }
             }
-            evt.rect = { x:-width * this.anchorPoint.x, y:-height * this.anchorPoint.y, w:width, h:height };
+            evt.shape = new lib.cwBoundingBox({ x:-width * this.anchorPoint.x, y:-height * this.anchorPoint.y, w:width, h:height });
         });
         this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
             if (this._font === '') {
                 this._font = `${this._fontStyle} ${this._fontVariant} ${this._fontWeight} ${this._fontSize}px ${this._fontFamily}`;
             }
-            evt.canvas.context.save();
-            evt.canvas.applyTransform(evt.transform);
             evt.canvas.context.textAlign = 'left';
             evt.canvas.context.textBaseline = 'hanging';
             evt.canvas.context.fillStyle = this._textcolor;
@@ -63,7 +61,6 @@ export class cwPGLabel extends lib.cwSceneObject {
                 }
             }
             evt.canvas.context.fillText(this._text, -width * this.anchorPoint.x, -height * this.anchorPoint.y, width);
-            evt.canvas.context.restore();
         });
         this.on(playground.cwPGGetObjectPropertyEvent.type, (ev: playground.cwPGGetObjectPropertyEvent) => {
             switch (ev.name) {
