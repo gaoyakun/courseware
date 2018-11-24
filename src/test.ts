@@ -11,12 +11,12 @@ const hullB = new lib.cwBoundingHull ();
 });
 
 const segmentA = new lib.cwBoundingSegment ();
-segmentA.start = { x:-30, y:-10 };
-segmentA.end = { x:50, y: 60 };
+segmentA.start = { x:-30, y:0 };
+segmentA.end = { x:0, y: 0 };
 
 const segmentB = new lib.cwBoundingSegment ();
-segmentB.start = { x: 5, y: -20 };
-segmentB.end = { x: 24, y: 17 };
+segmentB.start = { x: 0, y: 0 };
+segmentB.end = { x: 0, y: 17 };
 
 const nodes: lib.cwSceneObject[] = [];
 let view = lib.cwScene.addCanvas (document.querySelector('#test-canvas'), true);
@@ -25,7 +25,6 @@ function collideTest () {
     const shapes = nodes.map (node => node.boundingShape.getTransformedShape(node.worldTransform));
     const flags = nodes.map (node => 0);
     for (let i = 0; i < shapes.length; i++) {
-        let collide = false;
         for (let j = i+1; j < nodes.length; j++) {
             if (lib.cwIntersectionTestShapeShape (shapes[i], shapes[j])) {
                 flags[i]++;
@@ -41,6 +40,7 @@ function collideTest () {
 function createSegmentNode (segment: lib.cwBoundingSegment, x:number, y:number): lib.cwSceneObject {
     const testNode = new lib.cwSceneObject(view.rootNode);
     testNode.translation = { x:x, y:y };
+    testNode.rotation = Math.random () * Math.PI * 2;
     testNode.anchorPoint = { x:0.5, y:0.5 };
     testNode.addComponent (new lib.cwcDraggable());
     testNode.on(lib.cwGetBoundingShapeEvent.type, (ev: lib.cwGetBoundingShapeEvent) => {
@@ -53,6 +53,8 @@ function createSegmentNode (segment: lib.cwBoundingSegment, x:number, y:number):
         ev.canvas.context.moveTo (segment.start.x, segment.start.y);
         ev.canvas.context.lineTo (segment.end.x, segment.end.y);
         ev.canvas.context.stroke ();
+        //const bbox = segment.getBoundingbox();
+        //ev.canvas.context.strokeRect (bbox.x, bbox.y, bbox.w, bbox.h);
     });
     testNode.on (lib.cwDragBeginEvent.type, (ev: lib.cwDragBeginEvent) => {
         testNode.dragBeginX = ev.x;
@@ -64,7 +66,6 @@ function createSegmentNode (segment: lib.cwBoundingSegment, x:number, y:number):
         testNode.collapseTransform ();
         testNode.dragBeginX = ev.x;
         testNode.dragBeginY = ev.y;
-        collideTest ();
     });
     return testNode;
 }
@@ -72,6 +73,7 @@ function createSegmentNode (segment: lib.cwBoundingSegment, x:number, y:number):
 function createHullNode (hull: lib.cwBoundingHull, x:number, y:number): lib.cwSceneObject {
     const testNode = new lib.cwSceneObject(view.rootNode);
     testNode.translation = { x:x, y:y};
+    testNode.rotation = Math.random () * Math.PI * 2;
     testNode.anchorPoint = { x:0, y:0 };
     testNode.addComponent (new lib.cwcDraggable ());
     testNode.on(lib.cwGetBoundingShapeEvent.type, (ev: lib.cwGetBoundingShapeEvent) => {
@@ -110,7 +112,6 @@ function createHullNode (hull: lib.cwBoundingHull, x:number, y:number): lib.cwSc
         testNode.collapseTransform ();
         testNode.dragBeginX = ev.x;
         testNode.dragBeginY = ev.y;
-        collideTest ();
     });
     testNode.on (lib.cwDragEndEvent.type, (ev: lib.cwDragDropEvent) => {
         console.log ('drag end');
@@ -122,9 +123,15 @@ function createHullNode (hull: lib.cwBoundingHull, x:number, y:number): lib.cwSc
 
 nodes.push (createHullNode (hullA, 200, 200));
 nodes.push (createHullNode (hullB, 300, 300));
-nodes.push (createSegmentNode (segmentA, 400, 200));
-nodes.push (createSegmentNode (segmentB, 300, 100));
+nodes.push (createSegmentNode (segmentA, 400, 1));
+nodes.push (createSegmentNode (segmentB, 400, 200));
 
+view.on (lib.cwMouseMoveEvent.type, (ev: lib.cwMouseMoveEvent) => {
+    console.log (`${ev.x}, ${ev.y}`);
+});
+view.on (lib.cwFrameEvent.type, (ev: lib.cwFrameEvent) => {
+    collideTest ();
+});
 lib.cwScene.init ();
 lib.cwApp.run ();
 

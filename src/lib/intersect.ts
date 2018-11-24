@@ -3,7 +3,6 @@ import * as shape from './boundingshape';
 import * as boundinghull from './boundinghull';
 import * as boundingbox from './boundingbox';
 import * as boundingsegment from './boundingsegment';
-import * as transform from './transform';
 
 export function cwIntersectionTestShapeSegment (a: shape.cwBoundingShape, b: point.ISegment2d): point.IPoint2d[] {
     const box = a.getBoundingbox ();
@@ -181,11 +180,14 @@ export function cwIntersectionTestHullPoint (a: point.IPoint2d[], b: point.IPoin
 }
 
 export function cwIntersectionTestHullSegment (a: point.IPoint2d[], b: point.ISegment2d): point.IPoint2d[] {
+    if (cwIntersectionTestHullPoint(a, b.start) || cwIntersectionTestHullPoint(a, b.end)) {
+        return [b.start, b.end];
+    }
     const result = [];
-    for (let i = 1; i < a.length; i++) {
+    for (let i = 0; i < a.length; i++) {
         const edge = {
-            start: a[i-1],
-            end: a[i]
+            start: a[i],
+            end: a[(i+1)%a.length]
         }
         const intersectedPoint = cwIntersectionTestSegmentSegment (edge, b);
         if (intersectedPoint) {

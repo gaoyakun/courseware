@@ -78,8 +78,8 @@ export class cwTransform2d {
     };
     transformPoint(point: { x: number, y: number }) {
         return {
-            x: this.a * point.x + this.c * point.y + this.e,
-            y: this.b * point.x + this.d * point.y + this.f
+            x: Math.round(this.a * point.x + this.c * point.y + this.e),
+            y: Math.round(this.b * point.x + this.d * point.y + this.f)
         };
     };
     translate(x: number, y: number) {

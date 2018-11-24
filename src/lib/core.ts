@@ -1112,7 +1112,7 @@ export class cwSceneView extends cwObject {
                     for (let j = 0; j < group.length; j++) {
                         ev.canvas.context.save();
                         ev.canvas.applyTransform(group[j].transform);
-                        ev.canvas.context.translate (0.5, 0.5);
+                        ev.canvas.context.translate (-0.5, -0.5);
                         group[j].object.triggerEx(new cwDrawEvent(ev.canvas, group[j].z, group[j].transform));
                         ev.canvas.context.restore();
                     }
