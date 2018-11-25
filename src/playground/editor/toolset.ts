@@ -29,6 +29,24 @@ export const cwPGDefaultToolSet = {
             args: {
                 name: 'Swap'
             }
+        },
+        Write: {
+            iconClass: 'fas fa-pen fa-fw',
+            command: function(editor: editor.cwPGEditor) {
+                const cmd: commands.IPGCommand = { command: 'UseTool', name: 'HandWriting' };
+                editor.playground.executeCommand (cmd);
+                const cmdDraw: commands.IPGCommand = { command: 'HandWritingMode', mode: 'draw' };
+                editor.playground.executeCommand (cmdDraw);
+            }
+        },
+        Erase: {
+            iconClass: 'fas fa-eraser fa-fw',
+            command: function(editor: editor.cwPGEditor) {
+                const cmd: commands.IPGCommand = { command: 'UseTool', name: 'HandWriting' };
+                editor.playground.executeCommand (cmd);
+                const cmdDraw: commands.IPGCommand = { command: 'HandWritingMode', mode: 'erase' };
+                editor.playground.executeCommand (cmdDraw);
+            }
         }
     },
     operations: {
