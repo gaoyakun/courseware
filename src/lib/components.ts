@@ -254,7 +254,7 @@ export class cwcImage extends cwComponent {
         });
         this.on(cwDrawEvent.type, (evt: cwDrawEvent) => {
             if (this._loaded) {
-                evt.canvas.context.drawImage(this._image, -this._width * this.object.anchorPoint.x, -this._height * this.object.anchorPoint.y, this._width, this._height);
+                evt.canvas.context.drawImage(this._image, -Math.round(this._width * this.object.anchorPoint.x)-0.5, -Math.round(this._height * this.object.anchorPoint.y)-0.5, this._width, this._height);
             }
         });
         this.on(cwGetPropEvent.type, (ev: cwGetPropEvent) => {
