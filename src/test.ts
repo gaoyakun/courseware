@@ -40,7 +40,7 @@ function collideTest () {
 function createSegmentNode (segment: lib.cwBoundingSegment, x:number, y:number): lib.cwSceneObject {
     const testNode = new lib.cwSceneObject(view.rootNode);
     testNode.translation = { x:x, y:y };
-    testNode.rotation = Math.random () * Math.PI * 2;
+    //testNode.rotation = Math.random () * Math.PI * 2;
     testNode.anchorPoint = { x:0.5, y:0.5 };
     testNode.addComponent (new lib.cwcDraggable());
     testNode.on(lib.cwGetBoundingShapeEvent.type, (ev: lib.cwGetBoundingShapeEvent) => {
@@ -123,8 +123,8 @@ function createHullNode (hull: lib.cwBoundingHull, x:number, y:number): lib.cwSc
 
 nodes.push (createHullNode (hullA, 200, 200));
 nodes.push (createHullNode (hullB, 300, 300));
-nodes.push (createSegmentNode (segmentA, 400, 1));
-nodes.push (createSegmentNode (segmentB, 400, 200));
+nodes.push (createSegmentNode (segmentA, 400, 0));
+nodes.push (createSegmentNode (segmentB, 0, 200));
 
 view.on (lib.cwMouseMoveEvent.type, (ev: lib.cwMouseMoveEvent) => {
     console.log (`${ev.x}, ${ev.y}`);

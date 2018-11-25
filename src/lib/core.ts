@@ -80,19 +80,15 @@ export class cwCullEvent extends cwEvent {
     readonly canvasWidth: number;
     readonly canvasHeight: number;
     readonly result: cwCullResult;
-    force_z: number | null;
-    force_transform: cwTransform2d | null;
     constructor(w: number, h: number) {
         super(cwCullEvent.type);
         this.canvasWidth = w;
         this.canvasHeight = h;
         this.result = {};
-        this.force_z = null;
-        this.force_transform = null;
     }
     addObject(object: cwEventObserver, z: number, transform: cwTransform2d): void {
         let objectList = this.result[z] || [];
-        objectList.push({ object: object, z: this.force_z === null ? z : this.force_z, transform: this.force_transform === null ? transform : this.force_transform });
+        objectList.push({ object: object, z: z, transform: transform });
         this.result[z] = objectList;
     }
 }
@@ -869,10 +865,6 @@ export class cwSceneObject extends cwObject {
             this._parent.removeChild(this);
         }
     }
-    applyTransform(ctx: CanvasRenderingContext2D): void {
-        let matrix = this.worldTransform;
-        ctx.setTransform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
-    };
     triggerRecursive(evt: cwEvent): void {
         super.trigger(evt);
         this.forEachChild((child: cwSceneObject, index: number) => {
@@ -988,18 +980,18 @@ export class cwScene extends cwObject {
     }
     private static initEventListeners(): void {
         window.addEventListener('resize', cwScene.resizeHandler);
-        window.addEventListener('mousedown', cwScene.mouseDownHandler);
-        window.addEventListener('mouseup', cwScene.mouseUpHandler);
-        window.addEventListener('mousemove', cwScene.mouseMoveHandler);
+        window.addEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', cwScene.mouseDownHandler);
+        window.addEventListener(window.onpointerup ? 'pointerup' : 'mouseup', cwScene.mouseUpHandler);
+        window.addEventListener(window.onpointermove ? 'pointermove' : 'mousemove', cwScene.mouseMoveHandler);
         window.addEventListener('keydown', cwScene.keyDownHandler);
         window.addEventListener('keyup', cwScene.keyUpHandler);
         window.addEventListener('keypress', cwScene.keyPressHandler);
     }
     private static doneEventListeners(): void {
         window.removeEventListener('resize', cwScene.resizeHandler);
-        window.removeEventListener('mousedown', cwScene.mouseDownHandler);
-        window.removeEventListener('mouseup', cwScene.mouseUpHandler);
-        window.removeEventListener('mousemove', cwScene.mouseMoveHandler);
+        window.removeEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', cwScene.mouseDownHandler);
+        window.removeEventListener(window.onpointerup ? 'pointerup' : 'mouseup', cwScene.mouseUpHandler);
+        window.removeEventListener(window.onpointermove ? 'pointermove' : 'mousemove', cwScene.mouseMoveHandler);
         window.removeEventListener('keydown', cwScene.keyDownHandler);
         window.removeEventListener('keyup', cwScene.keyUpHandler);
         window.removeEventListener('keypress', cwScene.keyPressHandler);
@@ -1112,7 +1104,7 @@ export class cwSceneView extends cwObject {
                     for (let j = 0; j < group.length; j++) {
                         ev.canvas.context.save();
                         ev.canvas.applyTransform(group[j].transform);
-                        ev.canvas.context.translate (-0.5, -0.5);
+                        ev.canvas.context.translate (0.5, 0.5);
                         group[j].object.triggerEx(new cwDrawEvent(ev.canvas, group[j].z, group[j].transform));
                         ev.canvas.context.restore();
                     }
@@ -1412,7 +1404,7 @@ export class cwCanvas extends cwObject {
         }
     }
     applyTransform(transform: cwTransform2d): void {
-        this.context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f);
+        this.context.setTransform(transform.a, transform.b, transform.c, transform.d, Math.round(transform.e), Math.round(transform.f));
     };
     flip(): void {
         if (this._doubleBuffer) {
