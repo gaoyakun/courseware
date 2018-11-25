@@ -14,7 +14,7 @@ export class cwPGEditorToolbox {
     private static uniqueId: number = 1;
     private _container: HTMLDivElement;
     private _pg: playground.cwPlayground;
-    private _tools: Array<IToolDef>;
+    private _tools: IToolDef[];
     private _curTool: IToolDef;
     private _direction: string;
     private _strokeColor: string;
@@ -38,7 +38,7 @@ export class cwPGEditorToolbox {
         container.style.alignItems = 'flex-start';
         container.style.alignContent = 'flex-start';
     }
-    loadTools (tools: Array<IToolDef>) {
+    loadTools (tools: IToolDef[]) {
         tools.forEach ((tool: IToolDef) => {
             this._tools.push (tool);
             const buttonSize = parseInt(tool.fontSize || '60') + 10; 

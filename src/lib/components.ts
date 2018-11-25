@@ -1,6 +1,7 @@
 import { cwComponent, cwSceneObject, cwApp, cwCullEvent, cwDraggingEvent, cwDragEndEvent, cwDrawEvent, cwUpdateEvent, cwGetPropEvent, cwSetPropEvent, cwMouseMoveEvent, cwMouseDownEvent, cwMouseUpEvent, cwDragBeginEvent, cwDragDropEvent, cwDragOverEvent, cwComponentBeforeAttachEvent, cwGetBoundingShapeEvent } from './core';
 import { cwSpline, cwSplineType } from './curve';
 import { cwBoundingBox } from './boundingbox';
+import { IPoint2d } from './point';
 
 export class cwcKeyframeAnimation extends cwComponent {
     static readonly type = 'KeyframeAnimation';
@@ -19,7 +20,7 @@ export class cwcKeyframeAnimation extends cwComponent {
         autoRemove?: boolean;
         tracks?: {
             [name: string]: {
-                cp: Array<{ x: number, y: number }> | Array<{ x: number, y: Array<number> }>;
+                cp: IPoint2d[] | {x: number, y: number[]}[];
                 type?: cwSplineType;
                 clamp?: boolean;
             }
@@ -100,7 +101,7 @@ export class cwcKeyframeAnimation extends cwComponent {
     set delay(delay: number) {
         this._delay = delay;
     }
-    setTrack(name: string, type: cwSplineType, clamp: boolean, keyFrames: Array<{ x: number, y: number }> | Array<{ x: number, y: Array<number> }>) {
+    setTrack(name: string, type: cwSplineType, clamp: boolean, keyFrames: IPoint2d[] | { x: number, y: number[] }[]) {
         if (keyFrames.length > 0) {
             if (keyFrames[keyFrames.length - 1].x > this._duration) {
                 this._duration = keyFrames[keyFrames.length - 1].x;

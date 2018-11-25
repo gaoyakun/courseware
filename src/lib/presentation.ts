@@ -16,7 +16,7 @@ export class CousewareFramework {
 	endNextPage: boolean;
 	outClass: string;
 	inClass: string;
-	navHistory: Array<any>;
+	navHistory: any[];
 
 	constructor() {
 		this.pageList = null;

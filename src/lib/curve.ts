@@ -1,3 +1,5 @@
+import { IPoint2d } from './point';
+
 export enum cwSplineType {
     STEP = 1,
     LINEAR = 2,
@@ -5,9 +7,9 @@ export enum cwSplineType {
 }
 
 export class cwCurveEvaluter {
-    cp: Array<{ x: number, y: number }>;
+    cp: IPoint2d[];
     clamp: boolean;
-    constructor(cp: Array<{ x: number, y: number }>, clamp: boolean = false) {
+    constructor(cp: IPoint2d[], clamp: boolean = false) {
         this.cp = cp;
         this.clamp = clamp;
     }
@@ -23,8 +25,8 @@ export class cwCurveEvaluter {
 }
 
 export class cwStepEvaluter extends cwCurveEvaluter {
-    h: Array<number>;
-    constructor(cp: Array<{ x: number, y: number }>, clamp: boolean = false) {
+    h: number[];
+    constructor(cp: IPoint2d[], clamp: boolean = false) {
         super(cp, clamp);
         this.h = new Array(cp.length - 1);
         this.compute();
@@ -58,8 +60,8 @@ export class cwStepEvaluter extends cwCurveEvaluter {
 }
 
 export class cwLinearEvaluter extends cwCurveEvaluter {
-    h: Array<number>;
-    constructor(cp: Array<{ x: number, y: number }>, clamp: boolean = false) {
+    h: number[];
+    constructor(cp: IPoint2d[], clamp: boolean = false) {
         super(cp, clamp);
         this.h = new Array(cp.length - 1);
         this.cp = cp;
@@ -98,16 +100,16 @@ export class cwLinearEvaluter extends cwCurveEvaluter {
 }
 
 export class cwPolynomialsEvaluter extends cwCurveEvaluter {
-    a: Array<number>;
-    h: Array<number>;
-    constructor(cp: Array<{ x: number, y: number }>, clamp: boolean = false) {
+    a: number[];
+    h: number[];
+    constructor(cp: IPoint2d[], clamp: boolean = false) {
         super(cp, clamp);
         this.a = new Array(cp.length);
         this.h = new Array(cp.length);
         this.cp = cp;
         this.compute();
     }
-    solveTridiag(sub: Array<number>, diag: Array<number>, sup: Array<number>) {
+    solveTridiag(sub: number[], diag: number[], sup: number[]) {
         let n = this.cp.length - 2;
         for (let i = 2; i <= n; i++) {
             sub[i] /= diag[i - 1];
@@ -166,9 +168,9 @@ export class cwPolynomialsEvaluter extends cwCurveEvaluter {
 }
 
 export class cwSpline {
-    private _evalutors: Array<cwCurveEvaluter>;
+    private _evalutors: cwCurveEvaluter[];
     private _array: boolean;
-    private initArray(type: cwSplineType, cp: Array<{ x: number, y: Array<number> }>, clamp: boolean) {
+    private initArray(type: cwSplineType, cp: { x: number, y: number[] }[], clamp: boolean) {
         const numElements = cp[0].y.length;
         if (numElements > 0) {
             for (let i = 0; i < numElements; i++) {
@@ -193,7 +195,7 @@ export class cwSpline {
             this._array = true;
         }
     }
-    private initNonArray(type: cwSplineType, cp: Array<{ x: number, y: number }>, clamp: boolean) {
+    private initNonArray(type: cwSplineType, cp: IPoint2d[], clamp: boolean) {
         switch (type) {
             case cwSplineType.STEP:
                 this._evalutors.push(new cwStepEvaluter(cp, clamp));
@@ -208,21 +210,21 @@ export class cwSpline {
         }
         this._array = false;
     }
-    constructor(type: cwSplineType, cp: Array<{ x: number, y: number }> | Array<{ x: number, y: Array<number> }>, clamp: boolean = false) {
+    constructor(type: cwSplineType, cp: IPoint2d[] | { x: number, y: number[] }[], clamp: boolean = false) {
         this._evalutors = [];
         this._array = false;
         if (cp.length > 0) {
             if (typeof cp[0].y === 'number') {
-                this.initNonArray(type, cp as Array<{ x: number, y: number }>, clamp);
+                this.initNonArray(type, cp as IPoint2d[], clamp);
             } else {
-                this.initArray(type, cp as Array<{ x: number, y: Array<number> }>, clamp);
+                this.initArray(type, cp as { x: number, y: number[] }[], clamp);
             }
         }
     }
-    eval(x: number): number | Array<number> {
+    eval(x: number): number | number[] {
         if (this._evalutors.length > 0) {
             if (this._array) {
-                let result: Array<number> = [];
+                let result: number[] = [];
                 this._evalutors.forEach((evalutor: cwCurveEvaluter) => {
                     result.push(evalutor.eval(x));
                 });
@@ -234,10 +236,10 @@ export class cwSpline {
             return 0;
         }
     }
-    evalFirst(): number | Array<number> {
+    evalFirst(): number | number[] {
         if (this._evalutors.length > 0) {
             if (this._array) {
-                let result: Array<number> = [];
+                let result: number[] = [];
                 this._evalutors.forEach((evalutor: cwCurveEvaluter) => {
                     result.push(evalutor.evalFirst());
                 });
@@ -249,10 +251,10 @@ export class cwSpline {
             return 0;
         }
     }
-    evalLast(): number | Array<number> {
+    evalLast(): number | number[] {
         if (this._evalutors.length > 0) {
             if (this._array) {
-                let result: Array<number> = [];
+                let result: number[] = [];
                 this._evalutors.forEach((evalutor: cwCurveEvaluter) => {
                     result.push(evalutor.evalLast());
                 });

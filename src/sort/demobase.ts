@@ -115,7 +115,7 @@ export class DemoBase {
         }
         return slot;
     }
-    playDemo (sequence:Array<{type:string,from:number,to:number}>, duration:number) {
+    playDemo (sequence:{type:string,from:number,to:number}[], duration:number) {
         let delay = 0;
         sequence.forEach (element => {
             setTimeout (()=>{
@@ -130,7 +130,7 @@ export class DemoBase {
         });
     }
     playShuffleDemo () {
-        let sequence:Array<{type:string,from:number,to:number}> = [];
+        let sequence:{type:string,from:number,to:number}[] = [];
         for (let i = 0; i < 20; i++) {
             const a = Math.floor(Math.random() * this.rects.length);
             const b = Math.floor(Math.random() * this.rects.length);
@@ -141,8 +141,8 @@ export class DemoBase {
         this.playDemo (sequence, 200);
     }
     playBubbleSortDemo (): boolean {
-        let sequence:Array<{type:string,from:number,to:number}> = [];
-        let numbers:Array<number> = [];
+        let sequence:{type:string,from:number,to:number}[] = [];
+        let numbers:number[] = [];
         this.rects.forEach (rc=>{
             if (!rc.node) {
                 return false;

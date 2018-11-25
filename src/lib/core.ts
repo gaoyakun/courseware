@@ -2,7 +2,7 @@ import { cwTransform2d } from './transform';
 import { cwBoundingShape} from './boundingshape';
 import { cwIntersectionTestShapePoint } from './intersect';
 
-export type cwCullResult = { [z: number]: Array<{ object: cwEventObserver, z: number, transform: cwTransform2d }> };
+export type cwCullResult = { [z: number]: { object: cwEventObserver, z: number, transform: cwTransform2d }[] };
 export type cwEventHandler<T extends cwEvent> = (evt: T) => void;
 export interface IRect {
     x: number;
@@ -381,13 +381,13 @@ export class cwEventObserver {
     }
 }
 
-type cwHitTestResult = Array<cwSceneObject>;
+type cwHitTestResult = cwSceneObject[];
 type cwEventHandlerList = { handler: cwEventHandler<any>, next: cwEventHandlerList };
 type cwEventHandlerEntry = { handlers: cwEventHandlerList, bindObject: any };
 
 export class cwApp {
-    private static eventQueue: Array<{ evt: cwEvent, target: any }> = [];
-    private static eventListeners: { [eventType: string]: Array<cwEventHandlerEntry> } = {};
+    private static eventQueue: { evt: cwEvent, target: any }[] = [];
+    private static eventListeners: { [eventType: string]: cwEventHandlerEntry[] } = {};
     private static running = false;
     private static lastFrameTime = 0;
     private static firstFrameTime = 0;
@@ -531,7 +531,7 @@ export class cwComponent extends cwEventObserver {
 }
 
 export class cwObject extends cwEventObserver {
-    private components: { [type: string]: Array<cwComponent> };
+    private components: { [type: string]: cwComponent[] };
     [name: string]: any;
     constructor() {
         super();
@@ -598,7 +598,7 @@ export class cwObject extends cwEventObserver {
         }
         return componentArray[index];
     }
-    getComponents(type: string): Array<cwComponent> {
+    getComponents(type: string): cwComponent[] {
         return this.components[type];
     }
     triggerEx(evt: cwEvent): void {
@@ -621,7 +621,7 @@ export class cwSceneObject extends cwObject {
     private _parent: cwSceneObject | null;
     private _z: number;
     private _visible: boolean;
-    private _children: Array<cwSceneObject>;
+    private _children: cwSceneObject[];
     private _localTransform: cwTransform2d;
     private _worldTranslation: { x: number, y: number } | null;
     private _worldRotation: number | null;
@@ -894,7 +894,7 @@ export class cwScene extends cwObject {
     private static capturedView: cwSceneView = null;
     private static hoverView: cwSceneView = null;
     private static focusView: cwSceneView = null;
-    private static views: Array<cwSceneView> = [];
+    private static views: cwSceneView[] = [];
     private static clickTick: number = 0;
     private static dblClickTick: number = 0;
     private static clickTime: number = 400;
@@ -1056,7 +1056,7 @@ export class cwSceneView extends cwObject {
     private _canvas: cwCanvas;
     private _rootNode: cwSceneObject;
     private _captureObject: cwSceneObject;
-    private _hitObjects: Array<cwSceneObject>;
+    private _hitObjects: cwSceneObject[];
     public updateHitObjects(x: number, y: number) {
         const hitTestResult = this.hitTest(x, y);
         for (let i = 0; i < this._hitObjects.length;) {
@@ -1120,7 +1120,7 @@ export class cwSceneView extends cwObject {
     get captureObject(): cwSceneObject {
         return this._captureObject;
     }
-    get hitObjects(): Array<cwSceneObject> {
+    get hitObjects(): cwSceneObject[] {
         return this._hitObjects;
     }
     empty(): void {
