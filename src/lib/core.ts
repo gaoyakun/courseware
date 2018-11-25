@@ -700,11 +700,11 @@ export class cwSceneObject extends cwObject {
                     ev.eat();
                     break;
                 case 'translation':
-                    let t = ev.propValue as Array<number>;
-                    this.translation = { x: t[0], y: t[1] };
+                    let t = ev.propValue as number[];
+                    this.translation = { x: Math.round(t[0]), y: Math.round(t[1]) };
                     break;
                 case 'scale':
-                    let s = ev.propValue as Array<number>;
+                    let s = ev.propValue as number[];
                     this.scale = { x: s[0], y: s[1] };
                     break;
                 case 'rotation':
@@ -785,7 +785,7 @@ export class cwSceneObject extends cwObject {
         return this._worldTranslation;
     }
     set worldTranslation(value: { x: number, y: number } | null) {
-        this._worldTranslation = value;
+        this._worldTranslation = value === null ? null : { x: Math.round(value.x), y: Math.round(value.y) };
     }
     get worldRotation(): number | null {
         return this._worldRotation;
@@ -818,6 +818,8 @@ export class cwSceneObject extends cwObject {
         } else {
             this.localTransform = wt;
         }
+        this.localTransform.e = Math.round(this.localTransform.e);
+        this.localTransform.f = Math.round(this.localTransform.f);
     }
     getLocalPoint(x: number, y: number): { x: number, y: number } {
         return cwTransform2d.invert(this.worldTransform).transformPoint({ x: x, y: y });
