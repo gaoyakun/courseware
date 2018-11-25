@@ -6,24 +6,21 @@ import * as boundingsegment from './boundingsegment';
 
 export function cwIntersectionTestShapeSegment (a: shape.cwBoundingShape, b: point.ISegment2d): point.IPoint2d[] {
     const box = a.getBoundingbox ();
-    if (!box) {
-        return [];
-    }
-    switch (a.type) {
-        case boundingbox.cwBoundingBox.type: {
-            return cwIntersectionTestBoxSegment ((a as boundingbox.cwBoundingBox).rect, b);
-        }
-        case boundinghull.cwBoundingHull.type: {
-            return cwIntersectionTestHullSegment ((a as boundinghull.cwBoundingHull).points, b);
-        }
-        case boundingsegment.cwBoundingSegment.type: {
-            const pt = cwIntersectionTestSegmentSegment ((a as boundingsegment.cwBoundingSegment).segment, b);
-            return pt ? [pt] : [];
-        }
-        default: {
-            return [];
+    if (box) {
+        switch (a.type) {
+            case boundingbox.cwBoundingBox.type: {
+                return cwIntersectionTestBoxSegment ((a as boundingbox.cwBoundingBox).rect, b);
+            }
+            case boundinghull.cwBoundingHull.type: {
+                return cwIntersectionTestHullSegment ((a as boundinghull.cwBoundingHull).points, b);
+            }
+            case boundingsegment.cwBoundingSegment.type: {
+                const pt = cwIntersectionTestSegmentSegment ((a as boundingsegment.cwBoundingSegment).segment, b);
+                return pt ? [pt] : [];
+            }
         }
     }
+    return null;
 }
 
 export function cwIntersectionTestShapeBox (a: shape.cwBoundingShape, b: point.IRect2d): boolean {
@@ -105,8 +102,7 @@ export function cwIntersectionTestShapeShape (a: shape.cwBoundingShape, b: shape
                     return cwIntersectionTestBoxHull ((a as boundingbox.cwBoundingBox).rect, (b as boundinghull.cwBoundingHull).points);
                 }
                 case boundingsegment.cwBoundingSegment.type: {
-                    const pt = cwIntersectionTestBoxSegment ((a as boundingbox.cwBoundingBox).rect, (b as boundingsegment.cwBoundingSegment).segment);
-                    return pt && pt.length > 0;
+                    return cwIntersectionTestBoxSegment ((a as boundingbox.cwBoundingBox).rect, (b as boundingsegment.cwBoundingSegment).segment) != null;
                 }
                 default: {
                     return false;
@@ -122,8 +118,7 @@ export function cwIntersectionTestShapeShape (a: shape.cwBoundingShape, b: shape
                     return cwIntersectionTestHullHull ((a as boundinghull.cwBoundingHull).points, (b as boundinghull.cwBoundingHull).points);
                 }
                 case boundingsegment.cwBoundingSegment.type: {
-                    const pt = cwIntersectionTestHullSegment ((a as boundinghull.cwBoundingHull).points, (b as boundingsegment.cwBoundingSegment).segment);
-                    return pt && pt.length > 0;
+                    return cwIntersectionTestHullSegment ((a as boundinghull.cwBoundingHull).points, (b as boundingsegment.cwBoundingSegment).segment) != null;
                 }
                 default: {
                     return false;
@@ -133,16 +128,13 @@ export function cwIntersectionTestShapeShape (a: shape.cwBoundingShape, b: shape
         case boundingsegment.cwBoundingSegment.type: {
             switch (b.type) {
                 case boundingbox.cwBoundingBox.type: {
-                    const pt = cwIntersectionTestBoxSegment ((b as boundingbox.cwBoundingBox).rect, (a as boundingsegment.cwBoundingSegment).segment);
-                    return pt && pt.length > 0;
+                    return cwIntersectionTestBoxSegment ((b as boundingbox.cwBoundingBox).rect, (a as boundingsegment.cwBoundingSegment).segment) != null;
                 }
                 case boundinghull.cwBoundingHull.type: {
-                    const pt = cwIntersectionTestHullSegment ((b as boundinghull.cwBoundingHull).points, (a as boundingsegment.cwBoundingSegment).segment);
-                    return pt && pt.length > 0;
+                    return cwIntersectionTestHullSegment ((b as boundinghull.cwBoundingHull).points, (a as boundingsegment.cwBoundingSegment).segment) != null;
                 }
                 case boundingsegment.cwBoundingSegment.type: {
-                    const pt = cwIntersectionTestSegmentSegment ((b as boundingsegment.cwBoundingSegment).segment, (a as boundingsegment.cwBoundingSegment).segment);
-                    return pt != null;
+                    return cwIntersectionTestSegmentSegment ((b as boundingsegment.cwBoundingSegment).segment, (a as boundingsegment.cwBoundingSegment).segment) != null;
                 }
                 default: {
                     return false;
@@ -180,8 +172,8 @@ export function cwIntersectionTestHullPoint (a: point.IPoint2d[], b: point.IPoin
 }
 
 export function cwIntersectionTestHullSegment (a: point.IPoint2d[], b: point.ISegment2d): point.IPoint2d[] {
-    if (cwIntersectionTestHullPoint(a, b.start) || cwIntersectionTestHullPoint(a, b.end)) {
-        return [b.start, b.end];
+    if (cwIntersectionTestHullPoint(a, b.start) && cwIntersectionTestHullPoint(a, b.end)) {
+        return [];
     }
     const result = [];
     for (let i = 0; i < a.length; i++) {
@@ -199,7 +191,7 @@ export function cwIntersectionTestHullSegment (a: point.IPoint2d[], b: point.ISe
             return point.cwDistanceSq (p, b.start) - point.cwDistanceSq (q, b.start);
         });
     }
-    return result;
+    return result.length > 0 ? result : null;
 }
 
 export function cwIntersectionTestHullHull (a: point.IPoint2d[], b: point.IPoint2d[]): boolean {
