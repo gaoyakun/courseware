@@ -224,14 +224,6 @@ export class cwPGTool extends lib.cwEventObserver {
         });
         this.on(cwPGGetPropertyListEvent.type, (ev: cwPGGetPropertyListEvent) => {
             ev.properties = ev.properties || {};
-            ev.properties.general = ev.properties.general || { desc: '通用', properties: [] };
-            ev.properties.general.properties.push ({
-                name: 'desc',
-                desc: '工具描述',
-                readonly: true,
-                type: 'string',
-                value: this.desc
-            });
         });
     }
     public activate(options: object) {
