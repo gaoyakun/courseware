@@ -13,7 +13,7 @@ export class cwPGCreateTool extends playground.cwPGTool {
         this._factoryProperties = null;
         this._creationParams = {};
     }
-    public activate(options: { [name: string]: any }) {
+    public activate(options: any) {
         this.options = options;
         this._factoryProperties = this._pg.getFactory (options.createType).getCreationProperties();
         this._creationParams = {};

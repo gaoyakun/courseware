@@ -94,7 +94,7 @@ export class cwPGSelectTool extends playground.cwPGTool {
     get selectedObjects () {
         return this._selectedObjects;
     }
-    public activate(options: object) {
+    public activate(options: any) {
         super.activate (options);
         this._selectedObjects.length = 0;
         this.on (lib.cwKeyDownEvent.type, (ev: lib.cwKeyDownEvent) => {

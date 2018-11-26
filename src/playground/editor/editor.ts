@@ -239,13 +239,13 @@ export class cwPGPropertyGrid {
         const tr = this.createRow ();
         this.createPropCell (tr).innerText = name;
         const input: HTMLSelectElement = document.createElement ('select');
-        values.forEach (name => {
+        values.forEach (opt => {
             const option = document.createElement ('option');
-            option.value = String(name);
-            option.innerText = String(name);
+            option.value = String(opt.value);
+            option.innerText = String(opt.desc);
             input.add (option);
         });
-        input.value = value;
+        input.value = String(value);
         input.disabled = readonly;
         input.style.width = '100%';
         input.style.boxSizing = 'border-box';
@@ -483,8 +483,8 @@ export class cwPGEditor {
     private _objectPropGrid: cwPGPropertyGrid;
     private _toolPropGrid: cwPGPropertyGrid;
     constructor (pg: playground.cwPlayground, toolset: IToolSet, toolPaletteElement:HTMLElement, opPaletteElement:HTMLElement, objectPropGridElement:HTMLElement, toolPropGridElement:HTMLElement) {
-        this._strokeColor = '#000000';
-        this._fillColor = '#ffffff';
+        this._strokeColor = '#00000000';
+        this._fillColor = 'red';
         this._toolFontSize = 14;
         this._pg = pg;
         this._toolset = toolset;

@@ -226,7 +226,7 @@ export class cwPGTool extends lib.cwEventObserver {
             ev.properties = ev.properties || {};
         });
     }
-    public activate(options: object) {
+    public activate(options: any) {
         lib.cwApp.triggerEvent(null, new cwPGToolActivateEvent(this));
     }
     public deactivate() {
