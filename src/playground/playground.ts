@@ -1,6 +1,22 @@
 import * as lib from '../lib';
 import * as command from './commands';
 
+export interface IProperty {
+    name: string;
+    desc: string;
+    type: string;
+    value: any;
+    enum?: any[];
+    readonly: boolean;
+}
+
+export interface IPropertyList {
+    [group: string]: {  
+        desc: string;
+        properties: IProperty[] 
+    }
+}
+
 export class cwPGComponent extends lib.cwComponent {
     static readonly type = 'PGComponent';
     constructor() {
@@ -11,7 +27,7 @@ export class cwPGComponent extends lib.cwComponent {
         this.on(cwPGToolDeactivateEvent.type, (ev: cwPGToolDeactivateEvent) => {
             ev.tool.deactivateObject(this.object as lib.cwSceneObject);
         });
-        this.on(cwPGSetObjectPropertyEvent.type, (ev: cwPGSetObjectPropertyEvent) => {
+        this.on(cwPGSetPropertyEvent.type, (ev: cwPGSetPropertyEvent) => {
             const object = this.object as lib.cwSceneObject;
             switch (ev.name) {
                 case 'localx': {
@@ -44,7 +60,7 @@ export class cwPGComponent extends lib.cwComponent {
                 }
             }
         });
-        this.on(cwPGGetObjectPropertyEvent.type, (ev: cwPGGetObjectPropertyEvent) => {
+        this.on(cwPGGetPropertyEvent.type, (ev: cwPGGetPropertyEvent) => {
             const object = this.object as lib.cwSceneObject;
             switch (ev.name) {
                 case 'localx': {
@@ -73,7 +89,7 @@ export class cwPGComponent extends lib.cwComponent {
                 }
             }
         });
-        this.on(cwPGGetObjectPropertyListEvent.type, (ev: cwPGGetObjectPropertyListEvent) => {
+        this.on(cwPGGetPropertyListEvent.type, (ev: cwPGGetPropertyListEvent) => {
             ev.properties = ev.properties || {};
             ev.properties.general = ev.properties.general || { desc: '通用', properties: [] };
             ev.properties.general.properties.push ({
@@ -127,16 +143,17 @@ export abstract class cwPGFactory {
     constructor(name: string) {
         this.name = name;
     }
-    public createEntity(options?: any): lib.cwSceneObject {
+    public createEntity(x:number, y:number, options?: any): lib.cwSceneObject {
         const entity = this._createEntity (options);
         if (entity === null) {
             return null;
         }
         entity.addComponent(new cwPGComponent());
-        if (options && options.x !== undefined && options.y !== undefined) {
-            entity.translation = { x:options.x, y:options.y };
-        }
+        entity.translation = { x:x, y:y };
         return entity;
+    }
+    public getCreationProperties (): IProperty[] {
+        return [];
     }
     protected abstract _createEntity(options?:any): lib.cwSceneObject;
 }
@@ -159,58 +176,63 @@ export class cwPGToolDeactivateEvent extends lib.cwEvent {
     }
 }
 
-export interface IObjectProperty {
-    name: string;
-    desc: string;
-    type: string;
-    value: any;
-    enum?: any[];
-    readonly: boolean;
-}
-
-export interface IObjectPropertyList {
-    [group: string]: {  
-        desc: string;
-        properties: IObjectProperty[] 
-    }
-}
-
-export class cwPGGetObjectPropertyListEvent extends lib.cwEvent {
+export class cwPGGetPropertyListEvent extends lib.cwEvent {
     static readonly type: string = '@PGGetObjectPropertyList';
-    properties?: IObjectPropertyList;
+    properties?: IPropertyList;
     constructor () {
-        super (cwPGGetObjectPropertyListEvent.type);
+        super (cwPGGetPropertyListEvent.type);
     }
 }
 
-export class cwPGSetObjectPropertyEvent extends lib.cwEvent {
+export class cwPGSetPropertyEvent extends lib.cwEvent {
     static readonly type: string = '@PGSetObjectPropertyEvent';
     name: string;
     value: any;
     constructor (name: string, value: any) {
-        super (cwPGSetObjectPropertyEvent.type);
+        super (cwPGSetPropertyEvent.type);
         this.name = name;
         this.value = value;
     }
 }
 
-export class cwPGGetObjectPropertyEvent extends lib.cwEvent {
+export class cwPGGetPropertyEvent extends lib.cwEvent {
     static readonly type: string = '@PGGetObjectPropertyEvent';
     name: string;
     value?: any;
     constructor (name: string) {
-        super (cwPGGetObjectPropertyEvent.type);
+        super (cwPGGetPropertyEvent.type);
         this.name = name;
     }
 }
 
 export class cwPGTool extends lib.cwEventObserver {
     public readonly name: string;
+    public readonly desc: string;
     protected readonly _pg: cwPlayground;
-    constructor (name: string, pg: cwPlayground) {
+    constructor (name: string, pg: cwPlayground, desc?: string) {
         super ();
         this.name = name;
+        this.desc = desc || name;
         this._pg = pg;
+        this.on(cwPGGetPropertyEvent.type, (ev: cwPGGetPropertyEvent) => {
+            switch (ev.name) {
+                case 'desc': {
+                    ev.value = this.desc;
+                    break;
+                }
+            }
+        });
+        this.on(cwPGGetPropertyListEvent.type, (ev: cwPGGetPropertyListEvent) => {
+            ev.properties = ev.properties || {};
+            ev.properties.general = ev.properties.general || { desc: '通用', properties: [] };
+            ev.properties.general.properties.push ({
+                name: 'desc',
+                desc: '工具描述',
+                readonly: true,
+                type: 'string',
+                value: this.desc
+            });
+        });
     }
     public activate(options: object) {
         lib.cwApp.triggerEvent(null, new cwPGToolActivateEvent(this));
@@ -302,7 +324,10 @@ export class cwPlayground extends lib.cwEventObserver {
     public addFactory(factory: cwPGFactory): void {
         this._factories[factory.name] = factory;
     }
-    public createEntity(type: string, name: string|null, failOnExists: boolean, options: any): lib.cwSceneObject {
+    public getFactory(name: string): cwPGFactory {
+        return this._factories[name] || null;
+    }
+    public createEntity(type: string, name: string|null, failOnExists: boolean, x: number, y: number, options: any): lib.cwSceneObject {
         let entity = null;
         if (name === null) {
             let id = 1;
@@ -320,7 +345,7 @@ export class cwPlayground extends lib.cwEventObserver {
         }
         const factory = this._factories[type];
         if (factory) {
-            entity = factory.createEntity(options);
+            entity = factory.createEntity(x, y, options);
             entity.entityName = name;
             entity.entityType = factory.name;
             if (entity) {
@@ -378,7 +403,8 @@ export class cwPlayground extends lib.cwEventObserver {
             const type = cmd.type;
             const name = cmd.name||null;
             const failOnExists = !!cmd.failOnExists;
-            const obj = this.createEntity (type, name, failOnExists, cmd);
+            const params = cmd.params||{};
+            const obj = this.createEntity (type, name, failOnExists, cmd.x, cmd.y, params);
             cmd.objectCreated = obj;
         } else if (cmd.command == 'DeleteObject') {
             this.deleteEntity (cmd.name);
@@ -491,7 +517,7 @@ export class cwPlayground extends lib.cwEventObserver {
         } else if (cmd.command == 'SetObjectProperty') {
             const obj = this.findEntity (cmd.objectName);
             if (obj) {
-                const ev = new cwPGSetObjectPropertyEvent (cmd.propName, cmd.propValue);
+                const ev = new cwPGSetPropertyEvent (cmd.propName, cmd.propValue);
                 obj.triggerEx (ev);
                 if (obj.entityName != cmd.objectName) {
                     if (this.findEntity(obj.entityName)) {
@@ -505,7 +531,7 @@ export class cwPlayground extends lib.cwEventObserver {
         } else if (cmd.command == 'GetObjectProperty') {
             const obj = this.findEntity (cmd.objectName);
             if (obj) {
-                const ev = new cwPGGetObjectPropertyEvent (cmd.propName);
+                const ev = new cwPGGetPropertyEvent (cmd.propName);
                 obj.triggerEx (ev);
                 cmd.propValue = ev.value;
             }

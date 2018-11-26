@@ -128,7 +128,7 @@ export class cwPGToolPalette {
 export class cwPGPropertyGrid {
     private _container: HTMLElement;
     private _tableId: string;
-    private _object: lib.cwSceneObject;
+    private _object: lib.cwEventObserver;
     private _editor: cwPGEditor;
     constructor (editor: cwPGEditor, container: HTMLElement, id: string) {
         this._editor = editor;
@@ -197,7 +197,7 @@ export class cwPGPropertyGrid {
         input.readOnly = readonly;
         input.disabled = readonly;
         if (changeCallback) {
-            input.onchange = () => {
+            input.oninput = () => {
                 input.value = String(changeCallback (input.value));
             }
         }
@@ -229,7 +229,7 @@ export class cwPGPropertyGrid {
         input.style.width = '100%';
         input.style.boxSizing = 'border-box';
         if (changeCallback) {
-            input.onchange = () => {
+            input.oninput = () => {
                 input.value = String(changeCallback (Number(input.value)));
             }
         }
@@ -273,28 +273,91 @@ export class cwPGPropertyGrid {
         }
         this.createPropCell (tr).appendChild (input);
     }
+    getToolProperty (name: string): any {
+        if (this._object) {
+            const ev = new playground.cwPGGetPropertyEvent (name);
+            this._object.triggerEx (ev);
+            return ev.value;
+        }
+    }
+    setToolProperty (name: string, value: any): void {
+        if (this._object) {
+            const ev = new playground.cwPGSetPropertyEvent(name, value);
+            this._object.triggerEx (ev);
+        }
+    }
+    addToolProperty (prop: playground.IProperty) {
+        const propName = prop.name;
+        const propType = prop.type;
+        const propReadonly = prop.readonly;
+        if (prop.enum) {
+            this.addChoiceAttribute (prop.desc, prop.enum, this.getToolProperty(propName), propReadonly, (value:string) => {
+                switch (propType) {
+                case 'string': 
+                    this.setToolProperty (propName, value);
+                    return this.getToolProperty (propName);
+                case 'number':
+                    this.setToolProperty (propName, Number(value));
+                    return this.getToolProperty (propName);
+                case 'boolean':
+                    this.setToolProperty (propName, Boolean(value));
+                    return this.getObjectProperty (propName);
+                case 'color':
+                    this.setToolProperty (propName, value);
+                    return this.getToolProperty (propName);
+                }
+            });
+        } else {
+            switch (propType) {
+            case 'string':
+                this.addTextAttribute (prop.desc, this.getToolProperty(propName), propReadonly, (value:string) => {
+                    this.setToolProperty (propName, value);
+                    return this.getToolProperty (propName);
+                });
+                break;
+            case 'number':
+                this.addNumberAttribute (prop.desc, this.getToolProperty(propName), propReadonly, (value:number) => {
+                    this.setToolProperty (propName, value);
+                    return this.getToolProperty (propName);
+                });
+                break;
+            case 'boolean':
+                this.addToggleAttribute (prop.desc, this.getToolProperty(propName), propReadonly, (value:boolean) => {
+                    this.setToolProperty (propName, value);
+                    return this.getToolProperty (propName);
+                });
+                break;
+            case 'color':
+                this.addColorAttribute (prop.desc, this.getToolProperty(propName), propReadonly, (value:string) => {
+                    this.setToolProperty (propName, value);
+                    return this.getToolProperty (propName);
+                });
+                break;
+            }
+        }
+    }
     getObjectProperty (name: string): any {
         if (this._object) {
             const cmd: commands.IPGCommand = {
                 command: 'GetObjectProperty',
-                objectName: this._object.entityName,
+                objectName: (this._object as lib.cwSceneObject).entityName,
                 propName: name
             }
             this._editor.playground.executeCommand (cmd);
             return cmd.propValue;
         }
     }
-    setObjectProperty (name: string, value: any): any {
+    setObjectProperty (name: string, value: any): void {
         if (this._object) {
             this._editor.playground.executeCommand ({
                 command: 'SetObjectProperty',
-                objectName: this._object.entityName,
+                objectName: (this._object as lib.cwSceneObject).entityName,
                 propName: name,
                 propValue: value
             });
         }
     }
-    addObjectProperty (prop: playground.IObjectProperty) {
+    addObjectProperty (prop: playground.IProperty) {
         const propName = prop.name;
         const propType = prop.type;
         const propReadonly = prop.readonly;
@@ -359,23 +422,47 @@ export class cwPGPropertyGrid {
         }
         this._object = null;
     }
-    reloadObjectProperties () {
+    reloadToolProperties () {
         const obj = this._object;
         this.clear ();
-        this.loadObjectProperties (obj);
+        this.loadToolProperties (obj);
     }
-    loadObjectProperties (object: lib.cwSceneObject) {
+    loadToolProperties (object: lib.cwEventObserver) {
         if (this._object !== object) {
             this.clear ();
             this._object = object;
             if (this._object) {
-                const ev = new playground.cwPGGetObjectPropertyListEvent ();
+                const ev = new playground.cwPGGetPropertyListEvent ();
                 this._object.triggerEx (ev);
                 if (ev.properties) {
                     for (const groupName in ev.properties) {
                         const group = ev.properties[groupName];
                         this.addGroup (group.desc);
-                        group.properties.forEach ((value: playground.IObjectProperty) => {
+                        group.properties.forEach ((value: playground.IProperty) => {
+                            this.addToolProperty (value);
+                        });
+                    }
+                }
+            }
+        }
+    }
+    reloadObjectProperties () {
+        const obj = this._object;
+        this.clear ();
+        this.loadObjectProperties (obj);
+    }
+    loadObjectProperties (object: lib.cwEventObserver) {
+        if (this._object !== object) {
+            this.clear ();
+            this._object = object;
+            if (this._object) {
+                const ev = new playground.cwPGGetPropertyListEvent ();
+                this._object.triggerEx (ev);
+                if (ev.properties) {
+                    for (const groupName in ev.properties) {
+                        const group = ev.properties[groupName];
+                        this.addGroup (group.desc);
+                        group.properties.forEach ((value: playground.IProperty) => {
                             this.addObjectProperty (value);
                         });
                     }
@@ -393,8 +480,9 @@ export class cwPGEditor {
     private _toolset: IToolSet;
     private _toolPalette: cwPGToolPalette;
     private _opPalette: cwPGToolPalette;
-    private _propGrid: cwPGPropertyGrid;
-    constructor (pg: playground.cwPlayground, toolset: IToolSet, toolPaletteElement:HTMLElement, opPaletteElement:HTMLElement, propGridElement:HTMLElement) {
+    private _objectPropGrid: cwPGPropertyGrid;
+    private _toolPropGrid: cwPGPropertyGrid;
+    constructor (pg: playground.cwPlayground, toolset: IToolSet, toolPaletteElement:HTMLElement, opPaletteElement:HTMLElement, objectPropGridElement:HTMLElement, toolPropGridElement:HTMLElement) {
         this._strokeColor = '#000000';
         this._fillColor = '#ffffff';
         this._toolFontSize = 14;
@@ -404,7 +492,8 @@ export class cwPGEditor {
         this._toolPalette.loadToolPalette (toolset.tools);
         this._opPalette = new cwPGToolPalette (this, opPaletteElement);
         this._opPalette.loadOpPalette (toolset.operations);
-        this._propGrid = new cwPGPropertyGrid (this, propGridElement, 'propgrid');
+        this._objectPropGrid = new cwPGPropertyGrid (this, objectPropGridElement, 'pg-object');
+        this._toolPropGrid = new cwPGPropertyGrid (this, toolPropGridElement, 'pg-tool');
     }
     get toolSet () {
         return this._toolset;
@@ -416,7 +505,10 @@ export class cwPGEditor {
         return this._toolPalette;
     }
     get objectPropertyGrid () {
-        return this._propGrid;
+        return this._objectPropGrid;
+    }
+    get toolPropertyGrid () {
+        return this._toolPropGrid;
     }
     get playground () {
         return this._pg;

@@ -47,7 +47,16 @@
             <div style="position:relative; flex:1; border:5px solid #f00;">
                 <canvas id="playground-canvas" style="position:absolute; left:0px; right:0px; top:0px; bottom:0px; background-color:#fff;"></canvas>
             </div>
-            <div id="object-propgrid" style="width:300px;margin-left:5px;background-color:#ccc;"></div>
+            <div class="flex-v flex-align-y-expand" style="width:300px;margin-left:5px;background-color:#ccc;">
+                <div class="flex-v flex-align-y-expand" style="flex:1;margin:0;padding:5px;background-color:#fff;">
+                    <p style="text-align:center;padding:0;margin:5px;">工具属性</p>
+                    <div id="tool-propgrid" style="flex:1;background-color:#ccc;overflow:hidden auto;border:1px solid #888;"></div>
+                </div>
+                <div class="flex-v flex-align-y-expand" style="flex:1;margin:0;padding:5px;background-color:#fff;">
+                    <p style="text-align:center;padding:0;margin:5px;">对象属性</p>
+                    <div id="object-propgrid" style="flex:1;background-color:#ccc;overflow:hidden auto;border:1px solid #888;"></div>
+                </div>
+            </div>
         </div>
         <div class="flex-h flex-align-x-center flex-align-y-center" style="width:100%;height:24px; margin-top:20px; color:#000; font-size: 14px; background-color:#fff;">
             <span>couseware playground v0.0.1 by GaoYakun. 2018-11-13</span>

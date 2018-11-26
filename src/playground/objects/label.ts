@@ -15,9 +15,9 @@ export class cwPGLabel extends lib.cwSceneObject {
     private _measure: TextMetrics;
     private _textcolor: string;
 
-    constructor(options:any = null) {
+    constructor(params:any = null) {
         super();
-        const opt = options||{}
+        const opt = params||{}
         this._width = Number(opt.width || 0);
         this._height = Number(opt.height || 0);
         this._fontSize = Number(opt.fontSize || 16);
@@ -29,7 +29,7 @@ export class cwPGLabel extends lib.cwSceneObject {
         this._text = opt.text || '';
         this._measure = null;
         this._minwidth = 10;
-        this._textcolor = opt.textcolor || '#000';
+        this._textcolor = opt.textColor || '#000';
         this.on(lib.cwGetBoundingShapeEvent.type, (evt: lib.cwGetBoundingShapeEvent) => {
             let width = this._width;
             let height = this._height || this._fontSize;
@@ -62,7 +62,7 @@ export class cwPGLabel extends lib.cwSceneObject {
             }
             evt.canvas.context.fillText(this._text, -width * this.anchorPoint.x, -height * this.anchorPoint.y, width);
         });
-        this.on(playground.cwPGGetObjectPropertyEvent.type, (ev: playground.cwPGGetObjectPropertyEvent) => {
+        this.on(playground.cwPGGetPropertyEvent.type, (ev: playground.cwPGGetPropertyEvent) => {
             switch (ev.name) {
                 case 'text': {
                     ev.value = this.text;
@@ -78,7 +78,7 @@ export class cwPGLabel extends lib.cwSceneObject {
                 }
             }
         });
-        this.on(playground.cwPGSetObjectPropertyEvent.type, (ev: playground.cwPGSetObjectPropertyEvent) => {
+        this.on(playground.cwPGSetPropertyEvent.type, (ev: playground.cwPGSetPropertyEvent) => {
             switch (ev.name) {
                 case 'text': {
                     this.text = ev.value;
@@ -94,7 +94,7 @@ export class cwPGLabel extends lib.cwSceneObject {
                 }
             }
         });
-        this.on(playground.cwPGGetObjectPropertyListEvent.type, (ev: playground.cwPGGetObjectPropertyListEvent) => {
+        this.on(playground.cwPGGetPropertyListEvent.type, (ev: playground.cwPGGetPropertyListEvent) => {
             ev.properties = ev.properties || {};
             ev.properties[this.entityType] = ev.properties[this.entityType] || { desc: this.entityType, properties: [] };
             ev.properties[this.entityType].properties.push ({
@@ -144,5 +144,26 @@ export class cwPGLabel extends lib.cwSceneObject {
 export class cwPGLabelFactory extends playground.cwPGFactory {
     protected _createEntity (options?:any): lib.cwSceneObject {
         return new cwPGLabel (options);
+    }
+    public getCreationProperties (): playground.IProperty[] {
+        return [{
+            name: 'text',
+            desc: '文字内容',
+            readonly: false,
+            type: 'string',
+            value: '标签'
+        }, {
+            name: 'textColor',
+            desc: '文字颜色',
+            readonly: false,
+            type: 'color',
+            value: '#000'
+        }, {
+            name: 'fontSize',
+            desc: '文字大小',
+            readonly: false,
+            type: 'number',
+            value: 16
+        }];
     }
 }
