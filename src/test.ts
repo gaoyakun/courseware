@@ -47,12 +47,14 @@ function createSegmentNode (segment: lib.cwBoundingSegment, x:number, y:number):
         ev.shape = segment;
     });
     testNode.on (lib.cwDrawEvent.type, (ev: lib.cwDrawEvent) => {
-        ev.canvas.context.beginPath ();
-        ev.canvas.context.strokeStyle = testNode.drawColor || '#000';
-        ev.canvas.context.lineWidth = 1;
-        ev.canvas.context.moveTo (segment.start.x, segment.start.y);
-        ev.canvas.context.lineTo (segment.end.x, segment.end.y);
-        ev.canvas.context.stroke ();
+        const t = testNode.worldTransform;
+        lib.cwDrawLine (ev.canvas.context, segment.start.x + t.e, segment.start.y + t.f, segment.end.x + t.e, segment.end.y + t.f, '#000000');
+        //ev.canvas.context.beginPath ();
+        //ev.canvas.context.strokeStyle = testNode.drawColor || '#000';
+        //ev.canvas.context.lineWidth = 1;
+        //ev.canvas.context.moveTo (segment.start.x, segment.start.y);
+        //ev.canvas.context.lineTo (segment.end.x, segment.end.y);
+        //ev.canvas.context.stroke ();
         //const bbox = segment.getBoundingbox();
         //ev.canvas.context.strokeRect (bbox.x, bbox.y, bbox.w, bbox.h);
     });

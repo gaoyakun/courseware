@@ -11,3 +11,4 @@ export * from './core';
 export * from './components';
 export * from './graph';
 export * from './presentation';
+export * from './paint';
