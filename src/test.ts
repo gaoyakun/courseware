@@ -6,7 +6,7 @@ const hullA = new lib.cwBoundingHull ();
 });
 
 const hullB = new lib.cwBoundingHull ();
-[{ x:30, y:50 },{ x:60, y:40 },{ x:60, y:20 },{ x:50, y:0 },{ x:20, y:10 },{ x:0, y:40 }].forEach (point => {
+[{ x:300, y:500 },{ x:600, y:400 },{ x:600, y:200 },{ x:500, y:0 },{ x:200, y:100 },{ x:0, y:400 }].forEach (point => {
     hullB.addPoint (point);
 });
 
@@ -18,7 +18,7 @@ const segmentB = new lib.cwBoundingSegment ();
 segmentB.start = { x: 0, y: 0 };
 segmentB.end = { x: 0, y: 17 };
 
-const boxA = new lib.cwBoundingBox ({ x:-40, y:-40, w:81, h:81 });
+const boxA = new lib.cwBoundingBox ({ x:-30, y:-30, w:61, h:61 });
 
 const nodes: lib.cwSceneObject[] = [];
 let view = lib.cwScene.addCanvas (document.querySelector('#test-canvas'), true);
@@ -41,6 +41,7 @@ function collideTest () {
 
 function createCircleNode (box: lib.cwBoundingBox, x: number, y: number): lib.cwSceneObject {
     const testNode = new lib.cwSceneObject(view.rootNode);
+    testNode.z = 999;
     testNode.translation = { x:x, y:y };
     testNode.anchorPoint = { x:0.5, y:0.5 };
     testNode.addComponent (new lib.cwcDraggable());
@@ -50,7 +51,7 @@ function createCircleNode (box: lib.cwBoundingBox, x: number, y: number): lib.cw
     testNode.on (lib.cwDrawEvent.type, (ev: lib.cwDrawEvent) => {
         const t = testNode.worldTransform;
         const radius = Math.floor(box.rect.w / 2);
-        lib.cwFillCircle (ev.canvas.context, t.e, t.f, radius, '#000000');
+        lib.cwFillCircle (ev.canvas.context, t.e, t.f, radius, '#ffffff');
     });
     testNode.on (lib.cwDragBeginEvent.type, (ev: lib.cwDragBeginEvent) => {
         testNode.dragBeginX = ev.x;

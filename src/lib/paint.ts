@@ -9,18 +9,57 @@ function setPixel (imageData: Uint8ClampedArray, w: number, h: number, x: number
 function blendPixel (imageData: Uint8ClampedArray, w: number, h: number, x: number, y: number, r: number, g: number, b: number, a: number) {
     const i = (y * w + x) * 4;
     const ia = 1 - a;
-    imageData[i] = imageData[i] * ia + r * a;
-    imageData[i+1] = imageData[i+1] * ia + g * a;
-    imageData[i+2] = imageData[i+2] * ia + b * a;
+    imageData[i] = clamp(imageData[i] * ia + r * a, 0, 255);
+    imageData[i+1] = clamp(imageData[i+1] * ia + g * a, 0, 255);
+    imageData[i+2] = clamp(imageData[i+2] * ia + b * a, 0, 255);
     imageData[i+3] = Math.max(imageData[i+3], a * 255);
+    /*
+    const c = a * 255;
+    imageData[i] = c;
+    imageData[i+1] = c;
+    imageData[i+2] = c;
+    imageData[i+3] = Math.max(imageData[i+3], c);
+    */
 }
+function clamp (value:number, minval:number, maxval:number) {
+    if (value < minval) {
+        value = minval;
+    }
+    if (value > maxval) {
+        value = maxval;
+    }
+    return value;
+}
+function blendImageData (imageData: Uint8ClampedArray, buffer: Uint8ClampedArray) {
+    for (let i = 0; i < imageData.length/4; i++) {
+        const alpha = buffer[i*4+3] / 255;
+        const invalpha = 1 - alpha;
+        imageData[i*4] = imageData[i*4] * invalpha + buffer[i*4];
+        imageData[i*4+1] = imageData[i*4+1] * invalpha + buffer[i*4+1];
+        imageData[i*4+2] = imageData[i*4+2] * invalpha + buffer[i*4+2];
+        if (imageData[i*4+3] < buffer[i*4+3]) {
+            imageData[i*4+3] = buffer[i*4+3];
+        }
+    }
+}
+let buffer: Uint8ClampedArray = null;
+
 function fillCircle (imageData: Uint8ClampedArray, w: number, h: number, x0: number, y0: number, radius: number, r: number, g: number, b: number) {
+    if (buffer === null || buffer.length < imageData.length) {
+        buffer = new Uint8ClampedArray(imageData.length);
+    }
     function plot (x: number, y: number) {
         //setPixel (imageData, w, h, x, y, r, g, b);
         const dx = x - x0;
         const dy = y - y0;
-        const f = 1.0 - Math.max(Math.min(1.0, (dx * dx + dy * dy) / (radius * radius)), 0.0);
-        blendPixel (imageData, w, h, x, y, r, g, b, f * f)
+        const f = (1 - Math.sqrt((dx * dx + dy * dy) / (radius * radius)));
+        const i = (y * w + x) * 4;
+        buffer[i] = r * f;
+        buffer[i+1] = g * f;
+        buffer[i+2] = b * f;
+        buffer[i+3] = f * 255;
+        //const f = 1.0 - Math.max(Math.min(1.0, (dx * dx + dy * dy) / (radius * radius)), 0.0);
+        //blendPixel (imageData, w, h, x, y, r, g, b, f/255)
         //setPixel (imageData, w, h, x, y, f * 255, f * 255, f * 255);
         // const r1 = Math.floor(255 * f);
         // const g1 = Math.floor(255 * f);
@@ -54,6 +93,7 @@ function fillCircle (imageData: Uint8ClampedArray, w: number, h: number, x0: num
             plot (xi, x + y0);
         }
     }
+    blendImageData (imageData, buffer);
 }
 
 function bresenhamDrawLine (imageData: Uint8ClampedArray, w: number, h: number, x1: number, y1: number, x2: number, y2: number, r: number, g: number, b: number) {
@@ -125,7 +165,7 @@ function parseColorRGBA (rgba: string): IColorRGBA {
         if (ch >= d1 && ch <= d2) {
             val = ch - d1;
         } else if (ch >= h1 && ch <= h2) {
-            val = ch - h1;
+            val = 10 + ch - h1;
         }
         if (i % 2 === 1) {
             t = val;
