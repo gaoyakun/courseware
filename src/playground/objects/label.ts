@@ -18,6 +18,23 @@ export class cwPGLabel extends lib.cwSceneObject {
     private _bkShape: string;
     private _boundingShape: lib.cwBoundingShape;
 
+    private parseText (value: string): string {
+        const regexp = /\{\{[^\{\}]*\}\}/g;
+        const k = value.split (regexp);
+        if (k.length === 1) {
+            return value;
+        }
+        const pos = 1;
+        while (true) {
+            const s = regexp.exec (value);
+            if (s === null) {
+                break;
+            }
+            const val = String((new Function('return ' + s[0].slice (2, s[0].length-2)))());
+            k.splice (pos, 0, val);
+        }
+        return k.join ('');
+    }
     constructor(params:any = null) {
         super();
         const opt = params||{}
@@ -29,7 +46,7 @@ export class cwPGLabel extends lib.cwSceneObject {
         this._fontWeight = opt.fontWeight || 'normal';
         this._fontFamily = opt.fontFamily || '微软雅黑';
         this._font = '';
-        this._text = opt.text || '';
+        this._text = opt.text ? this.parseText(opt.text) : '';
         this._measure = null;
         this._minwidth = 10;
         this._textcolor = opt.textColor || '#000';
@@ -214,8 +231,9 @@ export class cwPGLabel extends lib.cwSceneObject {
         return this._text;
     }
     set text (value: string) {
-        if (value !== this._text) {
-            this._text = value;
+        const newText = this.parseText (value);
+        if (newText !== this._text) {
+            this._text = newText;
             this._measure = null;
             this._boundingShape = null;
         }

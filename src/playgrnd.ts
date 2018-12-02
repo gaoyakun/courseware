@@ -6,6 +6,26 @@ console.log (cv.length);
 
 lib.cwScene.init ();
 
+if (!(window as any).cw) {
+    (window as any).cw = {
+        rand: (minval:number,maxval:number) => {
+            return minval + Math.random() * (maxval - minval);
+        },
+        randi: (minval:number,maxval:number) => {
+            const m1 = Math.ceil(minval);
+            const m2 = Math.floor(maxval);
+            return  Math.round(m1 + Math.random() * (m2 - m1));
+        }
+    }
+}
+(window as any).cwRandom = (function (f) {
+    if (!f) {
+        f = function (minval:number, maxval:number): number {
+            return minval + Math.random() * (maxval - minval);
+        }
+    }
+})((window as any).cwRandom);
+
 const PG = new playground.cwPlayground (document.querySelector('#playground-canvas'), true);
 playground.installTools (PG);
 playground.installFactories (PG);

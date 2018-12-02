@@ -66,6 +66,8 @@ export class cwPGSwapTool extends playground.cwPGTool {
         } else if (this._curObject !== object) {
             this.swapObject (this._curObject, object, 200);
             this._curObject = null;
+        } else {
+            this._curObject = null;
         }
     }
     private swapObject (object1: lib.cwSceneObject, object2: lib.cwSceneObject, animationDuration:number) {

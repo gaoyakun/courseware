@@ -138,7 +138,6 @@ export class cwPGSelectTool extends playground.cwPGTool {
                     const t = obj.translation;
                     obj.translation = { x: t.x + dx, y: t.y + dy };
                 });
-                lib.cwApp.triggerEvent (null, new cwPGObjectMovedEvent (this._selectedObjects));
             } else if (this._rangeSelecting) {
                 this.rangeSelectR (this._pg.view.rootNode, this._mouseStartPosX, this._mouseStartPosY, ev.x-this._mouseStartPosX, ev.y-this._mouseStartPosY);
                 this._mouseCurrentPosX = ev.x;
@@ -146,6 +145,9 @@ export class cwPGSelectTool extends playground.cwPGTool {
             }
         });
         this.on (lib.cwMouseUpEvent.type, (ev: lib.cwMouseUpEvent) => {
+            if (this._moving && this._selectedObjects && this._selectedObjects.length > 0) {
+                lib.cwApp.triggerEvent (null, new cwPGObjectMovedEvent (this._selectedObjects));
+            }
             this._moving = false;
             this._rangeSelecting = false;
         });
