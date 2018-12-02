@@ -76,3 +76,7 @@ export function cwCrossProduct (v1: IVector2d, v2: IVector2d) {
 export function cwGetVector (start: IPoint2d, end: IPoint2d) {
     return { x: end.x - start.x, y: end.y - start.y };
 }
+
+export function cwClampPoint (pt: IPoint2d, ptMin: IPoint2d, ptMax: IPoint2d): IPoint2d {
+    return { x: Math.max(ptMin.x, Math.min(ptMax.x, pt.x)), y: Math.max(ptMin.y, Math.min(ptMax.y, pt.y))};
+}

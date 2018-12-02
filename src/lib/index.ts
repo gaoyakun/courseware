@@ -3,6 +3,7 @@ export * from './boundingshape';
 export * from './boundingbox';
 export * from './boundinghull';
 export * from './boundingsegment';
+export * from './boundingsphere';
 export * from './intersect';
 export * from './curve';
 export * from './keycode';

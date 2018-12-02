@@ -3,6 +3,7 @@ import * as shape from './boundingshape';
 import * as boundinghull from './boundinghull';
 import * as boundingbox from './boundingbox';
 import * as boundingsegment from './boundingsegment';
+import * as boundingsphere from './boundingsphere';
 
 export function cwIntersectionTestShapeSegment (a: shape.cwBoundingShape, b: point.ISegment2d): point.IPoint2d[] {
     const box = a.getBoundingbox ();
@@ -17,6 +18,9 @@ export function cwIntersectionTestShapeSegment (a: shape.cwBoundingShape, b: poi
             case boundingsegment.cwBoundingSegment.type: {
                 const pt = cwIntersectionTestSegmentSegment ((a as boundingsegment.cwBoundingSegment).segment, b);
                 return pt ? [pt] : [];
+            }
+            case boundingsphere.cwBoundingSphere.type: {
+                return cwIntersectionTestSphereSegment ((a as boundingsphere.cwBoundingSphere).sphere, b);
             }
         }
     }
@@ -37,6 +41,9 @@ export function cwIntersectionTestShapeBox (a: shape.cwBoundingShape, b: point.I
         }
         case boundingsegment.cwBoundingSegment.type: {
             return cwIntersectionTestBoxSegment (b, (a as boundingsegment.cwBoundingSegment).segment) != null;
+        }
+        case boundingsphere.cwBoundingSphere.type: {
+            return cwIntersectionTestBoxSphere (b, (a as boundingsphere.cwBoundingSphere).sphere);
         }
         default: {
             return false;
@@ -59,6 +66,9 @@ export function cwIntersectionTestShapeHull (a: shape.cwBoundingShape, b: point.
         case boundingsegment.cwBoundingSegment.type: {
             return cwIntersectionTestHullSegment (b, (a as boundingsegment.cwBoundingSegment).segment) != null;
         }
+        case boundingsphere.cwBoundingSphere.type: {
+            return cwIntersectionTestSphereHull ((a as boundingsphere.cwBoundingSphere).sphere, b);
+        }
         default: {
             return false;
         }
@@ -79,6 +89,9 @@ export function cwIntersectionTestShapePoint (a: shape.cwBoundingShape, b: point
         }
         case boundingsegment.cwBoundingSegment.type: {
             return cwIntersectionTestSegmentPoint ((a as boundingsegment.cwBoundingSegment).segment, b);
+        }
+        case boundingsphere.cwBoundingSphere.type: {
+            return cwIntersectionTestSpherePoint ((a as boundingsphere.cwBoundingSphere).sphere, b);
         }
         default: {
             return false;
@@ -104,6 +117,9 @@ export function cwIntersectionTestShapeShape (a: shape.cwBoundingShape, b: shape
                 case boundingsegment.cwBoundingSegment.type: {
                     return cwIntersectionTestBoxSegment ((a as boundingbox.cwBoundingBox).rect, (b as boundingsegment.cwBoundingSegment).segment) != null;
                 }
+                case boundingsphere.cwBoundingSphere.type: {
+                    return cwIntersectionTestBoxSphere ((a as boundingbox.cwBoundingBox).rect, (b as boundingsphere.cwBoundingSphere).sphere);
+                }
                 default: {
                     return false;
                 }
@@ -119,6 +135,9 @@ export function cwIntersectionTestShapeShape (a: shape.cwBoundingShape, b: shape
                 }
                 case boundingsegment.cwBoundingSegment.type: {
                     return cwIntersectionTestHullSegment ((a as boundinghull.cwBoundingHull).points, (b as boundingsegment.cwBoundingSegment).segment) != null;
+                }
+                case boundingsphere.cwBoundingSphere.type: {
+                    return cwIntersectionTestSphereHull ((b as boundingsphere.cwBoundingSphere).sphere, (a as boundinghull.cwBoundingHull).points);
                 }
                 default: {
                     return false;
@@ -136,6 +155,28 @@ export function cwIntersectionTestShapeShape (a: shape.cwBoundingShape, b: shape
                 case boundingsegment.cwBoundingSegment.type: {
                     return cwIntersectionTestSegmentSegment ((b as boundingsegment.cwBoundingSegment).segment, (a as boundingsegment.cwBoundingSegment).segment) != null;
                 }
+                case boundingsphere.cwBoundingSphere.type: {
+                    return cwIntersectionTestSphereSegment ((b as boundingsphere.cwBoundingSphere).sphere, (a as boundingsegment.cwBoundingSegment).segment) != null;
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        case boundingsphere.cwBoundingSphere.type: {
+            switch (b.type) {
+                case boundingbox.cwBoundingBox.type: {
+                    return cwIntersectionTestBoxSphere ((b as boundingbox.cwBoundingBox).rect, (a as boundingsphere.cwBoundingSphere).sphere);
+                }
+                case boundinghull.cwBoundingHull.type: {
+                    return cwIntersectionTestSphereHull ((a as boundingsphere.cwBoundingSphere).sphere, (b as boundinghull.cwBoundingHull).points);
+                }
+                case boundingsegment.cwBoundingSegment.type: {
+                    return cwIntersectionTestSphereSegment ((a as boundingsphere.cwBoundingSphere).sphere, (b as boundingsegment.cwBoundingSegment).segment) != null;
+                }
+                case boundingsphere.cwBoundingSphere.type: {
+                    return cwIntersectionTestSphereSphere ((a as boundingsphere.cwBoundingSphere).sphere, (b as boundingsphere.cwBoundingSphere).sphere);
+                }
                 default: {
                     return false;
                 }
@@ -152,12 +193,36 @@ export function cwIntersectionTestBoxPoint (a: point.IRect2d, b: point.IPoint2d)
     return b.x >= a.x && b.x <= a.x + a.w && b.y >= a.y && b.y <= a.y + a.h;
 }
 
-export function cwIntersectionTestBoxHull (a: point.IRect2d, b: point.IPoint2d[]) {
+export function cwIntersectionTestBoxHull (a: point.IRect2d, b: point.IPoint2d[]): boolean {
     return cwIntersectionTestHullHull ([ point.cwGetTopLeft(a), point.cwGetBottomLeft(a), point.cwGetBottomRight(a), point.cwGetTopRight(a) ], b);
 }
 
 export function cwIntersectionTestBoxSegment (a: point.IRect2d, b: point.ISegment2d): point.IPoint2d[] {
     return cwIntersectionTestHullSegment ([point.cwGetTopLeft(a),point.cwGetBottomLeft(a),point.cwGetBottomRight(a),point.cwGetTopRight(a)], b);
+}
+
+export function cwIntersectionTestBoxSphere (a: point.IRect2d, b: point.ISphere2d): boolean {
+    const pt = point.cwClampPoint (b.center, {x:a.x, y:a.y}, {x:a.x+a.w-1, y:a.y+a.h-1});
+    const v = point.cwGetVector (pt, b.center);
+    return point.cwDotProduct (v, v) < b.radius * b.radius;
+}
+
+export function cwIntersectionTestSphereHull (a: point.ISphere2d, b: point.IPoint2d[]): boolean {
+    const r2 = a.radius * a.radius;
+    for (let i = 0; i < b.length; i++) {
+        const dx = a.center.x - b[i].x;
+        const dy = a.center.y - b[i].y;
+        if (dx * dx + dy * dy < r2) {
+            return true;
+        }
+    }
+    for (let i = 0; i < b.length; i++) {
+        const t = cwIntersectionTestSphereSegment (a, { start:b[i], end:b[(i+1)%b.length] });
+        if (t !== null && t.length > 0) {
+            return true;
+        }
+    }
+    return cwIntersectionTestHullPoint (b, a.center);
 }
 
 export function cwIntersectionTestHullPoint (a: point.IPoint2d[], b: point.IPoint2d): boolean {
@@ -169,6 +234,41 @@ export function cwIntersectionTestHullPoint (a: point.IPoint2d[], b: point.IPoin
         }
     }
     return true;
+}
+
+export function cwIntersectionTestSphereSphere (a: point.ISphere2d, b: point.ISphere2d): boolean {
+    const dx = a.center.x - b.center.x;
+    const dy = a.center.y - b.center.y;
+    const r = a.radius + b.radius;
+    return dx * dx + dy * dy < r * r;
+}
+
+export function cwIntersectionTestSphereSegment (a: point.ISphere2d, b: point.ISegment2d): point.IPoint2d[] {
+    const d = point.cwGetVector (b.start, b.end);
+    const f = point.cwGetVector (a.center, b.start);
+    const A = point.cwDotProduct (d, d);
+    const B = 2 * point.cwDotProduct (f, d);
+    const C = point.cwDotProduct (f, f) - a.radius * a.radius;
+    let discriminant = B * B - 4 * A * C;
+    if (discriminant < 0) {
+        return null;
+    }
+    discriminant = Math.sqrt (discriminant);
+    let t1 = (-B - discriminant) / (2 * A);
+    let t2 = (-B + discriminant) / (2 * A);
+    if (t1 > t2) {
+        const tmp = t1;
+        t1 = t2;
+        t2 = tmp;
+    }
+    const intersectionPoints: point.IPoint2d[] = [];
+    if (t1 >= 0 && t1 <= 1) {
+        intersectionPoints.push ({ x: b.start.x + t1 * d.x, y: b.start.y + t1 * d.y} );
+    }
+    if (t2 >= 0 && t2 <= 1) {
+        intersectionPoints.push ({ x: b.start.x + t2 * d.x, y: b.start.y + t2 * d.y} );
+    }
+    return intersectionPoints;
 }
 
 export function cwIntersectionTestHullSegment (a: point.IPoint2d[], b: point.ISegment2d): point.IPoint2d[] {
@@ -225,6 +325,12 @@ export function cwIntersectionTestHullHull (a: point.IPoint2d[], b: point.IPoint
         }
     }
     return true;
+}
+
+export function cwIntersectionTestSpherePoint (a: point.ISphere2d, b: point.IPoint2d): boolean {
+    const dx = a.center.x - b.x;
+    const dy = a.center.y - b.y;
+    return dx * dx + dy * dy < a.radius * a.radius;
 }
 
 export function cwIntersectionTestSegmentPoint (s: point.ISegment2d, p: point.IPoint2d): boolean {
