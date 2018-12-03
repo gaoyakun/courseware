@@ -35,8 +35,8 @@ export class cwPGLabel extends lib.cwSceneObject {
         }
         return k.join ('');
     }
-    constructor(params:any = null) {
-        super();
+    constructor(parent: lib.cwSceneObject, params:any = null) {
+        super (parent);
         const opt = params||{}
         this._width = Number(opt.width || 0);
         this._height = Number(opt.height || 0);
@@ -283,7 +283,7 @@ export class cwPGLabel extends lib.cwSceneObject {
 
 export class cwPGLabelFactory extends playground.cwPGFactory {
     protected _createEntity (options?:any): lib.cwSceneObject {
-        return new cwPGLabel (options);
+        return new cwPGLabel (null, options);
     }
     public getCreationProperties (): playground.IProperty[] {
         return [{

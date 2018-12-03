@@ -1,4 +1,5 @@
 import * as lib from './lib'
+import * as pg from './playground'
 
 const hullA = new lib.cwBoundingHull ();
 [{ x:30, y:50 },{ x:60, y:40 },{ x:60, y:20 },{ x:50, y:0 },{ x:20, y:10 },{ x:0, y:40 }].forEach (point => {
@@ -42,6 +43,32 @@ function collideTest () {
     }
 }
 
+function createArrowNode (x: number, y: number): lib.cwSceneObject {
+    const node = new pg.cwPGArrow (view.rootNode, {
+        lineWidth: 5,
+        arrowLen: 25,
+        color: '#ff00ff',
+        positionFromX: -20,
+        positionFromY: 50,
+        positionToX: 40,
+        positionToY: 10
+    });
+    node.translation = { x:x, y:y };
+    node.rotation = Math.random() * Math.PI * 2;
+    node.addComponent (new lib.cwcDraggable());
+    node.on (lib.cwDragBeginEvent.type, (ev: lib.cwDragBeginEvent) => {
+        node.dragBeginX = ev.x;
+        node.dragBeginY = ev.y;
+    });
+    node.on (lib.cwDraggingEvent.type, (ev:lib.cwDragOverEvent) => {
+        const t = node.worldTransform;
+        node.worldTranslation = { x:t.e + ev.x - node.dragBeginX, y:t.f + ev.y - node.dragBeginY };
+        node.collapseTransform ();
+        node.dragBeginX = ev.x;
+        node.dragBeginY = ev.y;
+    });
+    return node;
+}
 function createCircleNode (sphere: lib.cwBoundingSphere, x: number, y: number): lib.cwSceneObject {
     const testNode = new lib.cwSceneObject(view.rootNode);
     testNode.z = 999;
@@ -84,14 +111,31 @@ function createSegmentNode (segment: lib.cwBoundingSegment, x:number, y:number):
         ev.shape = segment;
     });
     testNode.on (lib.cwDrawEvent.type, (ev: lib.cwDrawEvent) => {
+        const v = lib.cwGetVector (segment.start, segment.end);
+        const d = lib.cwVectorLength (v);
+        const w = 2;
+        const dx = w * v.y / d;
+        const dy = w * v.x / d;
         ev.canvas.context.beginPath ();
         ev.canvas.context.strokeStyle = testNode.drawColor || '#000';
+        ev.canvas.context.fillStyle = testNode.drawColor || '#000';
         ev.canvas.context.lineWidth = 1;
+        /*
         ev.canvas.context.moveTo (segment.start.x, segment.start.y);
         ev.canvas.context.lineTo (segment.end.x, segment.end.y);
         ev.canvas.context.stroke ();
+        */
+        ev.canvas.context.moveTo (segment.start.x + dx, segment.start.y + dy);
+        ev.canvas.context.lineTo (segment.start.x - dx, segment.start.y - dy);
+        ev.canvas.context.lineTo (segment.end.x - dx, segment.end.y - dy);
+        ev.canvas.context.lineTo (segment.end.x + dx, segment.end.y + dy);
+        ev.canvas.context.closePath ();
+        ev.canvas.context.stroke ();
+        ev.canvas.context.fill ();
+        /*
         const bbox = segment.getBoundingbox();
         ev.canvas.context.strokeRect (bbox.x, bbox.y, bbox.w, bbox.h);
+        */
     });
     testNode.on (lib.cwDragBeginEvent.type, (ev: lib.cwDragBeginEvent) => {
         testNode.dragBeginX = ev.x;
@@ -160,10 +204,11 @@ function createHullNode (hull: lib.cwBoundingHull, x:number, y:number): lib.cwSc
 
 nodes.push (createHullNode (hullA, 200, 200));
 nodes.push (createHullNode (hullB, 300, 300));
-nodes.push (createSegmentNode (segmentA, 400, 0));
-nodes.push (createSegmentNode (segmentB, 0, 200));
+nodes.push (createSegmentNode (segmentA, 400, 60));
+nodes.push (createSegmentNode (segmentB, 100, 200));
 nodes.push (createCircleNode (sphereA, 400, 200));
 nodes.push (createCircleNode (sphereB, 200, 100));
+nodes.push (createArrowNode (60, 250));
 view.on (lib.cwMouseMoveEvent.type, (ev: lib.cwMouseMoveEvent) => {
     console.log (`${ev.x}, ${ev.y}`);
 });
