@@ -53,6 +53,7 @@ export class cwPGLabel extends lib.cwSceneObject {
         this._bkColor = opt.bkColor || '#f00';
         this._bkShape = opt.bkShape || 'rect';
         this._boundingShape = null;
+        this.anchorPoint = { x:0.5, y:0.5 };
         this.on(lib.cwGetBoundingShapeEvent.type, (evt: lib.cwGetBoundingShapeEvent) => {
             if (!this._boundingShape && this._measure) {
                 let width = Math.max(this._measure.width, this._minwidth);

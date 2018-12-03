@@ -195,6 +195,9 @@ export class cwPGSelectTool extends playground.cwPGTool {
         this.off (lib.cwKeyUpEvent.type);
         this.off (lib.cwKeyPressEvent.type);
         this.off (lib.cwMouseDownEvent.type);
+        this.off (lib.cwMouseMoveEvent.type);
+        this.off (lib.cwMouseUpEvent.type);
+        this.off (lib.cwDrawEvent.type);
         super.deactivate ();
     }
     public activateObject(object: lib.cwSceneObject) {

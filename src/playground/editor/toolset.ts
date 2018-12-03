@@ -30,6 +30,13 @@ export const cwPGDefaultToolSet = {
                 name: 'Swap'
             }
         },
+        Connect: {
+            iconClass: 'fas fa-arrow-right fa-fw',
+            command: 'UseTool',
+            args: {
+                name: 'Connect'
+            }
+        },
         Write: {
             iconClass: 'fas fa-pen fa-fw',
             command: function(editor: editor.cwPGEditor) {

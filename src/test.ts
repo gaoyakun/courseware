@@ -47,6 +47,7 @@ function createArrowNode (x: number, y: number): lib.cwSceneObject {
     const node = new pg.cwPGArrow (view.rootNode, {
         lineWidth: 5,
         arrowLen: 25,
+        style: 'double',
         color: '#ff00ff',
         positionFromX: -20,
         positionFromY: 50,

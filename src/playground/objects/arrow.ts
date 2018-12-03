@@ -61,7 +61,7 @@ export class cwPGArrow extends lib.cwSceneObject {
         return result;
     }
 
-    private drawArrow (ctx: CanvasRenderingContext2D, fromX: number, fromY: number, toX: number, toY: number, theta: number, headlen: number, width: number, color: string) {
+    private drawArrow (ctx: CanvasRenderingContext2D, fromX: number, fromY: number, toX: number, toY: number, theta: number, headlen: number, width: number, color: string, double: boolean) {
         // 计算各角度和对应的P2,P3坐标 
         var angle = Math.atan2(fromY - toY, fromX - toX) * 180 / Math.PI, 
         angle1 = (angle + theta) * Math.PI / 180, 
@@ -71,19 +71,28 @@ export class cwPGArrow extends lib.cwSceneObject {
         botX = headlen * Math.cos(angle2), 
         botY = headlen * Math.sin(angle2); 
         ctx.beginPath(); 
-        var arrowX = fromX - topX, arrowY = fromY - topY; 
+        var arrowX = fromX - topX, 
+            arrowY = fromY - topY; 
         ctx.moveTo(arrowX, arrowY); 
+        ctx.lineTo(fromX, fromY); 
+        arrowX = fromX - botX;
+        arrowY = fromY - botY;
+        ctx.lineTo(arrowX, arrowY); 
         ctx.moveTo(fromX, fromY); 
         ctx.lineTo(toX, toY); 
-        arrowX = toX + topX; arrowY = toY + topY; 
-        ctx.moveTo(arrowX, arrowY); 
-        ctx.lineTo(toX, toY); 
-        arrowX = toX + botX; arrowY = toY + botY; 
-        ctx.lineTo(arrowX, arrowY); 
+
+        if (double) {
+            arrowX = toX + topX; 
+            arrowY = toY + topY; 
+            ctx.moveTo(arrowX, arrowY); 
+            ctx.lineTo(toX, toY); 
+            arrowX = toX + botX; 
+            arrowY = toY + botY; 
+            ctx.lineTo(arrowX, arrowY);
+        }
         ctx.strokeStyle = color; 
         ctx.lineWidth = width; 
         ctx.stroke(); 
-        ctx.restore();
     }
 
     private update () {
@@ -127,7 +136,17 @@ export class cwPGArrow extends lib.cwSceneObject {
             evt.shape = this._boundingShape;
         });
         this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
-            this.drawArrow (evt.canvas.context, this._segment.start.x, this._segment.start.y, this._segment.end.x, this._segment.end.y, 30, this._arrowLen, this._lineWidth, this._color);
+            if (this._style === 'none') {
+                evt.canvas.context.strokeStyle = this._color;
+                evt.canvas.context.lineWidth = this._lineWidth;
+                evt.canvas.context.beginPath ();
+                evt.canvas.context.moveTo (this._segment.start.x, this._segment.start.y);
+                evt.canvas.context.lineTo (this._segment.end.x, this._segment.end.y);
+                evt.canvas.context.stroke ();
+            } else {
+                const double = this._style === 'double';
+                this.drawArrow (evt.canvas.context, this._segment.end.x, this._segment.end.y, this._segment.start.x, this._segment.start.y, 30, this._arrowLen, this._lineWidth, this._color, double);
+            }
         });
         this.on(playground.cwPGGetPropertyEvent.type, (ev: playground.cwPGGetPropertyEvent) => {
             switch (ev.name) {
