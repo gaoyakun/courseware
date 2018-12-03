@@ -84,7 +84,7 @@ export class cwPGConnectTool extends playground.cwPGTool {
             this._createParams.positionToX = ev.x;
             this._createParams.positionToY = ev.y;
             const hitObjects = this._pg.view.hitObjects;
-            if (hitObjects.length > 1) {
+            if (hitObjects.length > 1 && hitObjects[0].entityType !== 'Arrow') {
                 this._createParams.objectFrom = hitObjects[0];
             } else {
                 this._createParams.positionFromX = ev.x;
@@ -94,7 +94,7 @@ export class cwPGConnectTool extends playground.cwPGTool {
         this.on (lib.cwMouseMoveEvent.type, (ev: lib.cwMouseMoveEvent) => {
             if (this._moving) {
                 const hitObjects = this._pg.view.hitObjects;
-                if (hitObjects.length > 1 && hitObjects[0] !== this._createParams.objectFrom) {
+                if (hitObjects.length > 1 && hitObjects[0] !== this._createParams.objectFrom && hitObjects[0].entityType !== 'Arrow') {
                     this._createParams.objectTo = hitObjects[0];
                 } else {
                     this._createParams.objectTo = null;
@@ -110,11 +110,13 @@ export class cwPGConnectTool extends playground.cwPGTool {
                 this._createParams.objectFrom = this._createParams.objectFrom.entityName;
                 this._createParams.objectTo = this._createParams.objectTo.entityName;
             } else if (this._createParams.objectFrom) {
+                this._createParams.objectFrom = this._createParams.objectFrom.entityName;
                 x = this._createParams.positionToX;
                 y = this._createParams.positionToY;
                 this._createParams.positionToX = 0;
                 this._createParams.positionToY = 0;
             } else if (this._createParams.objectTo) {
+                this._createParams.objectTo = this._createParams.objectTo.entityName;
                 x = this._createParams.positionFromX;
                 y = this._createParams.positionFromY;
                 this._createParams.positionFromX = 0;
