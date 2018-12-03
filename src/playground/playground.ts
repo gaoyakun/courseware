@@ -1,5 +1,6 @@
 import * as lib from '../lib';
 import * as command from './commands';
+import { cwSceneObject } from '../lib';
 
 export interface IProperty {
     name: string;
@@ -205,6 +206,16 @@ export class cwPGGetPropertyEvent extends lib.cwEvent {
     }
 }
 
+export class cwPGGetObjectEvent extends lib.cwEvent {
+    static readonly type: string = '@PGGetObject';
+    name: string;
+    object?: cwSceneObject;
+    constructor (name: string) {
+        super (cwPGGetObjectEvent.type);
+        this.name = name;
+    }
+}
+
 export class cwPGTool extends lib.cwEventObserver {
     public readonly name: string;
     public readonly desc: string;
@@ -255,6 +266,9 @@ export class cwPlayground extends lib.cwEventObserver {
 
         this._currentTool = '';
         this._entities = {};
+        this.on (cwPGGetObjectEvent.type, (ev: cwPGGetObjectEvent) => {
+            ev.object = this.findEntity (ev.name);
+        });
         this.view.on (lib.cwKeyDownEvent.type, (ev: lib.cwKeyDownEvent) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
