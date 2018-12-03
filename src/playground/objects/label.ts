@@ -35,6 +35,24 @@ export class cwPGLabel extends lib.cwSceneObject {
         }
         return k.join ('');
     }
+    private update () {
+        if (this._font === '') {
+            this._font = `${this._fontStyle} ${this._fontVariant} ${this._fontWeight} ${this._fontSize}px ${this._fontFamily}`;
+        }
+        if (this._measure === null) {
+            this.view.canvas.context.textAlign = 'left';
+            this.view.canvas.context.textBaseline = 'hanging';
+            this.view.canvas.context.font = this._font;
+                this._measure = this.view.canvas.context.measureText (this._text);
+        }
+        if (!this._boundingShape) {
+            let width = Math.max(this._measure.width, this._minwidth);
+            let height = this._fontSize;
+            let boundingWidth = Math.max(width, this._width);
+            let boundingHeight = Math.max(height, this._height);
+            this._boundingShape = new lib.cwBoundingBox({ x:-boundingWidth * this.anchorPoint.x, y:-boundingHeight * this.anchorPoint.y, w:boundingWidth, h:boundingHeight });
+        }
+    }
     constructor(parent: lib.cwSceneObject, params:any = null) {
         super (parent);
         const opt = params||{}
@@ -54,26 +72,13 @@ export class cwPGLabel extends lib.cwSceneObject {
         this._bkShape = opt.bkShape || 'rect';
         this._boundingShape = null;
         this.anchorPoint = { x:0.5, y:0.5 };
+        this.on(lib.cwUpdateEvent.type, (evt: lib.cwUpdateEvent) => {
+            this.update ();
+        });
         this.on(lib.cwGetBoundingShapeEvent.type, (evt: lib.cwGetBoundingShapeEvent) => {
-            if (!this._boundingShape && this._measure) {
-                let width = Math.max(this._measure.width, this._minwidth);
-                let height = this._fontSize;
-                let boundingWidth = Math.max(width, this._width);
-                let boundingHeight = Math.max(height, this._height);
-                this._boundingShape = new lib.cwBoundingBox({ x:-boundingWidth * this.anchorPoint.x, y:-boundingHeight * this.anchorPoint.y, w:boundingWidth, h:boundingHeight });
-            }
             evt.shape = this._boundingShape;
         });
         this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
-            if (this._font === '') {
-                this._font = `${this._fontStyle} ${this._fontVariant} ${this._fontWeight} ${this._fontSize}px ${this._fontFamily}`;
-            }
-            evt.canvas.context.textAlign = 'left';
-            evt.canvas.context.textBaseline = 'hanging';
-            evt.canvas.context.font = this._font;
-            if (this._measure === null) {
-                this._measure = evt.canvas.context.measureText (this._text);
-            }
             let width = this._measure.width;
             if (width < this._minwidth) {
                 width = this._minwidth;
