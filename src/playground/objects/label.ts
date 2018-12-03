@@ -38,12 +38,14 @@ export class cwPGLabel extends lib.cwSceneObject {
     private update () {
         if (this._font === '') {
             this._font = `${this._fontStyle} ${this._fontVariant} ${this._fontWeight} ${this._fontSize}px ${this._fontFamily}`;
+            this._boundingShape = null;
         }
         if (this._measure === null) {
             this.view.canvas.context.textAlign = 'left';
             this.view.canvas.context.textBaseline = 'hanging';
             this.view.canvas.context.font = this._font;
-                this._measure = this.view.canvas.context.measureText (this._text);
+            this._measure = this.view.canvas.context.measureText (this._text);
+            this._boundingShape = null;
         }
         if (!this._boundingShape) {
             let width = Math.max(this._measure.width, this._minwidth);
@@ -243,6 +245,10 @@ export class cwPGLabel extends lib.cwSceneObject {
             this._measure = null;
             this._boundingShape = null;
         }
+    }
+    setAnchorPoint (pt: {x:number, y:number}) {
+        super.setAnchorPoint (pt);
+        this._boundingShape = null;
     }
     get fontSize () {
         return this._fontSize;

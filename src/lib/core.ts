@@ -735,38 +735,56 @@ export class cwSceneObject extends cwObject {
     get z() {
         return this._z;
     }
-    set z(value: number) {
+    setZ (value: number) {
         this._z = value;
+    }
+    set z(value: number) {
+        this.setZ (value);
     }
     get visible() {
         return this._visible;
     }
-    set visible(value: boolean) {
+    setVisible (value: boolean) {
         this._visible = value;
+    }
+    set visible(value: boolean) {
+        this.setVisible (value);
     }
     get localTransform() {
         return this._localTransform;
     }
-    set localTransform(t: cwTransform2d) {
+    setLocalTransform (t: cwTransform2d) {
         this._localTransform = t;
+    }
+    set localTransform(t: cwTransform2d) {
+        this.setLocalTransform (t);
     }
     get translation(): { x: number, y: number } {
         return this.localTransform.getTranslationPart();
     }
-    set translation(t: { x: number, y: number }) {
+    setTranslation (t: { x: number, y: number }) {
         this.localTransform.setTranslationPart(t);
+    }
+    set translation(t: { x: number, y: number }) {
+        this.setTranslation (t);
     }
     get scale(): { x: number, y: number } {
         return this.localTransform.getScalePart();
     }
-    set scale(s: { x: number, y: number }) {
+    setScale (s: { x: number, y: number}) {
         this.localTransform.setScalePart(s);
+    }
+    set scale(s: { x: number, y: number }) {
+        this.setScale (s);
     }
     get rotation(): number {
         return this.localTransform.getRotationPart();
     }
-    set rotation(r: number) {
+    setRotation(r: number) {
         this.localTransform.setRotationPart(r);
+    }
+    set rotation(r: number) {
+        this.setRotation (r);
     }
     get worldTransform(): cwTransform2d {
         let t = this.parent ? cwTransform2d.transform(this.parent.worldTransform, this.localTransform) : this.localTransform;
@@ -784,26 +802,38 @@ export class cwSceneObject extends cwObject {
     get worldTranslation(): { x: number, y: number } | null {
         return this._worldTranslation;
     }
-    set worldTranslation(value: { x: number, y: number } | null) {
+    setWorldTranslation (value: { x: number, y: number } | null) {
         this._worldTranslation = value === null ? null : { x: Math.round(value.x), y: Math.round(value.y) };
+    }
+    set worldTranslation(value: { x: number, y: number } | null) {
+        this.setWorldTranslation(value);
     }
     get worldRotation(): number | null {
         return this._worldRotation;
     }
-    set worldRotation(value: number | null) {
+    setWorldRotation(value: number | null) {
         this._worldRotation = value;
+    }
+    set worldRotation(value: number | null) {
+        this.setWorldRotation(value);
     }
     get worldScale(): { x: number, y: number } | null {
         return this._worldScale;
     }
-    set worldScale(value: { x: number, y: number } | null) {
+    setWorldScale(value: { x: number, y: number } | null) {
         this._worldScale = value;
+    }
+    set worldScale(value: { x: number, y: number } | null) {
+        this.setWorldScale (value);
     }
     get anchorPoint() {
         return this._anchorPoint;
     }
-    set anchorPoint (pt) {
+    setAnchorPoint (pt: { x:number,y:number }) {
         this._anchorPoint = pt;
+    }
+    set anchorPoint (pt) {
+        this.setAnchorPoint (pt);
     }
     get numChildren(): number {
         return this._children.length;
