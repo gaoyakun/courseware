@@ -1144,6 +1144,13 @@ export class cwSceneView extends cwObject {
     get rootNode(): cwSceneObject {
         return this._rootNode;
     }
+    set rootNode(node: cwSceneObject) {
+        if (this._rootNode !== node) {
+            this._rootNode = node;
+            this._hitObjects.length = 0;
+            this._captureObject = null;
+        }
+    }
     get canvas(): cwCanvas {
         return this._canvas;
     }
@@ -1371,6 +1378,7 @@ export function ResizeSensor(element:HTMLElement, callback:Function)
 interface IOverlay {
     canvas: HTMLCanvasElement;
     context: CanvasRenderingContext2D;
+    enabled: boolean;
 }
 export class cwCanvas extends cwObject {
     private readonly _canvas: HTMLCanvasElement;
@@ -1406,10 +1414,11 @@ export class cwCanvas extends cwObject {
         overlayCanvas.height = this._height;
         overlayCanvas.style.backgroundColor = 'rgba(0,0,0,0)';
         const overlayContext = overlayCanvas.getContext("2d");
-        return { canvas: overlayCanvas, context: overlayContext };
+        return { canvas: overlayCanvas, context: overlayContext, enabled: true };
     }
     private _resizeOverlay ( overlay:IOverlay ): IOverlay {
         const newOverlay = this._createOverlay ();
+        newOverlay.enabled = overlay.enabled;
         newOverlay.context.lineWidth = overlay.context.lineWidth;
         newOverlay.context.lineCap = overlay.context.lineCap;
         newOverlay.context.lineJoin = overlay.context.lineJoin;
@@ -1479,7 +1488,9 @@ export class cwCanvas extends cwObject {
     };
     flip(): void {
         this._overlays.forEach (overlay => {
-            this.context.drawImage (overlay.canvas, 0, 0);
+            if (overlay.enabled) {
+                this.context.drawImage (overlay.canvas, 0, 0);
+            }
         });
         if (this._doubleBuffer) {
             this._screenCtx.drawImage(this._buffer, 0, 0);
@@ -1507,6 +1518,14 @@ export class cwCanvas extends cwObject {
                 overlay.canvas = null;
                 overlay.context = null;
                 this._overlays[index] = null;
+            }
+        }
+    }
+    enableOverlay (index: number, enable: boolean) {
+        if (index < this._overlays.length) {
+            const overlay = this._overlays[index];
+            if (overlay) {
+                overlay.enabled = enable;
             }
         }
     }
