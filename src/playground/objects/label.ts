@@ -64,7 +64,7 @@ export class cwPGLabel extends lib.cwSceneObject {
         this._fontStyle = opt.fontStyle || 'normal';
         this._fontVariant = opt.fontVariant || 'normal';
         this._fontWeight = opt.fontWeight || 'normal';
-        this._fontFamily = opt.fontFamily || '微软雅黑';
+        this._fontFamily = opt.fontFamily || 'PingFang SC,Hiragino Sans GB,Microsoft YaHei UI,Microsoft YaHei,Source Han Sans CN,sans-serif';
         this._font = '';
         this._text = opt.text ? this.parseText(opt.text) : '';
         this._measure = null;
@@ -104,6 +104,7 @@ export class cwPGLabel extends lib.cwSceneObject {
             let x = (boundingWidth - width)/2 - boundingWidth * this.anchorPoint.x;
             let y = (boundingHeight - height)/2 - boundingHeight * this.anchorPoint.y;
             evt.canvas.context.fillStyle = this._textcolor;
+            evt.canvas.context.font = this._font;
             evt.canvas.context.fillText(this._text, x, y, width);
     
         });
@@ -119,6 +120,14 @@ export class cwPGLabel extends lib.cwSceneObject {
                 }
                 case 'fontSize': {
                     ev.value = this.fontSize;
+                    break;
+                }
+                case 'fontWeight': {
+                    ev.value = this.fontWeight;
+                    break;
+                }
+                case 'fontStyle': {
+                    ev.value = this.fontStyle;
                     break;
                 }
                 case 'width': {
@@ -151,6 +160,14 @@ export class cwPGLabel extends lib.cwSceneObject {
                 }
                 case 'fontSize': {
                     this.fontSize = Number(ev.value);
+                    break;
+                }
+                case 'fontWeight': {
+                    this.fontWeight = String(ev.value);
+                    break;
+                }
+                case 'fontStyle': {
+                    this.fontStyle = String(ev.value);
                     break;
                 }
                 case 'width': {
@@ -190,10 +207,44 @@ export class cwPGLabel extends lib.cwSceneObject {
             });
             ev.properties[this.entityType].properties.push ({
                 name: 'fontSize',
-                desc: '文字大小',
+                desc: '字体大小',
                 readonly: false,
                 type: 'number',
                 value: this.fontSize
+            });
+            ev.properties[this.entityType].properties.push ({
+                name: 'fontWeight',
+                desc: '字体粗细',
+                readonly: false,
+                type: 'string',
+                value: this._fontWeight,
+                enum: [{
+                    value: 'normal',
+                    desc: '正常'
+                }, {
+                    value: 'bold',
+                    desc: '粗体'
+                }, {
+                    value: 'bolder',
+                    desc: '加粗'
+                }, {
+                    value: 'lighter',
+                    desc: '纤细'
+                }]
+            });
+            ev.properties[this.entityType].properties.push ({
+                name: 'fontStyle',
+                desc: '字体样式',
+                readonly: false,
+                type: 'string',
+                value: this._fontStyle,
+                enum: [{
+                    value: 'normal',
+                    desc: '正常'
+                }, {
+                    value: 'italic',
+                    desc: '斜体'
+                }]
             });
             ev.properties[this.entityType].properties.push ({
                 name: 'width',
@@ -261,6 +312,28 @@ export class cwPGLabel extends lib.cwSceneObject {
             this._boundingShape = null;
         }
     }
+    get fontWeight () {
+        return this._fontWeight;
+    }
+    set fontWeight (value: string) {
+        if (value !== this._fontWeight) {
+            this._fontWeight = value;
+            this._font = '';
+            this._measure = null;
+            this._boundingShape = null;
+        }
+    }
+    get fontStyle () {
+        return this._fontStyle;
+    }
+    set fontStyle (value: string) {
+        if (value !== this._fontStyle) {
+            this._fontStyle = value;
+            this._font = '';
+            this._measure = null;
+            this._boundingShape = null;
+        }
+    }
     get width () {
         return this._width;    
     }
@@ -312,10 +385,42 @@ export class cwPGLabelFactory extends playground.cwPGFactory {
             value: '#000'
         }, {
             name: 'fontSize',
-            desc: '文字大小',
+            desc: '字体大小',
             readonly: false,
             type: 'number',
             value: 16
+        }, {
+            name: 'fontWeight',
+            desc: '字体粗细',
+            readonly: false,
+            type: 'string',
+            value: 'normal',
+            enum: [{
+                value: 'normal',
+                desc: '正常'
+            }, {
+                value: 'bold',
+                desc: '粗体'
+            }, {
+                value: 'bolder',
+                desc: '加粗'
+            }, {
+                value: 'lighter',
+                desc: '纤细'
+            }]
+        }, {
+            name: 'fontStyle',
+            desc: '字体样式',
+            readonly: false,
+            type: 'string',
+            value: 'normal',
+            enum: [{
+                value: 'normal',
+                desc: '正常'
+            }, {
+                value: 'italic',
+                desc: '斜体'
+            }]
         }, {
             name: 'width',
             desc: '宽度',
