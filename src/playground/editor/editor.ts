@@ -26,6 +26,13 @@ interface IToolSet {
     operations: IToolPalette;
 }
 
+interface IPage {
+    rootNode: lib.cwSceneObject;
+    bkImage: string;
+    bkColor: string;
+    overlays: number[];
+}
+
 export class cwPGToolPalette {
     private static uniqueId: number = 1;
     private _editor: cwPGEditor;
@@ -482,6 +489,7 @@ export class cwPGEditor {
     private _opPalette: cwPGToolPalette;
     private _objectPropGrid: cwPGPropertyGrid;
     private _toolPropGrid: cwPGPropertyGrid;
+    private _pages: IPage[];
     constructor (pg: playground.cwPlayground, toolset: IToolSet, toolPaletteElement:HTMLElement, opPaletteElement:HTMLElement, objectPropGridElement:HTMLElement, toolPropGridElement:HTMLElement) {
         this._strokeColor = '#00000000';
         this._fillColor = 'red';

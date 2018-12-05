@@ -7,7 +7,8 @@ module.exports = {
   entry: {
     index: './src/index.ts',
     test: './src/test.ts',
-    playgrnd: './src/playgrnd.ts'
+    playgrnd: './src/playgrnd.ts',
+    testfreedraw: './src/testfreedraw.ts'
   },
   output: {
     //The output directory as an absolute path.
@@ -49,6 +50,12 @@ module.exports = {
       chunks:['playgrnd'],
       filename:'playgrnd.html',
       template: path.resolve(path.resolve(__dirname), 'playgrnd.html'),
+      inject: 'body'
+    }),
+    new HtmlWebpackPlugin({
+      chunks:['testfreedraw'],
+      filename:'testfreedraw.html',
+      template: path.resolve(path.resolve(__dirname), 'testfreedraw.html'),
       inject: 'body'
     }),
     new ExtractTextWebpackPlugin('./dist/css'),

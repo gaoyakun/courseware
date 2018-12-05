@@ -318,6 +318,15 @@ export class cwResizeEvent extends cwEvent {
     }
 }
 
+export class cwCanvasResizeEvent extends cwEvent {
+    static readonly type: string = '@canvasresize';
+    readonly view: cwSceneView;
+    constructor(view: cwSceneView) {
+        super (cwCanvasResizeEvent.type);
+        this.view = view;
+    }
+}
+
 export class cwGetPropEvent extends cwEvent {
     static readonly type: string = '@getprop';
     readonly propName: string;
@@ -1114,7 +1123,7 @@ export class cwSceneView extends cwObject {
         this._hitObjects = [];
         this._rootNode = new cwSceneObject();
         this._rootNode.view = this;
-        this._canvas = new cwCanvas(canvas, doubleBuffer);
+        this._canvas = new cwCanvas(this, canvas, doubleBuffer);
         this.on(cwFrameEvent.type, (ev: cwFrameEvent) => {
             let updateEvent = new cwUpdateEvent(ev.deltaTime, ev.elapsedTime, ev.frameStamp);
             if (this.rootNode) {
@@ -1382,6 +1391,7 @@ interface IOverlay {
 }
 export class cwCanvas extends cwObject {
     private readonly _canvas: HTMLCanvasElement;
+    private _view: cwSceneView;
     private _buffer: HTMLCanvasElement;
     private _screenCtx: CanvasRenderingContext2D;
     private _offscreenCtx: CanvasRenderingContext2D;
@@ -1407,13 +1417,14 @@ export class cwCanvas extends cwObject {
                 this._overlays[i] = newOverlay;
             }
         }
+        cwApp.triggerEvent (null, new cwCanvasResizeEvent(this._view));
     }
     private _createOverlay (): IOverlay {
         const overlayCanvas = document.createElement('canvas');
         overlayCanvas.width = this._width;
         overlayCanvas.height = this._height;
         overlayCanvas.style.backgroundColor = 'rgba(0,0,0,0)';
-        const overlayContext = overlayCanvas.getContext("2d");
+        const overlayContext = overlayCanvas.getContext('2d');
         return { canvas: overlayCanvas, context: overlayContext, enabled: true };
     }
     private _resizeOverlay ( overlay:IOverlay ): IOverlay {
@@ -1439,8 +1450,9 @@ export class cwCanvas extends cwObject {
         newOverlay.context.drawImage (overlay.canvas, 0, 0);
         return newOverlay;
     }
-    constructor(canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
+    constructor(view: cwSceneView, canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
         super();
+        this._view = view;
         this._canvas = canvas;
         this._overlays = [];
         if (this._canvas) {
