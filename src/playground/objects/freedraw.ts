@@ -7,6 +7,8 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
     private _curveMode: number;
     private _eraseSize: number;
     private _mode: string;
+    private _mousePosX: number;
+    private _mousePosY: number;
     private _cp: lib.IPoint2d[];
     private _lastMoveTime: number;
     private _action: boolean;
@@ -36,6 +38,8 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
         this._lineWidth = Number(opt.lineWidth || 1);
         this._color = opt.color || '#000000';
         this._mode = opt.mode || 'draw';
+        this._mousePosX = 0;
+        this._mousePosY = 0;
         this._eraseSize = opt.eraseSize || 20;
         this._curveMode = opt.curveMode || 0;
         this.on(lib.cwCanvasResizeEvent.type, (evt: lib.cwCanvasResizeEvent) => {
@@ -67,6 +71,10 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
             const w = this.canvas.width;
             const h = this.canvas.height;
             evt.canvas.context.drawImage (this.canvas, -Math.round(w * this.anchorPoint.x)-0.5, -Math.round(h * this.anchorPoint.y)-0.5, w, h);
+            if (this._mode === 'erase') {
+                evt.canvas.context.strokeStyle = '#000000';
+                evt.canvas.context.strokeRect (Math.round(this._mousePosX - this._eraseSize/2), Math.round(this._mousePosY - this._eraseSize/2), this._eraseSize, this._eraseSize);
+            }
         });
         this.on (lib.cwMouseDownEvent.type, (ev: lib.cwMouseDownEvent) => {
             const pt = lib.cwTransform2d.invert(this.worldTransform).transformPoint({x:ev.x, y:ev.y});
@@ -87,6 +95,8 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
             }
         });
         this.on (lib.cwMouseMoveEvent.type, (ev: lib.cwMouseMoveEvent) => {
+            this._mousePosX = ev.x;
+            this._mousePosY = ev.y;
             if (this._action) {
                 const pt = lib.cwTransform2d.invert(this.worldTransform).transformPoint({x:ev.x, y:ev.y});
                 if (this._mode === 'draw') {
@@ -130,8 +140,8 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
         this.on (lib.cwMouseUpEvent.type, (ev: lib.cwMouseUpEvent) => {
             if (this._mode === 'draw' && this._action) {
                 this.finishDraw ();
-                this._action = false;
             }
+            this._action = false;
         });
         this.on(playground.cwPGGetPropertyEvent.type, (ev: playground.cwPGGetPropertyEvent) => {
             switch (ev.name) {

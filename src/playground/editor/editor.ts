@@ -30,7 +30,6 @@ interface IPage {
     rootNode: lib.cwSceneObject;
     bkImage: string;
     bkColor: string;
-    overlays: number[];
 }
 
 export class cwPGToolPalette {

@@ -1384,11 +1384,6 @@ export function ResizeSensor(element:HTMLElement, callback:Function)
     shrink.addEventListener('scroll', onScroll);
 }
 
-interface IOverlay {
-    canvas: HTMLCanvasElement;
-    context: CanvasRenderingContext2D;
-    enabled: boolean;
-}
 export class cwCanvas extends cwObject {
     private readonly _canvas: HTMLCanvasElement;
     private _view: cwSceneView;
@@ -1398,7 +1393,6 @@ export class cwCanvas extends cwObject {
     private _width: number;
     private _height: number;
     private _doubleBuffer: boolean;
-    private _overlays: IOverlay[];
     private adjustCanvasSize (canvas:HTMLCanvasElement) {
         const computedStyle = window.getComputedStyle (canvas.parentElement);
         this._width = canvas.parentElement.clientWidth - parseFloat (computedStyle.paddingLeft) - parseFloat (computedStyle.paddingRight);
@@ -1410,51 +1404,12 @@ export class cwCanvas extends cwObject {
         this._buffer.width = this._width;
         this._buffer.height = this._height;
         this._offscreenCtx = this._buffer.getContext("2d");
-        for (let i = 0; i < this._overlays.length; i++) {
-            if (this._overlays[i] !== null) {
-                const newOverlay = this._resizeOverlay (this._overlays[i]);
-                this.deleteOverlay (i);
-                this._overlays[i] = newOverlay;
-            }
-        }
         cwApp.triggerEvent (null, new cwCanvasResizeEvent(this._view));
-    }
-    private _createOverlay (): IOverlay {
-        const overlayCanvas = document.createElement('canvas');
-        overlayCanvas.width = this._width;
-        overlayCanvas.height = this._height;
-        overlayCanvas.style.backgroundColor = 'rgba(0,0,0,0)';
-        const overlayContext = overlayCanvas.getContext('2d');
-        return { canvas: overlayCanvas, context: overlayContext, enabled: true };
-    }
-    private _resizeOverlay ( overlay:IOverlay ): IOverlay {
-        const newOverlay = this._createOverlay ();
-        newOverlay.enabled = overlay.enabled;
-        newOverlay.context.lineWidth = overlay.context.lineWidth;
-        newOverlay.context.lineCap = overlay.context.lineCap;
-        newOverlay.context.lineJoin = overlay.context.lineJoin;
-        newOverlay.context.miterLimit = overlay.context.miterLimit;
-        newOverlay.context.lineDashOffset = overlay.context.lineDashOffset;
-        newOverlay.context.font = overlay.context.font;
-        newOverlay.context.textAlign = overlay.context.textAlign;
-        newOverlay.context.textBaseline = overlay.context.textBaseline;
-        newOverlay.context.fillStyle = overlay.context.fillStyle;
-        newOverlay.context.strokeStyle = overlay.context.strokeStyle;
-        newOverlay.context.shadowBlur = overlay.context.shadowBlur;
-        newOverlay.context.shadowColor = overlay.context.shadowColor;
-        newOverlay.context.shadowOffsetX = overlay.context.shadowOffsetX;
-        newOverlay.context.shadowOffsetY = overlay.context.shadowOffsetY;
-        newOverlay.context.globalAlpha = overlay.context.globalAlpha;
-        newOverlay.context.globalCompositeOperation = overlay.context.globalCompositeOperation;
-        newOverlay.context.imageSmoothingEnabled = overlay.context.imageSmoothingEnabled;
-        newOverlay.context.drawImage (overlay.canvas, 0, 0);
-        return newOverlay;
     }
     constructor(view: cwSceneView, canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
         super();
         this._view = view;
         this._canvas = canvas;
-        this._overlays = [];
         if (this._canvas) {
             this.adjustCanvasSize (this._canvas);
             ResizeSensor (this._canvas.parentElement, () => {
@@ -1499,56 +1454,9 @@ export class cwCanvas extends cwObject {
         this.context.setTransform(transform.a, transform.b, transform.c, transform.d, Math.round(transform.e), Math.round(transform.f));
     };
     flip(): void {
-        this._overlays.forEach (overlay => {
-            if (overlay.enabled) {
-                this.context.drawImage (overlay.canvas, 0, 0);
-            }
-        });
         if (this._doubleBuffer) {
             this._screenCtx.drawImage(this._buffer, 0, 0);
         }
-    }
-    createOverlay(): number {
-        const overlay = this._createOverlay ();
-        let i;
-        for (i = 0; i < this._overlays.length; i++) {
-            if (this._overlays[i] === null) {
-                break;
-            }
-        }
-        if (i === this._overlays.length) {
-            this._overlays.push (overlay);
-        } else {
-            this._overlays[i] = overlay;
-        }
-        return i;
-    }
-    deleteOverlay(index: number) {
-        if (index < this._overlays.length) {
-            const overlay = this._overlays[index];
-            if (overlay) {
-                overlay.canvas = null;
-                overlay.context = null;
-                this._overlays[index] = null;
-            }
-        }
-    }
-    enableOverlay (index: number, enable: boolean) {
-        if (index < this._overlays.length) {
-            const overlay = this._overlays[index];
-            if (overlay) {
-                overlay.enabled = enable;
-            }
-        }
-    }
-    getOverlayContext(index: number) {
-        if (index < this._overlays.length) {
-            const overlay = this._overlays[index];
-            if (overlay !== null) {
-                return overlay.context;
-            }
-        }
-        return null;
     }
 }
 
