@@ -133,10 +133,10 @@ export class cwPGConnectTool extends playground.cwPGTool {
                 command: 'CreateObject',
                 type: 'Arrow',
                 name: null,
+                x: x,
+                y: y,
+                params: this._createParams
             };
-            cmd.x = x;
-            cmd.y = y;
-            cmd.params = this._createParams;
             this._pg.executeCommand (cmd);
         });
         this.on (lib.cwDrawEvent.type, (ev: lib.cwDrawEvent) => {

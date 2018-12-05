@@ -172,22 +172,26 @@ export class cwPGSelectTool extends playground.cwPGTool {
     }
     private rangeSelectR (root:lib.cwSceneObject, x:number, y:number, w:number, h:number) {
         root.forEachChild (child => {
-            const shape = child.boundingShape;
-            if (shape) {
-                const t = lib.cwTransform2d.invert(child.worldTransform);
-                const rectObject = [
-                    t.transformPoint({x:x, y:y}),
-                    t.transformPoint({x:x ,y:y+h}),
-                    t.transformPoint({x:x+w, y:y+h}),
-                    t.transformPoint({x:x+w, y:y})
-                ];
-                if (lib.cwIntersectionTestShapeHull (shape, rectObject)) {
-                    this.selectObject (child, null);
-                } else {
-                    this.deselectObject (child);
+            if (w == 0 || h == 0) {
+                this.deselectObject (child);
+            } else {
+                const shape = child.boundingShape;
+                if (shape) {
+                    const t = lib.cwTransform2d.invert(child.worldTransform);
+                    const rectObject = [
+                        t.transformPoint({x:x, y:y}),
+                        t.transformPoint({x:x ,y:y+h}),
+                        t.transformPoint({x:x+w, y:y+h}),
+                        t.transformPoint({x:x+w, y:y})
+                    ];
+                    if (lib.cwIntersectionTestShapeHull (shape, rectObject)) {
+                        this.selectObject (child, null);
+                    } else {
+                        this.deselectObject (child);
+                    }
                 }
+                this.rangeSelectR (child, x, y, w, h);
             }
-            this.rangeSelectR (child, x, y, w, h);
         });
     }
     public deactivate() {

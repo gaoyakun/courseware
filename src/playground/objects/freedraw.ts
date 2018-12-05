@@ -13,12 +13,22 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
     private _canvas: HTMLCanvasElement;
     private _boundingShape: lib.cwBoundingBox;
 
+    private finishDraw () {
+        if (this._mode === 'draw' && this._cp.length > 0) {
+            const context = this.canvas.getContext('2d');
+            if (this._cp.length === 1) {
+                context.lineTo (this._cp[0].x + 0.5, this._cp[0].y + 0.5);
+            } else if (this._cp.length) {
+                context.quadraticCurveTo (this._cp[0].x + 0.5, this._cp[0].y + 0.5, this._cp[1].x + 0.5, this._cp[1].y + 0.5);
+            }
+            context.stroke ();
+            this._cp.length = 0;
+        }
+    }
     constructor(parent: lib.cwSceneObject, params:any = null) {
         super(parent);
-        this._canvas = document.createElement('canvas');
-        this._canvas.width = this.view.canvas.width;
-        this._canvas.height = this.view.canvas.height;
-        this._boundingShape = new lib.cwBoundingBox ({x:0, y:0, w:this._canvas.width, h:this._canvas.height});
+        this._canvas = null;
+        this._boundingShape = null;
         this._cp = [];
         this._lastMoveTime = 0;
         this._action = false;
@@ -29,33 +39,39 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
         this._eraseSize = opt.eraseSize || 20;
         this._curveMode = opt.curveMode || 0;
         this.on(lib.cwCanvasResizeEvent.type, (evt: lib.cwCanvasResizeEvent) => {
-            if (evt.view === this.view) {
+            if (evt.view === this.view && this._canvas) {
                 this._canvas.width = evt.view.canvas.width;
                 this._canvas.height = evt.view.canvas.height;
-                this._boundingShape.rect = {x:0, y:0, w:this._canvas.width, h:this._canvas.height};
+                if (this._boundingShape) {
+                    this._boundingShape.rect = {x:0, y:0, w:this._canvas.width, h:this._canvas.height};
+                }
             }
         })
         this.on(lib.cwGetBoundingShapeEvent.type, (evt: lib.cwGetBoundingShapeEvent) => {
+            if (this._boundingShape === null) {
+                this._boundingShape = new lib.cwBoundingBox ({x:0, y:0, w:this.canvas.width, h:this.canvas.height});
+            }
             evt.shape = this._boundingShape;
         });
         this.on(lib.cwHitTestEvent.type, (evt: lib.cwHitTestEvent) => {
-            const pt = lib.cwTransform2d.invert(this.worldTransform).transformPoint({x:evt.x, y:evt.y});
-            if (pt.x >= 0 && pt.x < this._canvas.width && pt.y >= 0 && pt.y < this._canvas.height) {
-                const data = this._canvas.getContext('2d').getImageData (pt.x, pt.y, 1, 1);
+            const canvas = this.canvas;
+            if (evt.x >= 0 && evt.x < canvas.width && evt.y >= 0 && evt.y < canvas.height) {
+                const data = canvas.getContext('2d').getImageData (evt.x, evt.y, 1, 1);
                 if (data && data.data[3] > 0) {
                     evt.result = true;
                 }
             }
+            evt.eat ();
         });
         this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
-            const w = this._canvas.width;
-            const h = this._canvas.height;
-            evt.canvas.context.drawImage (this._canvas, -Math.round(w * this.anchorPoint.x)-0.5, -Math.round(h * this.anchorPoint.y)-0.5, w, h);
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+            evt.canvas.context.drawImage (this.canvas, -Math.round(w * this.anchorPoint.x)-0.5, -Math.round(h * this.anchorPoint.y)-0.5, w, h);
         });
         this.on (lib.cwMouseDownEvent.type, (ev: lib.cwMouseDownEvent) => {
             const pt = lib.cwTransform2d.invert(this.worldTransform).transformPoint({x:ev.x, y:ev.y});
             if (this._mode === 'draw') {
-                const context = this._canvas.getContext('2d');
+                const context = this.canvas.getContext('2d');
                 context.lineWidth = this._lineWidth;
                 context.strokeStyle = this._color;
                 context.lineCap = 'round';
@@ -66,7 +82,7 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
                 this._action = true;
             } else if (this._mode === 'erase') {
                 const context = this.canvas.getContext('2d');
-                context.clearRect (ev.x - this._eraseSize / 2, ev.y - this._eraseSize / 2, this._eraseSize, this._eraseSize);
+                context.clearRect (pt.x - this._eraseSize / 2, pt.y - this._eraseSize / 2, this._eraseSize, this._eraseSize);
                 this._action = true;
             }
         });
@@ -74,7 +90,7 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
             if (this._action) {
                 const pt = lib.cwTransform2d.invert(this.worldTransform).transformPoint({x:ev.x, y:ev.y});
                 if (this._mode === 'draw') {
-                    const context = this._canvas.getContext('2d');
+                    const context = this.canvas.getContext('2d');
                     if (this._curveMode === 0) {
                         context.lineTo (pt.x + 0.5, pt.y + 0.5);
                         context.stroke ();
@@ -98,38 +114,22 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
                         }
                     }
                 } else if (this._mode === 'erase') {
-                    const context = this._canvas.getContext('2d');
-                    context.clearRect (pt.x - this._eraseSize / 2, ev.y - this._eraseSize / 2, this._eraseSize, this._eraseSize);
+                    const context = this.canvas.getContext('2d');
+                    context.clearRect (pt.x - this._eraseSize / 2, pt.y - this._eraseSize / 2, this._eraseSize, this._eraseSize);
                 }
             }
         });
-        this.on (lib.cwFrameEvent.type, (ev: lib.cwFrameEvent) => {
-            if (this._action && this._mode === 'draw' && this._cp.length > 0) {
+        this.on (lib.cwFrameEvent.type, (ev: lib.cwFrameEvent) => {            
+            if (this._mode === 'draw' && this._action) {
                 const t = Date.now();
                 if (t > this._lastMoveTime + 250) {
-                    const context = this._canvas.getContext('2d');
-                    if (this._cp.length === 1) {
-                        context.lineTo (this._cp[0].x + 0.5, this._cp[0].y + 0.5);
-                    } else if (this._cp.length) {
-                        context.quadraticCurveTo (this._cp[0].x + 0.5, this._cp[0].y + 0.5, this._cp[1].x + 0.5, this._cp[1].y + 0.5);
-                    }
-                    context.stroke ();
-                    this._cp.length = 0;
+                    this.finishDraw ();
                 }
             }
         });
         this.on (lib.cwMouseUpEvent.type, (ev: lib.cwMouseUpEvent) => {
-            if (this._action) {
-                if (this._mode === 'draw' && this._cp.length > 0) {
-                    const context = this._canvas.getContext('2d');
-                    if (this._cp.length === 1) {
-                        context.lineTo (this._cp[0].x + 0.5, this._cp[0].y + 0.5);
-                    } else if (this._cp.length) {
-                        context.quadraticCurveTo (this._cp[0].x + 0.5, this._cp[0].y + 0.5, this._cp[1].x + 0.5, this._cp[1].y + 0.5);
-                    }
-                    context.stroke ();
-                    this._cp.length = 0;
-                }
+            if (this._mode === 'draw' && this._action) {
+                this.finishDraw ();
                 this._action = false;
             }
         });
@@ -143,6 +143,14 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
                     ev.value = this._color;
                     break;
                 }
+                case 'curveMode': {
+                    ev.value = this._curveMode;
+                    break;
+                }
+                case 'eraseSize': {
+                    ev.value = this._eraseSize;
+                    break;
+                }
             }
         });
         this.on(playground.cwPGSetPropertyEvent.type, (ev: playground.cwPGSetPropertyEvent) => {
@@ -153,6 +161,14 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
                 }
                 case 'color': {
                     this._color = String(ev.value);
+                    break;
+                }
+                case 'curveMode': {
+                    this._curveMode = Number(ev.value);
+                    break;
+                }
+                case 'eraseSize': {
+                    this._eraseSize = Number(ev.value);
                     break;
                 }
             }
@@ -174,7 +190,55 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
                 type: 'color',
                 value: this._color
             });
+            ev.properties[this.entityType].properties.push ({
+                name: 'curveMode',
+                desc: '平滑模式',
+                readonly: false,
+                type: 'number',
+                value: this._curveMode,
+                enum: [{
+                    value: 0,
+                    desc: '无'
+                }, {
+                    value: 1,
+                    desc: '二次样条'
+                }, {
+                    value: 2,
+                    desc: '三次样条'
+                }]
+            });
+            ev.properties[this.entityType].properties.push ({
+                name: 'eraseSize',
+                desc: '橡皮宽度',
+                readonly: false,
+                type: 'number',
+                value: this._eraseSize
+            })
         });
+    }
+    get mode () {
+        return this._mode;
+    }
+    set mode (value: string) {
+        if (this._mode !== value) {
+            if (this._mode === 'draw') {
+                this.finishDraw ();
+            }
+            this._action = false;
+            this._mode = value;
+        }
+    }
+    get canvas () {
+        if (this._canvas === null) {
+            this._canvas = document.createElement('canvas');
+            this._canvas.style.backgroundColor = '#00000000';
+            this._canvas.width = this.view.canvas.width;
+            this._canvas.height = this.view.canvas.height;
+            if (this._boundingShape) {
+                this._boundingShape = new lib.cwBoundingBox ({x:0, y:0, w:this._canvas.width, h:this._canvas.height});
+            }
+        }
+        return this._canvas;
     }
 }
 
@@ -195,6 +259,28 @@ export class cwPGFreeDrawFactory extends playground.cwPGFactory {
             readonly: false,
             type: 'color',
             value: '#000000'
+        }, {
+            name: 'curveMode',
+            desc: '平滑模式',
+            readonly: false,
+            type: 'number',
+            value: 0,
+            enum: [{
+                value: 0,
+                desc: '无'
+            }, {
+                value: 1,
+                desc: '二次样条'
+            }, {
+                value: 2,
+                desc: '三次样条'
+            }]
+        }, {
+            name: 'eraseSize',
+            desc: '橡皮宽度',
+            readonly: false,
+            type: 'number',
+            value: 20
         }];
     }
 }
