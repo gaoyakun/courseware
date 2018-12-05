@@ -42,7 +42,7 @@ export class cwPGSwapTool extends playground.cwPGTool {
     get currentObject () {
         return this._curObject;
     }
-    public activate(options: any) {
+    public activate(options?: any) {
         super.activate (options);
         this._curObject = null;
     }

@@ -1,5 +1,6 @@
 import * as lib from './lib';
 import * as playground from './playground';
+import { cwPGSelectTool } from './playground';
 
 const cv = new lib.cwBoundingHull ();
 console.log (cv.length);
@@ -40,20 +41,30 @@ PG.on (playground.cwPGObjectSelectedEvent.type, (ev: playground.cwPGObjectSelect
     if (ev.objects.length == 1) {
         g_editor.objectPropertyGrid.loadObjectProperties (ev.objects[0]);
     } else {
-        g_editor.objectPropertyGrid.clear ();
+        g_editor.objectPropertyGrid.loadPageProperties ();
     }
 });
 PG.on (playground.cwPGObjectDeselectedEvent.type, (ev: playground.cwPGObjectDeselectedEvent) => {
-    g_editor.objectPropertyGrid.clear ();
+    if (ev.objects.length == 1) {
+        g_editor.objectPropertyGrid.loadObjectProperties (ev.objects[0]);
+    } else {
+        g_editor.objectPropertyGrid.loadPageProperties ();
+    }
 });
 PG.on (playground.cwPGObjectMovedEvent.type, (ev: playground.cwPGObjectMovedEvent) => {
     g_editor.objectPropertyGrid.reloadObjectProperties ();
 });
 PG.on (playground.cwPGToolActivateEvent.type, (ev: playground.cwPGToolActivateEvent) => {
     g_editor.toolPropertyGrid.loadToolProperties (ev.tool);
+    if (ev.tool.name === cwPGSelectTool.toolname) {
+        g_editor.objectPropertyGrid.loadPageProperties ();
+    }
 });
 PG.on (playground.cwPGToolDeactivateEvent.type, (ev: playground.cwPGToolDeactivateEvent) => {
     g_editor.toolPropertyGrid.clear ();
+    if (ev.tool.name === cwPGSelectTool.toolname) {
+        g_editor.objectPropertyGrid.loadPageProperties ();
+    }
 });
 lib.cwApp.run ();
 

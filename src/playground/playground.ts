@@ -237,7 +237,7 @@ export class cwPGTool extends lib.cwEventObserver {
             ev.properties = ev.properties || {};
         });
     }
-    public activate(options: any) {
+    public activate(options?: any) {
         lib.cwApp.triggerEvent(null, new cwPGToolActivateEvent(this));
     }
     public deactivate() {
@@ -268,6 +268,18 @@ export class cwPlayground extends lib.cwEventObserver {
         this._entities = {};
         this.on (cwPGGetObjectEvent.type, (ev: cwPGGetObjectEvent) => {
             ev.object = this.findEntity (ev.name);
+        });
+        this.on (lib.cwSceneViewPageWillChangeEvent.type, (ev: lib.cwSceneViewPageWillChangeEvent) => {
+            const tool = this._tools[this._currentTool];
+            if (tool) {
+                tool.deactivate();
+            }
+        });
+        this.on (lib.cwSceneViewPageChangedEvent.type, (ev: lib.cwSceneViewPageChangedEvent) => {
+            const tool = this._tools[this._currentTool];
+            if (tool) {
+                tool.activate();
+            }
         });
         this.view.on (lib.cwKeyDownEvent.type, (ev: lib.cwKeyDownEvent) => {
             if (this._currentTool !== '') {

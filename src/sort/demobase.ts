@@ -240,7 +240,6 @@ export class DemoBase {
         if (!this._view) {
             return false;
         }
-        this._view.empty ();
         this.rects = [];
 
         this._view.on (lib.cwDragOverEvent.type, (ev:lib.cwDragOverEvent) => {

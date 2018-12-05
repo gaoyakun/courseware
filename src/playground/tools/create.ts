@@ -13,14 +13,16 @@ export class cwPGCreateTool extends playground.cwPGTool {
         this._factoryProperties = null;
         this._creationParams = {};
     }
-    public activate(options: any) {
-        this.options = options;
-        this._factoryProperties = this._pg.getFactory (options.createType).getCreationProperties();
-        this._creationParams = {};
-        if (this._factoryProperties) {
-            this._factoryProperties.forEach (prop => {
-                this._creationParams[prop.name] = prop.value;
-            });
+    public activate(options?: any) {
+        if (options) {
+            this.options = options;
+            this._factoryProperties = this._pg.getFactory (options.createType).getCreationProperties();
+            this._creationParams = {};
+            if (this._factoryProperties) {
+                this._factoryProperties.forEach (prop => {
+                    this._creationParams[prop.name] = prop.value;
+                });
+            }
         }
         this.on (lib.cwMouseDownEvent.type, (ev: lib.cwMouseDownEvent) => {
             const cmd: commands.IPGCommand  = {

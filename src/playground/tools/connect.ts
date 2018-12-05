@@ -74,7 +74,7 @@ export class cwPGConnectTool extends playground.cwPGTool {
             });
         });
     }
-    public activate(options: any) {
+    public activate(options?: any) {
         super.activate (options);
         this._moving = false;
         this.on (lib.cwMouseDownEvent.type, (ev: lib.cwMouseDownEvent) => {

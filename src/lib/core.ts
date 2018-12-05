@@ -349,6 +349,32 @@ export class cwSetPropEvent extends cwEvent {
     }
 }
 
+export class cwSceneViewPageWillChangeEvent extends cwEvent {
+    static readonly type: string = '@scenviewpagewillchange';
+    readonly view: cwSceneView;
+    readonly oldPage: string;
+    readonly newPage: string;
+    constructor (view: cwSceneView, oldPage: string, newPage: string) {
+        super (cwSceneViewPageWillChangeEvent.type);
+        this.view = view;
+        this.oldPage = oldPage;
+        this.newPage = newPage;
+    }
+}
+
+export class cwSceneViewPageChangedEvent extends cwEvent {
+    static readonly type: string = '@sceneviewpagechanged';
+    readonly view: cwSceneView;
+    readonly oldPage: string;
+    readonly newPage: string;
+    constructor (view: cwSceneView, oldPage: string, newPage: string) {
+        super (cwSceneViewPageChangedEvent.type);
+        this.view = view;
+        this.oldPage = oldPage;
+        this.newPage = newPage;
+    }
+}
+
 export class cwSysInfo {
     private static _isWindows = (navigator.platform == 'Win32' || navigator.platform == 'Windows');
     private static _isMac = (navigator.platform == 'Mac68K' || navigator.platform == 'MacPPC' || navigator.platform == 'Macintosh' || navigator.platform == 'MacIntel');
@@ -1091,11 +1117,115 @@ export class cwScene extends cwObject {
     }
 }
 
+export interface ISceneViewPage {
+    name: string;
+    rootNode: cwSceneObject;
+    bkImage: string;
+    bkColor: string;
+}
+
 export class cwSceneView extends cwObject {
     private _canvas: cwCanvas;
-    private _rootNode: cwSceneObject;
+    private _pages: { [name:string]: ISceneViewPage };
+    private _currentPage: string;
     private _captureObject: cwSceneObject;
     private _hitObjects: cwSceneObject[];
+    private genPageName (): string {
+        let n = 1;
+        while (true) {
+            const name = `page${n++}`;
+            if (!(name in this._pages)) {
+                return name;
+            }
+        }
+    }
+    forEachPage (callback: (page: ISceneViewPage) => void) {
+        if (callback) {
+            for (const name in this._pages) {
+                callback ({ name: name, rootNode: this._pages[name].rootNode, bkImage: this._pages[name].bkImage, bkColor: this._pages[name].bkColor});
+            }
+        }
+    }
+    addPage (page?: ISceneViewPage): string {
+        const p:ISceneViewPage = page || { name: null, rootNode: null, bkImage: null, bkColor: null };
+        const name = p.name || this.genPageName ();
+        if (name in this._pages) {
+            return null;
+        }
+        this._pages[name] = {
+            name: name,
+            rootNode: p.rootNode,
+            bkImage: p.bkImage,
+            bkColor: p.bkColor
+        }
+        return name;
+    }
+    removePage (name: string): boolean {
+        if (name in this._pages) {
+            if (name === this._currentPage) {
+                let b = false;
+                for (const n in this._pages) {
+                    if (n !== name) {
+                        this.selectPage (n);
+                        b = true;
+                    }
+                }
+                if (!b) {
+                    return false;
+                }
+            }
+            this._pages[name].rootNode.unrefChildren();
+            this._pages[name].rootNode.view = null;
+            this._pages[name].rootNode = null;
+            delete this._pages[name];
+            return true;
+        }
+        return false;
+    }
+    selectPage (name: string) {
+        const oldName = this._currentPage;
+        if (name in this._pages && name !== oldName) {
+            cwApp.triggerEvent (null, new cwSceneViewPageWillChangeEvent(this, oldName, name));
+            this._currentPage = name;
+            this._captureObject = null;
+            this._hitObjects.length = 0;
+            this.applyPage (this._pages[this._currentPage]);
+            cwApp.triggerEvent (null, new cwSceneViewPageChangedEvent(this, oldName, name))
+        }
+    }
+    renamePage (oldName: string, newName: string) {
+        if (oldName in this._pages && newName && newName !== oldName && !(newName in this._pages)) {
+            const page = this._pages[oldName];
+            delete this._pages[oldName];
+            page.name = newName;
+            this._pages[newName] = page;
+        }
+    }
+    get currentPage () {
+        return this._currentPage;
+    }
+    get pageImage () {
+        return this._pages[this._currentPage].bkImage;
+    }
+    set pageImage (image: string) {
+        if (image !== this._pages[this._currentPage].bkImage) {
+            this._pages[this._currentPage].bkImage = image;
+            this.applyPage (this._pages[this._currentPage]);
+        }
+    }
+    get pageColor () {
+        return this._pages[this._currentPage].bkColor;
+    }
+    set pageColor (color: string) {
+        if (color !== this._pages[this._currentPage].bkColor) {
+            this._pages[this._currentPage].bkColor = color;
+            this.applyPage (this._pages[this._currentPage]);
+        }
+    }
+    private applyPage (page: ISceneViewPage) {
+        this._canvas.canvas.style.backgroundImage = page.bkImage;
+        this._canvas.canvas.style.backgroundColor = page.bkColor;
+    }
     public updateHitObjects(x: number, y: number) {
         const hitTestResult = this.hitTest(x, y);
         for (let i = 0; i < this._hitObjects.length;) {
@@ -1112,7 +1242,7 @@ export class cwSceneView extends cwObject {
             }
         }
         this._hitObjects = hitTestResult;
-        this._hitObjects.push (this._rootNode);
+        this._hitObjects.push (this.rootNode);
     }
     private isValidObject(object: cwSceneObject) {
         return object && object.view === this;
@@ -1121,8 +1251,15 @@ export class cwSceneView extends cwObject {
         super();
         this._captureObject = null;
         this._hitObjects = [];
-        this._rootNode = new cwSceneObject();
-        this._rootNode.view = this;
+        this._currentPage = 'page1';
+        this._pages = {};
+        this._pages[this._currentPage] = {
+            name: this._currentPage,
+            rootNode: new cwSceneObject(),
+            bkImage: null,
+            bkColor: null
+        }
+        this._pages[this._currentPage].rootNode.view = this;
         this._canvas = new cwCanvas(this, canvas, doubleBuffer);
         this.on(cwFrameEvent.type, (ev: cwFrameEvent) => {
             let updateEvent = new cwUpdateEvent(ev.deltaTime, ev.elapsedTime, ev.frameStamp);
@@ -1151,11 +1288,11 @@ export class cwSceneView extends cwObject {
         });
     }
     get rootNode(): cwSceneObject {
-        return this._rootNode;
+        return this._pages[this._currentPage].rootNode;
     }
     set rootNode(node: cwSceneObject) {
-        if (this._rootNode !== node) {
-            this._rootNode = node;
+        if (this._pages[this._currentPage].rootNode !== node) {
+            this._pages[this._currentPage].rootNode = node;
             this._hitObjects.length = 0;
             this._captureObject = null;
         }
@@ -1168,18 +1305,6 @@ export class cwSceneView extends cwObject {
     }
     get hitObjects(): cwSceneObject[] {
         return this._hitObjects;
-    }
-    empty(): void {
-        if (this._rootNode) {
-            this._rootNode.unrefChildren();
-        }
-    }
-    unref(): void {
-        this.empty();
-        if (this._rootNode) {
-            this._rootNode.view = null;
-            this._rootNode = null;
-        }
     }
     setCaptureObject(object: cwSceneObject): void {
         this._captureObject = object;

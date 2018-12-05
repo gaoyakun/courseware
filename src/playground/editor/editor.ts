@@ -26,12 +26,6 @@ interface IToolSet {
     operations: IToolPalette;
 }
 
-interface IPage {
-    rootNode: lib.cwSceneObject;
-    bkImage: string;
-    bkColor: string;
-}
-
 export class cwPGToolPalette {
     private static uniqueId: number = 1;
     private _editor: cwPGEditor;
@@ -476,6 +470,25 @@ export class cwPGPropertyGrid {
             }
         }
     }
+    loadPageProperties () {
+        this.clear ();
+        const pageList: any[] = [];
+        this._editor.playground.view.forEachPage (page => {
+            pageList.push ({
+                value: page.name,
+                desc: page.name
+            });
+        });
+        this.addChoiceAttribute ('页面列表', pageList, this._editor.playground.view.currentPage, false, (value:string) => {
+            this._editor.playground.view.selectPage (value);
+        });
+        this.addTextAttribute ('页面背景图像', this._editor.playground.view.pageImage||'', false, value => {
+            this._editor.playground.view.pageImage = (value === '') ? null : value;
+        });
+        this.addColorAttribute ('页面背景颜色', this._editor.playground.view.pageColor||'', false, value => {
+            this._editor.playground.view.pageColor = (value === '') ? null : value;
+        });
+    }
 }
 
 export class cwPGEditor {
@@ -488,7 +501,6 @@ export class cwPGEditor {
     private _opPalette: cwPGToolPalette;
     private _objectPropGrid: cwPGPropertyGrid;
     private _toolPropGrid: cwPGPropertyGrid;
-    private _pages: IPage[];
     constructor (pg: playground.cwPlayground, toolset: IToolSet, toolPaletteElement:HTMLElement, opPaletteElement:HTMLElement, objectPropGridElement:HTMLElement, toolPropGridElement:HTMLElement) {
         this._strokeColor = '#00000000';
         this._fillColor = 'red';
@@ -501,6 +513,7 @@ export class cwPGEditor {
         this._opPalette.loadOpPalette (toolset.operations);
         this._objectPropGrid = new cwPGPropertyGrid (this, objectPropGridElement, 'pg-object');
         this._toolPropGrid = new cwPGPropertyGrid (this, toolPropGridElement, 'pg-tool');
+        this._objectPropGrid.loadPageProperties ();
     }
     get toolSet () {
         return this._toolset;

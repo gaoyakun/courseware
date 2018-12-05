@@ -39,9 +39,11 @@ export class cwPGObjectMovedEvent extends lib.cwEvent {
 export class cwPGObjectDeselectedEvent extends lib.cwEvent {
     static readonly type: string = '@PGObjectDeselected';
     readonly object: lib.cwSceneObject;
-    constructor (object: lib.cwSceneObject) {
+    readonly objects: lib.cwSceneObject[];
+    constructor (object: lib.cwSceneObject, objects: lib.cwSceneObject[]) {
         super (cwPGObjectDeselectedEvent.type);
         this.object = object;
+        this.objects = objects;
     }
 }
 export class cwPGSelectComponent extends lib.cwComponent {
@@ -94,7 +96,7 @@ export class cwPGSelectTool extends playground.cwPGTool {
     get selectedObjects () {
         return this._selectedObjects;
     }
-    public activate(options: any) {
+    public activate(options?: any) {
         super.activate (options);
         this._selectedObjects.length = 0;
         this.on (lib.cwKeyDownEvent.type, (ev: lib.cwKeyDownEvent) => {
@@ -236,7 +238,7 @@ export class cwPGSelectTool extends playground.cwPGTool {
         if (index >= 0) {
             object.triggerEx(new cwPGDeselectEvent());
             this.selectedObjects.splice(index, 1);
-            lib.cwApp.triggerEvent (null, new cwPGObjectDeselectedEvent (object));
+            lib.cwApp.triggerEvent (null, new cwPGObjectDeselectedEvent (object, this._selectedObjects));
         }
     }
     public deselectAll() {

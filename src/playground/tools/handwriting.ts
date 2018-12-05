@@ -115,8 +115,10 @@ export class cwPGHandWritingTool extends playground.cwPGTool {
             }
         });
     }
-    public activate(options: any) {
-        this._mode = (options||{}).mode || 'draw';
+    public activate(options?: any) {
+        if (options) {
+            this._mode = options.mode || 'draw';
+        }
         this._freedrawNode = this.findFreedrawNode ();
         if (!this._freedrawNode) {
             const cmd: commands.IPGCommand = {
