@@ -481,12 +481,39 @@ export class cwPGPropertyGrid {
         });
         this.addChoiceAttribute ('页面列表', pageList, this._editor.playground.view.currentPage, false, (value:string) => {
             this._editor.playground.view.selectPage (value);
+            return value;
         });
         this.addTextAttribute ('页面背景图像', this._editor.playground.view.pageImage||'', false, value => {
             this._editor.playground.view.pageImage = (value === '') ? null : value;
+            return value;
+        });
+        this.addChoiceAttribute ('页面背景重复', [{
+            value: 'repeat',
+            desc: '重复'
+        }, {
+            value: 'repeat-x',
+            desc: '横向重复'
+        }, {
+            value: 'repeat-y',
+            desc: '纵向重复'
+        }, {
+            value: 'no-repeat',
+            desc: '不重复'
+        }], this._editor.playground.view.pageImageRepeat, false, value => {
+            this._editor.playground.view.pageImageRepeat = value;
+            return value;
+        });
+        this.addToggleAttribute ('页面背景固定', this._editor.playground.view.pageImageAttachment === 'fixed', false, value => {
+            this._editor.playground.view.pageImageAttachment = value ? 'fixed' : 'scroll';
+            return value;
+        });
+        this.addTextAttribute ('页面背景大小', this._editor.playground.view.pageImageSize, false, value => {
+            this._editor.playground.view.pageImageSize = value;
+            return value;
         });
         this.addColorAttribute ('页面背景颜色', this._editor.playground.view.pageColor||'', false, value => {
             this._editor.playground.view.pageColor = (value === '') ? null : value;
+            return value;
         });
     }
 }

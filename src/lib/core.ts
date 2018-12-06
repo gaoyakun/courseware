@@ -1120,7 +1120,10 @@ export class cwScene extends cwObject {
 export interface ISceneViewPage {
     name: string;
     rootNode: cwSceneObject;
-    bkImage: string;
+    bkImageUrl: string;
+    bkImageRepeat: string;
+    bkImageAttachment: string;
+    bkImageSize: string;
     bkColor: string;
 }
 
@@ -1142,12 +1145,21 @@ export class cwSceneView extends cwObject {
     forEachPage (callback: (page: ISceneViewPage) => void) {
         if (callback) {
             for (const name in this._pages) {
-                callback ({ name: name, rootNode: this._pages[name].rootNode, bkImage: this._pages[name].bkImage, bkColor: this._pages[name].bkColor});
+                callback ({ 
+                    name: name, 
+                    rootNode: this._pages[name].rootNode, 
+                    bkImageUrl: this._pages[name].bkImageUrl, 
+                    bkImageRepeat: this._pages[name].bkImageRepeat,
+                    bkImageAttachment: this._pages[name].bkImageAttachment,
+                    bkImageSize: this._pages[name].bkImageSize, 
+                    bkColor: this._pages[name].bkColor
+                });
             }
         }
     }
     addPage (page?: ISceneViewPage): string {
-        const p:ISceneViewPage = page || { name: null, rootNode: null, bkImage: null, bkColor: null };
+        const defaultPage:ISceneViewPage = { name: null, rootNode: null, bkImageUrl: null, bkImageRepeat: 'repeat', bkImageAttachment: 'scroll', bkImageSize: 'auto', bkColor: '#ffffff' };
+        const p:ISceneViewPage = page || defaultPage;
         const name = p.name || this.genPageName ();
         if (name in this._pages) {
             return null;
@@ -1155,8 +1167,11 @@ export class cwSceneView extends cwObject {
         this._pages[name] = {
             name: name,
             rootNode: p.rootNode,
-            bkImage: p.bkImage,
-            bkColor: p.bkColor
+            bkImageUrl: p.bkImageUrl,
+            bkImageRepeat: p.bkImageRepeat || defaultPage.bkImageRepeat,
+            bkImageAttachment: p.bkImageAttachment || defaultPage.bkImageAttachment,
+            bkImageSize: p.bkImageSize || defaultPage.bkImageSize,
+            bkColor: p.bkColor || defaultPage.bkColor
         }
         return name;
     }
@@ -1205,11 +1220,41 @@ export class cwSceneView extends cwObject {
         return this._currentPage;
     }
     get pageImage () {
-        return this._pages[this._currentPage].bkImage;
+        return this._pages[this._currentPage].bkImageUrl;
     }
     set pageImage (image: string) {
-        if (image !== this._pages[this._currentPage].bkImage) {
-            this._pages[this._currentPage].bkImage = image;
+        if (image !== this._pages[this._currentPage].bkImageUrl) {
+            this._pages[this._currentPage].bkImageUrl = image;
+            this.applyPage (this._pages[this._currentPage]);
+        }
+    }
+    get pageImageRepeat () {
+        return this._pages[this._currentPage].bkImageRepeat;
+    }
+    set pageImageRepeat (value: string) {
+        const repeat = value || 'repeat';
+        if (repeat !== this._pages[this._currentPage].bkImageRepeat) {
+            this._pages[this._currentPage].bkImageRepeat = repeat;
+            this.applyPage (this._pages[this._currentPage]);
+        }
+    }
+    get pageImageAttachment () {
+        return this._pages[this._currentPage].bkImageAttachment;
+    }
+    set pageImageAttachment (value: string) {
+        const attach = value || 'scroll';
+        if (attach !== this._pages[this._currentPage].bkImageAttachment) {
+            this._pages[this._currentPage].bkImageAttachment = attach;
+            this.applyPage (this._pages[this._currentPage]);
+        }
+    }
+    get pageImageSize () {
+        return this._pages[this._currentPage].bkImageSize;
+    }
+    set pageImageSize (value: string) {
+        const size = value || 'auto';
+        if (size !== this._pages[this._currentPage].bkImageSize) {
+            this._pages[this._currentPage].bkImageSize = size;
             this.applyPage (this._pages[this._currentPage]);
         }
     }
@@ -1223,8 +1268,13 @@ export class cwSceneView extends cwObject {
         }
     }
     private applyPage (page: ISceneViewPage) {
-        this._canvas.canvas.style.backgroundImage = page.bkImage;
-        this._canvas.canvas.style.backgroundColor = page.bkColor;
+        const color = page.bkColor || '';
+        const url = page.bkImageUrl && `url(${page.bkImageUrl})` || '';
+        const bkrepeat = page.bkImageRepeat || 'repeat';
+        const bkattach = page.bkImageAttachment || 'scroll';
+        const bkpos = '0% 0%';
+        const bksize = page.bkImageSize || 'auto';
+        this._canvas.canvas.style.background = `${color} ${url} ${bkrepeat} ${bkattach} ${bkpos} / ${bksize}`;
     }
     public updateHitObjects(x: number, y: number) {
         const hitTestResult = this.hitTest(x, y);
@@ -1249,18 +1299,24 @@ export class cwSceneView extends cwObject {
     }
     constructor(canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
         super();
+        this._canvas = new cwCanvas(this, canvas, doubleBuffer);
         this._captureObject = null;
         this._hitObjects = [];
-        this._currentPage = 'page1';
+        this._currentPage = null;
         this._pages = {};
-        this._pages[this._currentPage] = {
-            name: this._currentPage,
-            rootNode: new cwSceneObject(),
-            bkImage: null,
-            bkColor: null
-        }
-        this._pages[this._currentPage].rootNode.view = this;
-        this._canvas = new cwCanvas(this, canvas, doubleBuffer);
+        const rootNode = new cwSceneObject();
+        rootNode.view = this;
+        this.addPage ({
+            name: 'page1',
+            rootNode: rootNode,
+            bkImageUrl: null,
+            bkImageRepeat: null,
+            bkImageSize: null,
+            bkImageAttachment: null,
+            bkColor: '#ffffff'
+        });
+        this.selectPage ('page1');
+
         this.on(cwFrameEvent.type, (ev: cwFrameEvent) => {
             let updateEvent = new cwUpdateEvent(ev.deltaTime, ev.elapsedTime, ev.frameStamp);
             if (this.rootNode) {
