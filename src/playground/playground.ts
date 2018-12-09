@@ -259,7 +259,6 @@ export class cwPlayground extends lib.EventObserver {
     constructor(canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
         super ();
         this.view = lib.App.addCanvas(canvas, doubleBuffer);
-        this.view.rootNode.addComponent (new lib.CoDraggable());
         this._factories = {};
         this._tools = {};
 
@@ -298,31 +297,31 @@ export class cwPlayground extends lib.EventObserver {
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (lib.EvtMouseDown.type, (ev: lib.EvtMouseDown) => {
+        this.view.on (lib.EvtMouseDown.type, (ev: lib.EvtMouseDown) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (lib.EvtMouseUp.type, (ev: lib.EvtMouseUp) => {
+        this.view.on (lib.EvtMouseUp.type, (ev: lib.EvtMouseUp) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (lib.EvtMouseMove.type, (ev: lib.EvtMouseMove) => {
+        this.view.on (lib.EvtMouseMove.type, (ev: lib.EvtMouseMove) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (lib.EvtClick.type, (ev: lib.EvtClick) => {
+        this.view.on (lib.EvtClick.type, (ev: lib.EvtClick) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (lib.EvtDblClick.type, (ev: lib.EvtDblClick) => {
+        this.view.on (lib.EvtDblClick.type, (ev: lib.EvtDblClick) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
@@ -552,6 +551,10 @@ export class cwPlayground extends lib.EventObserver {
                 obj.triggerEx (ev);
                 cmd.propValue = ev.value;
             }
+        } else if (cmd.command == 'AddPage') {
+            this.view.addPage ();
+        } else if (cmd.command == 'RenamePage') {
+            this.view.renamePage (this.view.currentPage, cmd.newName);
         } else if (this._currentTool) {
             this._tools[this._currentTool].executeCommand (cmd);
         }

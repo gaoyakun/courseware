@@ -186,7 +186,22 @@ export class cwPGPropertyGrid {
         tr.style.fontWeight = 'bold';
         this.createGroupCell (tr, name);
     }
-    addTextAttribute (name: string, value: string, readonly: boolean, changeCallback: (value: string) => any) {
+    addButton (text: string, callback: () => void) {
+        const tr = this.createRow ();
+        const td = this.createCell (tr);
+        td.style.padding = '5px';
+        td.style.textAlign = 'center';
+        td.setAttribute ('colspan', '2');
+        const btn = document.createElement ('button');
+        btn.innerText = text;
+        btn.style.width = '100%';
+        btn.style.padding = '5px';
+        btn.onclick = () => {
+            callback && callback ();
+        };
+        td.appendChild (btn);
+    }
+    addTextAttribute (name: string, value: string, readonly: boolean, changeCallback: (value: string) => any, laterChange?: boolean) {
         const tr = this.createRow ();
         this.createPropCell (tr).innerText = name;
         const input: HTMLInputElement = document.createElement ('input');
@@ -197,8 +212,14 @@ export class cwPGPropertyGrid {
         input.readOnly = readonly;
         input.disabled = readonly;
         if (changeCallback) {
-            input.oninput = () => {
-                input.value = String(changeCallback (input.value));
+            if (!!laterChange) {
+                input.onchange = input.onblur = () => {
+                    input.value = String(changeCallback (input.value));
+                }
+            } else {
+                input.oninput = () => {
+                    input.value = String(changeCallback (input.value));
+                }
             }
         }
         this.createPropCell (tr).appendChild (input);
@@ -481,12 +502,23 @@ export class cwPGPropertyGrid {
         });
         this.addChoiceAttribute ('页面列表', pageList, this._editor.playground.view.currentPage, false, (value:string) => {
             this._editor.playground.view.selectPage (value);
-            return value;
+            this.loadPageProperties ();
+            return this._editor.playground.view.currentPage;
         });
+        this.addTextAttribute ('页面名称', this._editor.playground.view.currentPage, false, (value:string) => {
+            if (value !== this._editor.playground.view.currentPage) {
+                this._editor.playground.executeCommand ({
+                    command: 'RenamePage',
+                    newName: value
+                });
+                this.loadPageProperties ();
+                return this._editor.playground.view.currentPage;
+            }
+        }, true);
         this.addTextAttribute ('页面背景图像', this._editor.playground.view.pageImage||'', false, value => {
             this._editor.playground.view.pageImage = (value === '') ? null : value;
             return value;
-        });
+        }, true);
         this.addChoiceAttribute ('页面背景重复', [{
             value: 'repeat',
             desc: '重复'
@@ -515,6 +547,18 @@ export class cwPGPropertyGrid {
             this._editor.playground.view.pageColor = (value === '') ? null : value;
             return value;
         });
+        this.addButton ('新建页面', () => {
+            this._editor.playground.executeCommand ({
+                command: 'AddPage'
+            });
+            this.loadPageProperties ();
+        });
+        this.addButton ('删除页面', () => {
+            this._editor.playground.executeCommand ({
+                command: 'DeletePage'
+            });
+            this.loadPageProperties ();
+        })
     }
 }
 
