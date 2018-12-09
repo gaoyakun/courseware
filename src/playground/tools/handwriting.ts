@@ -1,4 +1,4 @@
-import * as lib from '../../lib';
+import * as lib from 'libcatk';
 import * as commands from '../commands';
 import * as playground from '../playground';
 import * as objects from '../objects';
@@ -19,7 +19,7 @@ export class cwPGHandWritingTool extends playground.cwPGTool {
             this.applyProperty (prop, props[prop]);
         }
     }
-    private findFreedrawNode (rootNode?: lib.cwSceneObject): objects.cwPGFreeDraw {
+    private findFreedrawNode (rootNode?: lib.SceneObject): objects.cwPGFreeDraw {
         const root = rootNode || this._pg.view.rootNode;
         if (root.entityType === 'FreeDraw') {
             return root as objects.cwPGFreeDraw;
@@ -145,10 +145,10 @@ export class cwPGHandWritingTool extends playground.cwPGTool {
         }
         super.deactivate ();
     }
-    public activateObject(object: lib.cwSceneObject) {
+    public activateObject(object: lib.SceneObject) {
         super.activateObject (object);
     }
-    public deactivateObject(object: lib.cwSceneObject) {
+    public deactivateObject(object: lib.SceneObject) {
         super.deactivateObject (object);
     }
 }

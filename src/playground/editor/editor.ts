@@ -1,4 +1,4 @@
-import * as lib from '../../lib';
+import * as lib from 'libcatk';
 import * as playground from '../playground';
 import * as commands from '../commands';
 
@@ -128,7 +128,7 @@ export class cwPGToolPalette {
 export class cwPGPropertyGrid {
     private _container: HTMLElement;
     private _tableId: string;
-    private _object: lib.cwEventObserver;
+    private _object: lib.EventObserver;
     private _editor: cwPGEditor;
     constructor (editor: cwPGEditor, container: HTMLElement, id: string) {
         this._editor = editor;
@@ -340,7 +340,7 @@ export class cwPGPropertyGrid {
         if (this._object) {
             const cmd: commands.IPGCommand = {
                 command: 'GetObjectProperty',
-                objectName: (this._object as lib.cwSceneObject).entityName,
+                objectName: (this._object as lib.SceneObject).entityName,
                 propName: name
             }
             this._editor.playground.executeCommand (cmd);
@@ -351,7 +351,7 @@ export class cwPGPropertyGrid {
         if (this._object) {
             this._editor.playground.executeCommand ({
                 command: 'SetObjectProperty',
-                objectName: (this._object as lib.cwSceneObject).entityName,
+                objectName: (this._object as lib.SceneObject).entityName,
                 propName: name,
                 propValue: value
             });
@@ -427,7 +427,7 @@ export class cwPGPropertyGrid {
         this.clear ();
         this.loadToolProperties (obj);
     }
-    loadToolProperties (object: lib.cwEventObserver) {
+    loadToolProperties (object: lib.EventObserver) {
         if (this._object !== object) {
             this.clear ();
             this._object = object;
@@ -451,7 +451,7 @@ export class cwPGPropertyGrid {
         this.clear ();
         this.loadObjectProperties (obj);
     }
-    loadObjectProperties (object: lib.cwEventObserver) {
+    loadObjectProperties (object: lib.EventObserver) {
         if (this._object !== object) {
             this.clear ();
             this._object = object;

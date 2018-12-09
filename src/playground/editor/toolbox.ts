@@ -1,6 +1,5 @@
 import * as playground from '../playground';
 import * as commands from '../commands';
-import * as editor from './editor';
 
 export interface IToolDef {
     activeCommand: string;

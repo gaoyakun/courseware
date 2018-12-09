@@ -1,7 +1,7 @@
-import * as lib from '../../lib';
+import * as lib from 'libcatk';
 import * as playground from '../playground';
 
-export class cwPGLabel extends lib.cwSceneObject {
+export class cwPGLabel extends lib.SceneObject {
     private _width: number;
     private _height: number;
     private _minwidth: number;
@@ -16,7 +16,7 @@ export class cwPGLabel extends lib.cwSceneObject {
     private _textcolor: string;
     private _bkColor: string;
     private _bkShape: string;
-    private _boundingShape: lib.cwBoundingShape;
+    private _boundingShape: lib.BoundingShape;
 
     private parseText (value: string): string {
         const regexp = /\{\{[^\{\}]*\}\}/g;
@@ -52,10 +52,10 @@ export class cwPGLabel extends lib.cwSceneObject {
             let height = this._fontSize;
             let boundingWidth = Math.max(width, this._width);
             let boundingHeight = Math.max(height, this._height);
-            this._boundingShape = new lib.cwBoundingBox({ x:-boundingWidth * this.anchorPoint.x, y:-boundingHeight * this.anchorPoint.y, w:boundingWidth, h:boundingHeight });
+            this._boundingShape = new lib.BoundingBox({ x:-boundingWidth * this.anchorPoint.x, y:-boundingHeight * this.anchorPoint.y, w:boundingWidth, h:boundingHeight });
         }
     }
-    constructor(parent: lib.cwSceneObject, params:any = null) {
+    constructor(parent: lib.SceneObject, params:any = null) {
         super (parent);
         const opt = params||{}
         this._width = Number(opt.width || 0);
@@ -74,13 +74,13 @@ export class cwPGLabel extends lib.cwSceneObject {
         this._bkShape = opt.bkShape || 'rect';
         this._boundingShape = null;
         this.anchorPoint = { x:0.5, y:0.5 };
-        this.on(lib.cwUpdateEvent.type, (evt: lib.cwUpdateEvent) => {
+        this.on(lib.EvtUpdate.type, (evt: lib.EvtUpdate) => {
             this.update ();
         });
-        this.on(lib.cwGetBoundingShapeEvent.type, (evt: lib.cwGetBoundingShapeEvent) => {
+        this.on(lib.EvtGetBoundingShape.type, (evt: lib.EvtGetBoundingShape) => {
             evt.shape = this._boundingShape;
         });
-        this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
+        this.on(lib.EvtDraw.type, (evt: lib.EvtDraw) => {
             let width = this._measure.width;
             if (width < this._minwidth) {
                 width = this._minwidth;
@@ -367,7 +367,7 @@ export class cwPGLabel extends lib.cwSceneObject {
 }
 
 export class cwPGLabelFactory extends playground.cwPGFactory {
-    protected _createEntity (options?:any): lib.cwSceneObject {
+    protected _createEntity (options?:any): lib.SceneObject {
         return new cwPGLabel (null, options);
     }
     public getCreationProperties (): playground.IProperty[] {

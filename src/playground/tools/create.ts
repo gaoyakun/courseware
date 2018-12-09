@@ -1,4 +1,4 @@
-import * as lib from '../../lib';
+import * as lib from 'libcatk';
 import * as playground from '../playground';
 import * as commands from '../commands';
 
@@ -24,7 +24,7 @@ export class cwPGCreateTool extends playground.cwPGTool {
                 });
             }
         }
-        this.on (lib.cwMouseDownEvent.type, (ev: lib.cwMouseDownEvent) => {
+        this.on (lib.EvtMouseDown.type, (ev: lib.EvtMouseDown) => {
             const cmd: commands.IPGCommand  = {
                 command: 'CreateObject',
                 type: this.options.createType,
@@ -60,7 +60,7 @@ export class cwPGCreateTool extends playground.cwPGTool {
         super.activate (options);
     }
     public deactivate() {
-        this.off (lib.cwMouseDownEvent.type);
+        this.off (lib.EvtMouseDown.type);
         this.options = {};
         super.deactivate ();
     }

@@ -1,7 +1,7 @@
-import * as lib from '../../lib';
+import * as lib from 'libcatk';
 import * as playground from '../playground';
 
-export class cwPGArrow extends lib.cwSceneObject {
+export class cwPGArrow extends lib.SceneObject {
     private _lineWidth: number;
     private _arrowLen: number;
     private _style: string;
@@ -11,20 +11,20 @@ export class cwPGArrow extends lib.cwSceneObject {
     private _objectTo: string;
     private _positionTo: lib.IPoint2d;
     private _segment: lib.ISegment2d;
-    private _boundingShape: lib.cwBoundingHull;
+    private _boundingShape: lib.BoundingHull;
 
     private getSegment (): lib.ISegment2d {
         const t = this.worldTransform;
         const posFrom = t.transformPoint (this._positionFrom);
         const posTo = t.transformPoint (this._positionTo);
         const result: lib.ISegment2d = { start: { x:posFrom.x, y:posFrom.y }, end: { x:posTo.x, y:posTo.y} };
-        let objectFrom: lib.cwSceneObject = null;
-        let transformFrom: lib.cwTransform2d = null;
-        let objectTo: lib.cwSceneObject = null;
-        let transformTo: lib.cwTransform2d = null;
+        let objectFrom: lib.SceneObject = null;
+        let transformFrom: lib.Matrix2d = null;
+        let objectTo: lib.SceneObject = null;
+        let transformTo: lib.Matrix2d = null;
         if (this._objectFrom) {
             const ev = new playground.cwPGGetObjectEvent (this._objectFrom);
-            lib.cwApp.triggerEvent (null, ev);
+            lib.App.triggerEvent (null, ev);
             objectFrom = ev.object;
             if (objectFrom) {
                 transformFrom = objectFrom.worldTransform;
@@ -34,7 +34,7 @@ export class cwPGArrow extends lib.cwSceneObject {
         }
         if (this._objectTo) {
             const ev = new playground.cwPGGetObjectEvent (this._objectTo);
-            lib.cwApp.triggerEvent (null, ev);
+            lib.App.triggerEvent (null, ev);
             objectTo = ev.object;
             if (objectTo) {
                 transformTo = objectTo.worldTransform;
@@ -43,18 +43,18 @@ export class cwPGArrow extends lib.cwSceneObject {
             }
         }
         if (objectFrom) {
-            const ptList = lib.cwIntersectionTestShapeSegment (objectFrom.boundingShape.getTransformedShape(transformFrom), result);
+            const ptList = lib.IntersectionTestShapeSegment (objectFrom.boundingShape.getTransformedShape(transformFrom), result);
             if (ptList && ptList.length > 0) {
                 result.start = ptList[0];
             }
         }
         if (objectTo) {
-            const ptList = lib.cwIntersectionTestShapeSegment (objectTo.boundingShape.getTransformedShape(transformTo), result);
+            const ptList = lib.IntersectionTestShapeSegment (objectTo.boundingShape.getTransformedShape(transformTo), result);
             if (ptList && ptList.length > 0) {
                 result .end = ptList[0];
             }
         }
-        const it = lib.cwTransform2d.invert (t);
+        const it = lib.Matrix2d.invert (t);
         result.start = it.transformPoint (result.start);
         result.end = it.transformPoint (result.end);
 
@@ -98,13 +98,13 @@ export class cwPGArrow extends lib.cwSceneObject {
     private update () {
         // Compute segment and bounding shape
         this._segment = this.getSegment ();
-        const v = lib.cwGetVector (this._segment.start, this._segment.end);
-        const d = lib.cwVectorLength (v);
+        const v = lib.GetVector (this._segment.start, this._segment.end);
+        const d = lib.VectorLength (v);
         const w = Math.floor(this._lineWidth / 2 + 3);
         const dx = w * v.y / d;
         const dy = -w * v.x / d;
         if (this._boundingShape === null) {
-            this._boundingShape = new lib.cwBoundingHull ();
+            this._boundingShape = new lib.BoundingHull ();
         } else {
             this._boundingShape.clear ();
         }
@@ -113,7 +113,7 @@ export class cwPGArrow extends lib.cwSceneObject {
         this._boundingShape.addPoint ({x:this._segment.end.x - dx, y:this._segment.end.y - dy});
         this._boundingShape.addPoint ({x:this._segment.end.x + dx, y:this._segment.end.y + dy});
     }
-    constructor(parent: lib.cwSceneObject, params:any = null) {
+    constructor(parent: lib.SceneObject, params:any = null) {
         super(parent);
         const opt = params||{}
         this._lineWidth = Number(opt.lineWidth || 1);
@@ -126,16 +126,16 @@ export class cwPGArrow extends lib.cwSceneObject {
         this._positionTo = { x:opt.positionToX===undefined?0:Number(opt.positionToX), y:opt.positionToY===undefined?0:Number(opt.positionToY) };
         this._segment = null;
         this._boundingShape = null;
-        this.on(lib.cwUpdateEvent.type, (evt: lib.cwUpdateEvent) => {
+        this.on(lib.EvtUpdate.type, (evt: lib.EvtUpdate) => {
             this.update ();
         })
-        this.on(lib.cwGetBoundingShapeEvent.type, (evt: lib.cwGetBoundingShapeEvent) => {
+        this.on(lib.EvtGetBoundingShape.type, (evt: lib.EvtGetBoundingShape) => {
             if (!this._boundingShape) {
                 this.update ();
             }
             evt.shape = this._boundingShape;
         });
-        this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
+        this.on(lib.EvtDraw.type, (evt: lib.EvtDraw) => {
             if (this._style === 'none') {
                 evt.canvas.context.strokeStyle = this._color;
                 evt.canvas.context.lineWidth = this._lineWidth;
@@ -324,7 +324,7 @@ export class cwPGArrow extends lib.cwSceneObject {
 }
 
 export class cwPGArrowFactory extends playground.cwPGFactory {
-    protected _createEntity (options?:any): lib.cwSceneObject {
+    protected _createEntity (options?:any): lib.SceneObject {
         return new cwPGArrow (null, options);
     }
     public getCreationProperties (): playground.IProperty[] {

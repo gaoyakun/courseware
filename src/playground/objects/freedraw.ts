@@ -1,7 +1,7 @@
-import * as lib from '../../lib';
+import * as lib from 'libcatk';
 import * as playground from '../playground';
 
-export class cwPGFreeDraw extends lib.cwSceneObject {
+export class cwPGFreeDraw extends lib.SceneObject {
     private _lineWidth: number;
     private _color: string;
     private _curveMode: number;
@@ -13,7 +13,7 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
     private _lastMoveTime: number;
     private _action: boolean;
     private _canvas: HTMLCanvasElement;
-    private _boundingShape: lib.cwBoundingBox;
+    private _boundingShape: lib.BoundingBox;
 
     private finishDraw () {
         if (this._mode === 'draw' && this._cp.length > 0) {
@@ -27,7 +27,7 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
             this._cp.length = 0;
         }
     }
-    constructor(parent: lib.cwSceneObject, params:any = null) {
+    constructor(parent: lib.SceneObject, params:any = null) {
         super(parent);
         this._canvas = null;
         this._boundingShape = null;
@@ -42,7 +42,7 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
         this._mousePosY = 0;
         this._eraseSize = opt.eraseSize || 20;
         this._curveMode = opt.curveMode || 0;
-        this.on(lib.cwCanvasResizeEvent.type, (evt: lib.cwCanvasResizeEvent) => {
+        this.on(lib.EvtCanvasResize.type, (evt: lib.EvtCanvasResize) => {
             if (evt.view === this.view && this._canvas) {
                 this._canvas.width = evt.view.canvas.width;
                 this._canvas.height = evt.view.canvas.height;
@@ -51,13 +51,13 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
                 }
             }
         })
-        this.on(lib.cwGetBoundingShapeEvent.type, (evt: lib.cwGetBoundingShapeEvent) => {
+        this.on(lib.EvtGetBoundingShape.type, (evt: lib.EvtGetBoundingShape) => {
             if (this._boundingShape === null) {
-                this._boundingShape = new lib.cwBoundingBox ({x:0, y:0, w:this.canvas.width, h:this.canvas.height});
+                this._boundingShape = new lib.BoundingBox ({x:0, y:0, w:this.canvas.width, h:this.canvas.height});
             }
             evt.shape = this._boundingShape;
         });
-        this.on(lib.cwHitTestEvent.type, (evt: lib.cwHitTestEvent) => {
+        this.on(lib.EvtHitTest.type, (evt: lib.EvtHitTest) => {
             const canvas = this.canvas;
             if (evt.x >= 0 && evt.x < canvas.width && evt.y >= 0 && evt.y < canvas.height) {
                 const data = canvas.getContext('2d').getImageData (evt.x, evt.y, 1, 1);
@@ -67,7 +67,7 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
             }
             evt.eat ();
         });
-        this.on(lib.cwDrawEvent.type, (evt: lib.cwDrawEvent) => {
+        this.on(lib.EvtDraw.type, (evt: lib.EvtDraw) => {
             const w = this.canvas.width;
             const h = this.canvas.height;
             evt.canvas.context.drawImage (this.canvas, -Math.round(w * this.anchorPoint.x)-0.5, -Math.round(h * this.anchorPoint.y)-0.5, w, h);
@@ -76,8 +76,8 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
                 evt.canvas.context.strokeRect (Math.round(this._mousePosX - this._eraseSize/2), Math.round(this._mousePosY - this._eraseSize/2), this._eraseSize, this._eraseSize);
             }
         });
-        this.on (lib.cwMouseDownEvent.type, (ev: lib.cwMouseDownEvent) => {
-            const pt = lib.cwTransform2d.invert(this.worldTransform).transformPoint({x:ev.x, y:ev.y});
+        this.on (lib.EvtMouseDown.type, (ev: lib.EvtMouseDown) => {
+            const pt = lib.Matrix2d.invert(this.worldTransform).transformPoint({x:ev.x, y:ev.y});
             if (this._mode === 'draw') {
                 const context = this.canvas.getContext('2d');
                 context.lineWidth = this._lineWidth;
@@ -94,11 +94,11 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
                 this._action = true;
             }
         });
-        this.on (lib.cwMouseMoveEvent.type, (ev: lib.cwMouseMoveEvent) => {
+        this.on (lib.EvtMouseMove.type, (ev: lib.EvtMouseMove) => {
             this._mousePosX = ev.x;
             this._mousePosY = ev.y;
             if (this._action) {
-                const pt = lib.cwTransform2d.invert(this.worldTransform).transformPoint({x:ev.x, y:ev.y});
+                const pt = lib.Matrix2d.invert(this.worldTransform).transformPoint({x:ev.x, y:ev.y});
                 if (this._mode === 'draw') {
                     const context = this.canvas.getContext('2d');
                     if (this._curveMode === 0) {
@@ -129,7 +129,7 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
                 }
             }
         });
-        this.on (lib.cwFrameEvent.type, (ev: lib.cwFrameEvent) => {            
+        this.on (lib.EvtFrame.type, (ev: lib.EvtFrame) => {            
             if (this._mode === 'draw' && this._action) {
                 const t = Date.now();
                 if (t > this._lastMoveTime + 250) {
@@ -137,7 +137,7 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
                 }
             }
         });
-        this.on (lib.cwMouseUpEvent.type, (ev: lib.cwMouseUpEvent) => {
+        this.on (lib.EvtMouseUp.type, (ev: lib.EvtMouseUp) => {
             if (this._mode === 'draw' && this._action) {
                 this.finishDraw ();
             }
@@ -245,7 +245,7 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
             this._canvas.width = this.view.canvas.width;
             this._canvas.height = this.view.canvas.height;
             if (this._boundingShape) {
-                this._boundingShape = new lib.cwBoundingBox ({x:0, y:0, w:this._canvas.width, h:this._canvas.height});
+                this._boundingShape = new lib.BoundingBox ({x:0, y:0, w:this._canvas.width, h:this._canvas.height});
             }
         }
         return this._canvas;
@@ -253,7 +253,7 @@ export class cwPGFreeDraw extends lib.cwSceneObject {
 }
 
 export class cwPGFreeDrawFactory extends playground.cwPGFactory {
-    protected _createEntity (options?:any): lib.cwSceneObject {
+    protected _createEntity (options?:any): lib.SceneObject {
         return new cwPGFreeDraw (null, options);
     }
     public getCreationProperties (): playground.IProperty[] {

@@ -1,6 +1,5 @@
-import * as lib from '../lib';
+import * as lib from 'libcatk';
 import * as command from './commands';
-import { cwSceneObject } from '../lib';
 
 export interface IProperty {
     name: string;
@@ -18,18 +17,18 @@ export interface IPropertyList {
     }
 }
 
-export class cwPGComponent extends lib.cwComponent {
+export class cwPGComponent extends lib.Component {
     static readonly type = 'PGComponent';
     constructor() {
         super(cwPGComponent.type);
         this.on(cwPGToolActivateEvent.type, (ev: cwPGToolActivateEvent) => {
-            ev.tool.activateObject(this.object as lib.cwSceneObject);
+            ev.tool.activateObject(this.object as lib.SceneObject);
         });
         this.on(cwPGToolDeactivateEvent.type, (ev: cwPGToolDeactivateEvent) => {
-            ev.tool.deactivateObject(this.object as lib.cwSceneObject);
+            ev.tool.deactivateObject(this.object as lib.SceneObject);
         });
         this.on(cwPGSetPropertyEvent.type, (ev: cwPGSetPropertyEvent) => {
-            const object = this.object as lib.cwSceneObject;
+            const object = this.object as lib.SceneObject;
             switch (ev.name) {
                 case 'localx': {
                     const t = object.translation;
@@ -62,7 +61,7 @@ export class cwPGComponent extends lib.cwComponent {
             }
         });
         this.on(cwPGGetPropertyEvent.type, (ev: cwPGGetPropertyEvent) => {
-            const object = this.object as lib.cwSceneObject;
+            const object = this.object as lib.SceneObject;
             switch (ev.name) {
                 case 'localx': {
                     ev.value = object.translation.x;
@@ -112,28 +111,28 @@ export class cwPGComponent extends lib.cwComponent {
                 desc: '位置X',
                 readonly: false,
                 type: 'number',
-                value: (this.object as lib.cwSceneObject).translation.x
+                value: (this.object as lib.SceneObject).translation.x
             });
             ev.properties.general.properties.push ({
                 name: 'localy',
                 desc: '位置Y',
                 readonly: false,
                 type: 'number',
-                value: (this.object as lib.cwSceneObject).translation.y
+                value: (this.object as lib.SceneObject).translation.y
             });
             ev.properties.general.properties.push ({
                 name: 'anchorx',
                 desc: '锚点X',
                 readonly: false,
                 type: 'number',
-                value: (this.object as lib.cwSceneObject).anchorPoint.x
+                value: (this.object as lib.SceneObject).anchorPoint.x
             });
             ev.properties.general.properties.push ({
                 name: 'anchory',
                 desc: '锚点Y',
                 readonly: false,
                 type: 'number',
-                value: (this.object as lib.cwSceneObject).anchorPoint.y
+                value: (this.object as lib.SceneObject).anchorPoint.y
             })
         });
     }
@@ -144,7 +143,7 @@ export abstract class cwPGFactory {
     constructor(name: string) {
         this.name = name;
     }
-    public createEntity(x:number, y:number, options?: any): lib.cwSceneObject {
+    public createEntity(x:number, y:number, options?: any): lib.SceneObject {
         const entity = this._createEntity (options);
         if (entity === null) {
             return null;
@@ -156,10 +155,10 @@ export abstract class cwPGFactory {
     public getCreationProperties (): IProperty[] {
         return [];
     }
-    protected abstract _createEntity(options?:any): lib.cwSceneObject;
+    protected abstract _createEntity(options?:any): lib.SceneObject;
 }
 
-export class cwPGToolActivateEvent extends lib.cwEvent {
+export class cwPGToolActivateEvent extends lib.BaseEvent {
     static readonly type: string = '@PGToolActivate';
     tool: cwPGTool;
     constructor(tool: cwPGTool) {
@@ -168,7 +167,7 @@ export class cwPGToolActivateEvent extends lib.cwEvent {
     }
 }
 
-export class cwPGToolDeactivateEvent extends lib.cwEvent {
+export class cwPGToolDeactivateEvent extends lib.BaseEvent {
     static readonly type: string = '@PGToolDeactivate';
     tool: cwPGTool;
     constructor(tool: cwPGTool) {
@@ -177,7 +176,7 @@ export class cwPGToolDeactivateEvent extends lib.cwEvent {
     }
 }
 
-export class cwPGGetPropertyListEvent extends lib.cwEvent {
+export class cwPGGetPropertyListEvent extends lib.BaseEvent {
     static readonly type: string = '@PGGetObjectPropertyList';
     properties?: IPropertyList;
     constructor () {
@@ -185,7 +184,7 @@ export class cwPGGetPropertyListEvent extends lib.cwEvent {
     }
 }
 
-export class cwPGSetPropertyEvent extends lib.cwEvent {
+export class cwPGSetPropertyEvent extends lib.BaseEvent {
     static readonly type: string = '@PGSetObjectPropertyEvent';
     name: string;
     value: any;
@@ -196,7 +195,7 @@ export class cwPGSetPropertyEvent extends lib.cwEvent {
     }
 }
 
-export class cwPGGetPropertyEvent extends lib.cwEvent {
+export class cwPGGetPropertyEvent extends lib.BaseEvent {
     static readonly type: string = '@PGGetObjectPropertyEvent';
     name: string;
     value?: any;
@@ -206,17 +205,17 @@ export class cwPGGetPropertyEvent extends lib.cwEvent {
     }
 }
 
-export class cwPGGetObjectEvent extends lib.cwEvent {
+export class cwPGGetObjectEvent extends lib.BaseEvent {
     static readonly type: string = '@PGGetObject';
     name: string;
-    object?: cwSceneObject;
+    object?: lib.SceneObject;
     constructor (name: string) {
         super (cwPGGetObjectEvent.type);
         this.name = name;
     }
 }
 
-export class cwPGTool extends lib.cwEventObserver {
+export class cwPGTool extends lib.EventObserver {
     public readonly name: string;
     public readonly desc: string;
     protected readonly _pg: cwPlayground;
@@ -238,29 +237,29 @@ export class cwPGTool extends lib.cwEventObserver {
         });
     }
     public activate(options?: any) {
-        lib.cwApp.triggerEvent(null, new cwPGToolActivateEvent(this));
+        lib.App.triggerEvent(null, new cwPGToolActivateEvent(this));
     }
     public deactivate() {
-        lib.cwApp.triggerEvent(null, new cwPGToolDeactivateEvent(this));
+        lib.App.triggerEvent(null, new cwPGToolDeactivateEvent(this));
     }
-    public activateObject(object: lib.cwSceneObject) {
+    public activateObject(object: lib.SceneObject) {
     }
-    public deactivateObject(object: lib.cwSceneObject) {
+    public deactivateObject(object: lib.SceneObject) {
     }
     public executeCommand(cmd: command.IPGCommand) {
     }
 }
 
-export class cwPlayground extends lib.cwEventObserver {
-    public readonly view: lib.cwSceneView = null;
+export class cwPlayground extends lib.EventObserver {
+    public readonly view: lib.SceneView = null;
     private _factories: { [name: string]: cwPGFactory };
     private _tools: { [name: string]: cwPGTool };
     private _currentTool: string;
-    private _entities: { [name: string]: lib.cwSceneObject };
+    private _entities: { [name: string]: lib.SceneObject };
     constructor(canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
         super ();
-        this.view = lib.cwScene.addCanvas(canvas, doubleBuffer);
-        this.view.rootNode.addComponent (new lib.cwcDraggable());
+        this.view = lib.App.addCanvas(canvas, doubleBuffer);
+        this.view.rootNode.addComponent (new lib.CoDraggable());
         this._factories = {};
         this._tools = {};
 
@@ -269,72 +268,72 @@ export class cwPlayground extends lib.cwEventObserver {
         this.on (cwPGGetObjectEvent.type, (ev: cwPGGetObjectEvent) => {
             ev.object = this.findEntity (ev.name);
         });
-        this.on (lib.cwSceneViewPageWillChangeEvent.type, (ev: lib.cwSceneViewPageWillChangeEvent) => {
+        this.on (lib.EvtSceneViewPageWillChange.type, (ev: lib.EvtSceneViewPageWillChange) => {
             const tool = this._tools[this._currentTool];
             if (tool) {
                 tool.deactivate();
             }
         });
-        this.on (lib.cwSceneViewPageChangedEvent.type, (ev: lib.cwSceneViewPageChangedEvent) => {
+        this.on (lib.EvtSceneViewPageChanged.type, (ev: lib.EvtSceneViewPageChanged) => {
             const tool = this._tools[this._currentTool];
             if (tool) {
                 tool.activate();
             }
         });
-        this.view.on (lib.cwKeyDownEvent.type, (ev: lib.cwKeyDownEvent) => {
+        this.view.on (lib.EvtKeyDown.type, (ev: lib.EvtKeyDown) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.on (lib.cwKeyUpEvent.type, (ev: lib.cwKeyUpEvent) => {
+        this.view.on (lib.EvtKeyUp.type, (ev: lib.EvtKeyUp) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.on (lib.cwKeyPressEvent.type, (ev: lib.cwKeyPressEvent) => {
+        this.view.on (lib.EvtKeyPress.type, (ev: lib.EvtKeyPress) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (lib.cwMouseDownEvent.type, (ev: lib.cwMouseDownEvent) => {
+        this.view.rootNode.on (lib.EvtMouseDown.type, (ev: lib.EvtMouseDown) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (lib.cwMouseUpEvent.type, (ev: lib.cwMouseUpEvent) => {
+        this.view.rootNode.on (lib.EvtMouseUp.type, (ev: lib.EvtMouseUp) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (lib.cwMouseMoveEvent.type, (ev: lib.cwMouseMoveEvent) => {
+        this.view.rootNode.on (lib.EvtMouseMove.type, (ev: lib.EvtMouseMove) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (lib.cwClickEvent.type, (ev: lib.cwClickEvent) => {
+        this.view.rootNode.on (lib.EvtClick.type, (ev: lib.EvtClick) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.rootNode.on (lib.cwDblClickEvent.type, (ev: lib.cwDblClickEvent) => {
+        this.view.rootNode.on (lib.EvtDblClick.type, (ev: lib.EvtDblClick) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
         });
-        this.view.on (lib.cwDrawEvent.type, (ev: lib.cwDrawEvent) => {
+        this.view.on (lib.EvtDraw.type, (ev: lib.EvtDraw) => {
             if (this._currentTool !== '') {
                 const tool = this._tools[this._currentTool];
                 tool.trigger (ev);
             }
-        }, lib.cwEventListenerOrder.LAST);
+        }, lib.EventListenerOrder.LAST);
     }
     public addTool (tool: cwPGTool): void {
         this._tools[tool.name] = tool;
@@ -345,7 +344,7 @@ export class cwPlayground extends lib.cwEventObserver {
     public getFactory(name: string): cwPGFactory {
         return this._factories[name] || null;
     }
-    public createEntity(type: string, name: string|null, failOnExists: boolean, x: number, y: number, options: any): lib.cwSceneObject {
+    public createEntity(type: string, name: string|null, failOnExists: boolean, x: number, y: number, options: any): lib.SceneObject {
         let entity = null;
         if (name === null) {
             let id = 1;
@@ -388,7 +387,7 @@ export class cwPlayground extends lib.cwEventObserver {
             delete this._entities[name];
         }
     }
-    public findEntity(name: string): lib.cwSceneObject {
+    public findEntity(name: string): lib.SceneObject {
         return this._entities[name] || null;
     }
     public encodeCommand(cmd: command.IPGCommand) {
@@ -434,7 +433,7 @@ export class cwPlayground extends lib.cwEventObserver {
             }
         } else if (cmd.command == 'AlignObjectsLeft') {
             if (cmd.objects && cmd.objects.length > 1) {
-                const objects: lib.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                const objects: lib.SceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
                 let minx = objects[0].worldTransform.e;
                 for (let i = 1; i < objects.length; i++) {
                     const x = objects[i].worldTransform.e;
@@ -449,7 +448,7 @@ export class cwPlayground extends lib.cwEventObserver {
             }
         } else if (cmd.command == 'AlignObjectsRight') {
             if (cmd.objects && cmd.objects.length > 1) {
-                const objects: lib.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                const objects: lib.SceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
                 let maxx = objects[0].worldTransform.e;
                 for (let i = 1; i < objects.length; i++) {
                     const x = objects[i].worldTransform.e;
@@ -464,7 +463,7 @@ export class cwPlayground extends lib.cwEventObserver {
             }
         } else if (cmd.command == 'AlignObjectsTop') {
             if (cmd.objects && cmd.objects.length > 1) {
-                const objects: lib.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                const objects: lib.SceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
                 let miny = objects[0].worldTransform.f;
                 for (let i = 1; i < objects.length; i++) {
                     const y = objects[i].worldTransform.f;
@@ -479,7 +478,7 @@ export class cwPlayground extends lib.cwEventObserver {
             }
         } else if (cmd.command == 'AlignObjectsBottom') {
             if (cmd.objects && cmd.objects.length > 1) {
-                const objects: lib.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                const objects: lib.SceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
                 let maxy = objects[0].worldTransform.f;
                 for (let i = 1; i < objects.length; i++) {
                     const y = objects[i].worldTransform.f;
@@ -508,7 +507,7 @@ export class cwPlayground extends lib.cwEventObserver {
             }
         } else if (cmd.command == 'ArrangeObjectsHorizontal') {
             if (cmd.objects && cmd.objects.length > 2) {
-                const objects: lib.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                const objects: lib.SceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
                 objects.sort ((a, b) => {
                     return a.worldTransform.e - b.worldTransform.e;
                 });
@@ -521,7 +520,7 @@ export class cwPlayground extends lib.cwEventObserver {
             }
         } else if (cmd.command == 'ArrangeObjectsVertical') {
             if (cmd.objects && cmd.objects.length > 2) {
-                const objects: lib.cwSceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
+                const objects: lib.SceneObject[] = cmd.objects.map ((name:string) => this.findEntity(name));
                 objects.sort ((a, b) => {
                     return a.worldTransform.f - b.worldTransform.f;
                 });

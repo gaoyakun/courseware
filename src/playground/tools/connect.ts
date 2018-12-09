@@ -1,4 +1,4 @@
-import * as lib from '../../lib';
+import * as lib from 'libcatk';
 import * as commands from '../commands';
 import * as playground from '../playground';
 
@@ -77,7 +77,7 @@ export class cwPGConnectTool extends playground.cwPGTool {
     public activate(options?: any) {
         super.activate (options);
         this._moving = false;
-        this.on (lib.cwMouseDownEvent.type, (ev: lib.cwMouseDownEvent) => {
+        this.on (lib.EvtMouseDown.type, (ev: lib.EvtMouseDown) => {
             this._moving = true;
             this._createParams.objectFrom = null;
             this._createParams.objectTo = null;
@@ -91,7 +91,7 @@ export class cwPGConnectTool extends playground.cwPGTool {
                 this._createParams.positionFromY = ev.y;
             }
         });
-        this.on (lib.cwMouseMoveEvent.type, (ev: lib.cwMouseMoveEvent) => {
+        this.on (lib.EvtMouseMove.type, (ev: lib.EvtMouseMove) => {
             if (this._moving) {
                 const hitObjects = this._pg.view.hitObjects;
                 if (hitObjects.length > 1 && hitObjects[0] !== this._createParams.objectFrom && hitObjects[0].entityType !== 'Arrow') {
@@ -103,7 +103,7 @@ export class cwPGConnectTool extends playground.cwPGTool {
                 }
             }
         });
-        this.on (lib.cwMouseUpEvent.type, (ev: lib.cwMouseUpEvent) => {
+        this.on (lib.EvtMouseUp.type, (ev: lib.EvtMouseUp) => {
             this._moving = false;
             let x = 0, y = 0;
             if (this._createParams.objectFrom && this._createParams.objectTo) {
@@ -139,7 +139,7 @@ export class cwPGConnectTool extends playground.cwPGTool {
             };
             this._pg.executeCommand (cmd);
         });
-        this.on (lib.cwDrawEvent.type, (ev: lib.cwDrawEvent) => {
+        this.on (lib.EvtDraw.type, (ev: lib.EvtDraw) => {
             if (this._moving) {
                 ev.canvas.context.save ();
                 ev.canvas.context.setTransform(1, 0, 0, 1, 0.5, 0.5);
@@ -148,13 +148,13 @@ export class cwPGConnectTool extends playground.cwPGTool {
                 ev.canvas.context.setLineDash ([6,3]);
                 ev.canvas.context.beginPath ();
                 if (this._createParams.objectFrom) {
-                    const t = (this._createParams.objectFrom as lib.cwSceneObject).worldTransform;
+                    const t = (this._createParams.objectFrom as lib.SceneObject).worldTransform;
                     ev.canvas.context.moveTo (t.e, t.f);
                 } else {
                     ev.canvas.context.moveTo (this._createParams.positionFromX, this._createParams.positionFromY);
                 }
                 if (this._createParams.objectTo) {
-                    const t = (this._createParams.objectTo as lib.cwSceneObject).worldTransform;
+                    const t = (this._createParams.objectTo as lib.SceneObject).worldTransform;
                     ev.canvas.context.lineTo (t.e, t.f);
                 } else {
                     ev.canvas.context.lineTo (this._createParams.positionToX, this._createParams.positionToY);
@@ -165,15 +165,15 @@ export class cwPGConnectTool extends playground.cwPGTool {
     });
     }
     public deactivate() {
-        this.off (lib.cwMouseDownEvent.type);
-        this.off (lib.cwMouseMoveEvent.type);
-        this.off (lib.cwMouseUpEvent.type);
+        this.off (lib.EvtMouseDown.type);
+        this.off (lib.EvtMouseMove.type);
+        this.off (lib.EvtMouseUp.type);
         super.deactivate ();
     }
-    public activateObject(object: lib.cwSceneObject) {
+    public activateObject(object: lib.SceneObject) {
         super.activateObject (object);
     }
-    public deactivateObject(object: lib.cwSceneObject) {
+    public deactivateObject(object: lib.SceneObject) {
         super.deactivateObject (object);
     }
     public executeCommand(cmd: commands.IPGCommand) {
